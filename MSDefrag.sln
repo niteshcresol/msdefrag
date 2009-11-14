@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSDefrag", "MSDefrag\MSDefrag.csproj", "{BB7279DA-B9B0-4507-96D9-34B116A5011C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSDefragLib", "MSDefragLib\MSDefragLib.csproj", "{EB340059-DCA9-4256-9643-5B066185EB5F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BB7279DA-B9B0-4507-96D9-34B116A5011C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB7279DA-B9B0-4507-96D9-34B116A5011C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB7279DA-B9B0-4507-96D9-34B116A5011C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB7279DA-B9B0-4507-96D9-34B116A5011C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB340059-DCA9-4256-9643-5B066185EB5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB340059-DCA9-4256-9643-5B066185EB5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB340059-DCA9-4256-9643-5B066185EB5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB340059-DCA9-4256-9643-5B066185EB5F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
