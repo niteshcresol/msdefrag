@@ -1974,7 +1974,7 @@ namespace MSDefragLib
         }
 
         Boolean InterpretMftRecord(
-            MSDefragDataStruct Data,
+            ref MSDefragDataStruct Data,
             NtfsDiskInfoStruct DiskInfo,
             Array InodeArray,
             UInt64 InodeNumber,
@@ -2166,7 +2166,7 @@ namespace MSDefragLib
                 }
 
                 /* Add the item record to the sorted item tree in memory. */
-                m_msDefragLib.TreeInsert(Data, Item);
+                m_msDefragLib.TreeInsert(ref Data, Item);
 
 		        /*
                     Also add the item to the array that is used to construct the full pathnames.
@@ -2260,7 +2260,7 @@ namespace MSDefragLib
         // Load the MFT into a list of ItemStruct records in memory.
         //
         //////////////////////////////////////////////////////////////////////////
-        public Boolean AnalyzeNtfsVolume(MSDefragDataStruct Data)
+        public Boolean AnalyzeNtfsVolume(ref MSDefragDataStruct Data)
         {
             ReadBootDiskRecord(Data);
 
@@ -2452,7 +2452,7 @@ namespace MSDefragLib
 	        MftBitmapBytes = 0;
             MftBitmapFragments = null;
 
-            Result = InterpretMftRecord(Data, DiskInfo, null, 0, 0, 
+            Result = InterpretMftRecord(ref Data, DiskInfo, null, 0, 0, 
                 ref MftDataFragments, ref MftDataBytes, ref MftBitmapFragments, ref MftBitmapBytes,
                 Buffer, DiskInfo.BytesPerMftRecord);
 
@@ -2680,8 +2680,11 @@ namespace MSDefragLib
                             if (Fragment == null) break;
 				        } while (Fragment.Lcn == VIRTUALFRAGMENT);
 
-                        ShowDebug(6, String.Format("  Extent Lcn={0:G}, RealVcn={1:G}, Size={2:G}",
-                              Fragment.Lcn, RealVcn, Fragment.NextVcn - Vcn));
+                        if (Fragment != null)
+                        {
+                            ShowDebug(6, String.Format("  Extent Lcn={0:G}, RealVcn={1:G}, Size={2:G}",
+                                  Fragment.Lcn, RealVcn, Fragment.NextVcn - Vcn));
+                        }
 			        }
 
                     if (Fragment == null) break;
@@ -2740,7 +2743,7 @@ namespace MSDefragLib
 		        }
 
 		        /* Interpret the Inode's attributes. */
-		        Result = InterpretMftRecord(Data,DiskInfo,InodeArray,InodeNumber,MaxInode,
+		        Result = InterpretMftRecord(ref Data,DiskInfo,InodeArray,InodeNumber,MaxInode,
 			            ref MftDataFragments, ref MftDataBytes, ref MftBitmapFragments, ref MftBitmapBytes,
                         Buffer.ToByteArray(
                             (Int64)((InodeNumber - BlockStart) * DiskInfo.BytesPerMftRecord), 

@@ -191,20 +191,20 @@ namespace MSDefragLib
 
         public class NTFS_VOLUME_DATA_BUFFER
         {
-          UInt64 VolumeSerialNumber;
-          UInt64 NumberSectors;
-          UInt64 TotalClusters;
-          UInt64 FreeClusters;
-          UInt64 TotalReserved;
-          DWORD         BytesPerSector;
-          DWORD         BytesPerCluster;
-          DWORD         BytesPerFileRecordSegment;
-          DWORD         ClustersPerFileRecordSegment;
-          UInt64 MftValidDataLength;
-          UInt64 MftStartLcn;
-          UInt64 Mft2StartLcn;
-          UInt64 MftZoneStart;
-          UInt64 MftZoneEnd;
+            public UInt64 VolumeSerialNumber;
+            public UInt64 NumberSectors;
+            public UInt64 TotalClusters;
+            public UInt64 FreeClusters;
+            public UInt64 TotalReserved;
+            public UInt32 BytesPerSector;
+            public UInt32 BytesPerCluster;
+            public UInt32 BytesPerFileRecordSegment;
+            public UInt32 ClustersPerFileRecordSegment;
+            public UInt64 MftValidDataLength;
+            public UInt64 MftStartLcn;
+            public UInt64 Mft2StartLcn;
+            public UInt64 MftZoneStart;
+            public UInt64 MftZoneEnd;
         };
 
         /// <summary>
@@ -212,11 +212,11 @@ namespace MSDefragLib
         /// </summary>
         /// <param name="DeviceName">use "c:"</param>
         /// <returns>a bitarray for each cluster</returns>
-        static public BitmapData GetNtfsInfo(IntPtr hDevice)
+        static public NTFS_VOLUME_DATA_BUFFER GetNtfsInfo(IntPtr hDevice)
         {
             IntPtr pAlloc = IntPtr.Zero;
 
-            BitmapData retValue = new BitmapData();
+            NTFS_VOLUME_DATA_BUFFER retValue = new NTFS_VOLUME_DATA_BUFFER();
 
             try
             {
@@ -225,7 +225,7 @@ namespace MSDefragLib
                 GCHandle handle = GCHandle.Alloc(i64, GCHandleType.Pinned);
                 IntPtr p = handle.AddrOfPinnedObject();
 
-                uint q = 1024 * 1024 * 64 + 2 * 8;
+                uint q = 96;
 
                 uint size = 0;
                 pAlloc = Marshal.AllocHGlobal((int)q);
@@ -247,22 +247,46 @@ namespace MSDefragLib
                 }
                 handle.Free();
 
-                retValue.StartingLcn = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
+                retValue.VolumeSerialNumber = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
 
                 pDest = (IntPtr)((Int64)pDest + 8);
-                retValue.BitmapSize = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
+                retValue.NumberSectors = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
 
-                Int32 byteSize = (int)(retValue.BitmapSize / 8);
-                byteSize++; // round up - even with no remainder
+                pDest = (IntPtr)((Int64)pDest + 8);
+                retValue.TotalClusters = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
 
-                IntPtr BitmapBegin = (IntPtr)((Int64)pDest + 8);
+                pDest = (IntPtr)((Int64)pDest + 8);
+                retValue.FreeClusters = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
 
-                byte[] byteArr = new byte[byteSize];
+                pDest = (IntPtr)((Int64)pDest + 8);
+                retValue.TotalReserved = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
 
-                Marshal.Copy(BitmapBegin, byteArr, 0, (Int32)byteSize);
+                pDest = (IntPtr)((Int64)pDest + 8);
+                retValue.BytesPerSector = (UInt32)Marshal.PtrToStructure(pDest, typeof(UInt32));
 
-                retValue.Buffer = new BitArray(byteArr);
-                retValue.Buffer.Length = (int)retValue.BitmapSize; // truncate to exact cluster count
+                pDest = (IntPtr)((Int64)pDest + 4);
+                retValue.BytesPerCluster = (UInt32)Marshal.PtrToStructure(pDest, typeof(UInt32));
+
+                pDest = (IntPtr)((Int64)pDest + 4);
+                retValue.BytesPerFileRecordSegment = (UInt32)Marshal.PtrToStructure(pDest, typeof(UInt32));
+
+                pDest = (IntPtr)((Int64)pDest + 4);
+                retValue.ClustersPerFileRecordSegment = (UInt32)Marshal.PtrToStructure(pDest, typeof(UInt32));
+
+                pDest = (IntPtr)((Int64)pDest + 4);
+                retValue.MftValidDataLength = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
+
+                pDest = (IntPtr)((Int64)pDest + 8);
+                retValue.MftStartLcn = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
+
+                pDest = (IntPtr)((Int64)pDest + 8);
+                retValue.Mft2StartLcn = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
+
+                pDest = (IntPtr)((Int64)pDest + 8);
+                retValue.MftZoneStart = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
+
+                pDest = (IntPtr)((Int64)pDest + 8);
+                retValue.MftZoneEnd = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
 
                 return retValue;
             }

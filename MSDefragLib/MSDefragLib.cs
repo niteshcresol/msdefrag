@@ -435,9 +435,9 @@ namespace MSDefragLib
         }
 */
         /* Subfunction of GetShortPath(). */
-        void AppendToShortPath(ItemStruct Item, String Path)
+        void AppendToShortPath(ItemStruct Item, ref String Path)
         {
-	        if (Item.ParentDirectory != null) AppendToShortPath(Item.ParentDirectory,Path);
+	        if (Item.ParentDirectory != null) AppendToShortPath(Item.ParentDirectory, ref Path);
 
             Path += "\\";
 
@@ -467,15 +467,15 @@ namespace MSDefragLib
             Path = Data.Disk.MountPoint;
 
 	        /* Append all the strings. */
-	        AppendToShortPath(Item,Path);
+	        AppendToShortPath(Item, ref Path);
 
 	        return(Path);
         }
 
         /* Subfunction of GetLongPath(). */
-        void AppendToLongPath(ItemStruct Item, String Path)
+        void AppendToLongPath(ItemStruct Item, ref String Path)
         {
-	        if (Item.ParentDirectory != null) AppendToLongPath(Item.ParentDirectory,Path);
+	        if (Item.ParentDirectory != null) AppendToLongPath(Item.ParentDirectory, ref Path);
 
             Path += "\\";
 
@@ -505,7 +505,7 @@ namespace MSDefragLib
             Path = Data.Disk.MountPoint;
 
 	        /* Append all the strings. */
-	        AppendToLongPath(Item,Path);
+	        AppendToLongPath(Item, ref Path);
 
 	        return(Path);
         }
@@ -674,7 +674,7 @@ namespace MSDefragLib
         }
 */
         /* Insert a record into the tree. The tree is sorted by LCN (Logical Cluster Number). */
-        public void TreeInsert(MSDefragDataStruct Data, ItemStruct New)
+        public void TreeInsert(ref MSDefragDataStruct Data, ItemStruct New)
         {
 	        ItemStruct Here;
 	        ItemStruct Ins;
@@ -1574,6 +1574,8 @@ namespace MSDefragLib
 	        }
         }
 
+        List<MSDefragLib.colors> m_clusterData = null;
+
         /*
             Show a map on the screen of all the clusters on disk. The map shows
             which clusters are free and which are in use.
@@ -1594,7 +1596,7 @@ namespace MSDefragLib
             //UInt16 ErrorCode;
             int Index;
             int IndexMax;
-            Byte Mask;
+            //Byte Mask;
             Boolean InUse = false;
             Boolean PrevInUse = false;
             //UInt16 w;
@@ -1619,6 +1621,16 @@ namespace MSDefragLib
             ClusterStart = 0;
 
             PrevInUse = true;
+
+            if (m_clusterData == null)
+            {
+                m_clusterData = new List<colors>(40000000);
+
+                for (Int32 ii = 0; ii < 40000000; ii++)
+                {
+                    m_clusterData.Add(colors.COLOREMPTY);
+                }
+            }
 
             do
             {
@@ -1656,7 +1668,7 @@ namespace MSDefragLib
                 /* Analyze the clusterdata. We resume where the previous block left off. */
                 Lcn = bitmapData.StartingLcn;
                 Index = 0;
-                Mask = 1;
+                //Mask = 1;
                 IndexMax = bitmapData.Buffer.Length;
 
                 while ((Index < IndexMax) && (Data.Running == true))
@@ -1731,6 +1743,7 @@ namespace MSDefragLib
             {
                 if (Data.RedrawScreen != 2) break;
                 if (Data.MftExcludes[i].Start <= 0) continue;
+
                 DrawCluster(Data,Data.MftExcludes[i].Start, Data.MftExcludes[i].End, colors.COLORMFT);
             }
 
@@ -1749,7 +1762,7 @@ namespace MSDefragLib
                     continue;
                 }
 
-                ColorizeItem(Data,Item,0,0,false);
+                ColorizeItem(Data,Item, 0, 0, false);
             }
 
             /* Set the flag to "no". */
@@ -2005,7 +2018,7 @@ namespace MSDefragLib
         an unmovable file.
 
         */
-        void CalculateZones(MSDefragDataStruct Data)
+        void CalculateZones(ref MSDefragDataStruct Data)
         {
 	        ItemStruct Item;
 
@@ -3658,7 +3671,7 @@ namespace MSDefragLib
 */
         /* Scan all files in a volume and store the information in a tree in
         memory for later use by the optimizer. */
-        void AnalyzeVolume(MSDefragDataStruct Data)
+        void AnalyzeVolume(ref MSDefragDataStruct Data)
         {
 	        ItemStruct Item;
 
@@ -3700,7 +3713,7 @@ namespace MSDefragLib
 */
 
 	        /* Scan NTFS disks. */
-            Result = m_msScanNtfs.AnalyzeNtfsVolume(Data);
+            Result = m_msScanNtfs.AnalyzeNtfsVolume(ref Data);
 
 	        /* Scan FAT disks. */
 //	        if ((Result == false) && (*Data->Running == RUNNING)) Result = jkScanFat->AnalyzeFatVolume(Data);
@@ -3839,7 +3852,7 @@ namespace MSDefragLib
 				        }
 			        }
 
-			        if (Item.SpaceHog == true) ColorizeItem(Data,Item,0,0,false);
+//			        if (Item.SpaceHog == true) ColorizeItem(Data,Item,0,0,false);
 		        }
 
 		        /* Special exception for "http://www.safeboot.com/". */
@@ -3875,7 +3888,7 @@ namespace MSDefragLib
             DrawCluster(Data,0,0,0);
 
 	        /* Calculate the begin of the zone's. */
-	        CalculateZones(Data);
+	        CalculateZones(ref Data);
 
 	        /* Call the ShowAnalyze() callback one last time. */
         //	jkGui->ShowAnalyze(Data,NULL);
@@ -5153,7 +5166,7 @@ namespace MSDefragLib
 */
         /* Run the defragmenter. Input is the name of a disk, mountpoint, directory, or file,
         and may contain wildcards '*' and '?'. */
-        void DefragOnePath(MSDefragDataStruct Data, String Path, UInt16 Mode)
+        void DefragOnePath(ref MSDefragDataStruct Data, String Path, UInt16 Mode)
         {
 /*
 	        HANDLE ProcessTokenHandle;
@@ -5292,6 +5305,8 @@ namespace MSDefragLib
             IOWrapper.ElevatePermissions();
 
             Data.Disk.VolumeHandle = IOWrapper.OpenVolume("C:");
+
+            Data.Disk.MountPoint = Path;
 
             /*
                         if ((OpenProcessToken(GetCurrentProcess(),TOKEN_ADJUST_PRIVILEGES|TOKEN_QUERY,
@@ -5473,8 +5488,26 @@ namespace MSDefragLib
 
             Data.TotalClusters = (UInt64)bitmap.Count/*bitmap.StartingLcn + bitmap.BitmapSize*/;
 
-            bool res = IOWrapper.DeviceIoControl(Data.Disk.VolumeHandle, FSCTL_GET_NTFS_VOLUME_DATA,
-                NULL, 0, &NtfsData, sizeof(NtfsData), &w, NULL);
+            IOWrapper.NTFS_VOLUME_DATA_BUFFER ntfsData = null;
+
+            ntfsData = IOWrapper.GetNtfsInfo(Data.Disk.VolumeHandle);
+
+            if (ntfsData == null)
+            {
+                return;
+            }
+
+            Data.BytesPerCluster = ntfsData.BytesPerCluster;
+
+            Data.MftExcludes[0].Start = ntfsData.MftStartLcn;
+            Data.MftExcludes[0].End = ntfsData.MftStartLcn + (UInt64)(ntfsData.MftValidDataLength / ntfsData.BytesPerCluster);
+
+            Data.MftExcludes[1].Start = ntfsData.MftZoneStart;
+            Data.MftExcludes[1].End = ntfsData.MftZoneEnd;
+
+            Data.MftExcludes[2].Start = ntfsData.Mft2StartLcn;
+            Data.MftExcludes[2].End = ntfsData.Mft2StartLcn + (UInt64)(ntfsData.MftValidDataLength / ntfsData.BytesPerCluster);
+
 #if AAA
 
 
@@ -5548,7 +5581,7 @@ namespace MSDefragLib
 /*
             if (Data.Running == RunningState.Running)
             {
-*/                AnalyzeVolume(Data);
+*/                AnalyzeVolume(ref Data);
 
 /*                switch (Mode)
                 {
@@ -6027,7 +6060,7 @@ namespace MSDefragLib
             */
             if (!Path.Equals(""))
             {
-                DefragOnePath(Data, Path, Mode);
+                DefragOnePath(ref Data, Path, Mode);
             }
 /*
             else
@@ -6137,6 +6170,143 @@ namespace MSDefragLib
             return m_lastMessage;
         }
 
+        public List<colors> GetClusterList(Int32 numClusters)
+        {
+            List<colors> clusters = new List<colors>(numClusters);
+
+            int numClustersPerSquare = m_clusterData.Count / numClusters;
+
+            for (int ii = 0; ii < numClusters - 1; ii++)
+            {
+                Int64 startCluster = ii * numClustersPerSquare;
+                Int64 endCluster = startCluster + numClustersPerSquare;
+
+                colors col = colors.COLOREMPTY;
+
+                Boolean maxColReached = false;
+
+                for (Int64 jj = startCluster; (!maxColReached) && jj < endCluster; jj++)
+                {
+                    colors clusterColor = m_clusterData[(Int32)jj];
+
+                    switch (clusterColor)
+                    {
+                        case colors.COLORBUSY:
+                            col = colors.COLORBUSY;
+                            maxColReached = true;
+                            break;
+                        case colors.COLORUNMOVABLE:
+                            col = colors.COLORUNMOVABLE;
+                            break;
+                        case colors.COLORALLOCATED:
+                            if (col == colors.COLOREMPTY)
+                            {
+                                col = colors.COLORALLOCATED;
+                            }
+                            break;
+                        case colors.COLORFRAGMENTED:
+                            if (col != colors.COLORUNMOVABLE)
+                            {
+                                col = colors.COLORFRAGMENTED;
+                            }
+                            break;
+                        case colors.COLORMFT:
+                            clusters[ii] = colors.COLORMFT;
+                            break;
+                        case colors.COLORSPACEHOG:
+                            if (col != colors.COLORUNMOVABLE)
+                            {
+                                col = colors.COLORSPACEHOG;
+                            }
+                            break;
+                        case colors.COLORUNFRAGMENTED:
+                            if ((col == colors.COLOREMPTY) || (col == colors.COLORALLOCATED))
+                            {
+                                col = colors.COLORUNFRAGMENTED;
+                            }
+                            break;
+                        default:
+                            col = colors.COLOREMPTY;
+                            break;
+                    }
+                }
+
+                clusters.Add(col);
+            }
+
+            return clusters;
+        }
+
+        public List<colors> GetClusterList(Int32 numClusters, Int64 startClusterNumber, Int64 endClusterNumber)
+        {
+            List<colors> clusters = new List<colors>(numClusters);
+
+            int numClustersPerSquare = m_clusterData.Count / numClusters;
+
+            int startSquare = (Int32)(startClusterNumber / numClustersPerSquare);
+            int endSquare = (Int32)(endClusterNumber / numClustersPerSquare) + 1;
+
+            for (int ii = startSquare; ii <= endSquare; ii++)
+            {
+                Int64 startCluster = ii * numClustersPerSquare;
+                Int64 endCluster = startCluster + numClustersPerSquare + 1;
+
+                colors col = colors.COLOREMPTY;
+
+                Boolean maxColReached = false;
+
+                for (Int64 jj = startCluster; (!maxColReached) && jj < endCluster; jj++)
+                {
+                    colors clusterColor = m_clusterData[(Int32)jj];
+
+                    switch (clusterColor)
+                    {
+                        case colors.COLORBUSY:
+                            col = colors.COLORBUSY;
+                            maxColReached = true;
+                            break;
+                        case colors.COLORUNMOVABLE:
+                            col = colors.COLORUNMOVABLE;
+                            break;
+                        case colors.COLORALLOCATED:
+                            if (col == colors.COLOREMPTY)
+                            {
+                                col = colors.COLORALLOCATED;
+                            }
+                            break;
+                        case colors.COLORFRAGMENTED:
+                            if (col != colors.COLORUNMOVABLE)
+                            {
+                                col = colors.COLORFRAGMENTED;
+                            }
+                            break;
+                        case colors.COLORMFT:
+                            clusters[ii] = colors.COLORMFT;
+                            break;
+                        case colors.COLORSPACEHOG:
+                            if (col != colors.COLORUNMOVABLE)
+                            {
+                                col = colors.COLORSPACEHOG;
+                            }
+                            break;
+                        case colors.COLORUNFRAGMENTED:
+                            if ((col == colors.COLOREMPTY) || (col == colors.COLORALLOCATED))
+                            {
+                                col = colors.COLORUNFRAGMENTED;
+                            }
+                            break;
+                        default:
+                            col = colors.COLOREMPTY;
+                            break;
+                    }
+                }
+
+                clusters.Add(col);
+            }
+
+            return clusters;
+        }
+
         public delegate void DrawClusterHandler(object sender, EventArgs e);
 
         public event DrawClusterHandler DrawClusterEvent;
@@ -6149,6 +6319,10 @@ namespace MSDefragLib
                 {
                     DrawClusterEvent(this, e);
                 }
+                if (e is DrawClusterEventArgs2)
+                {
+                    DrawClusterEvent(this, e);
+                }
             }
         }
 
@@ -6156,10 +6330,16 @@ namespace MSDefragLib
         {
             for (UInt64 ii = clusterStart; ii < clusterEnd; ii++)
             {
-                DrawClusterEventArgs e = new DrawClusterEventArgs(data, ii, col);
+                m_clusterData[(Int32)ii] = col; 
 
-                OnDrawCluster(e);
+//                DrawClusterEventArgs e = new DrawClusterEventArgs(data, ii, col);
+
+//                OnDrawCluster(e);
             }
+
+            DrawClusterEventArgs2 e = new DrawClusterEventArgs2(data, clusterStart, clusterEnd);
+
+            OnDrawCluster(e);
         }
     }
 
@@ -6174,6 +6354,20 @@ namespace MSDefragLib
             m_data = data;
             m_clusterNumber = clusterNum;
             m_color = col;
+        }
+    }
+
+    public class DrawClusterEventArgs2 : EventArgs
+    {
+        public UInt64 m_startClusterNumber;
+        public UInt64 m_endClusterNumber;
+        public MSDefragDataStruct m_data;
+
+        public DrawClusterEventArgs2(MSDefragDataStruct data, UInt64 startClusterNum, UInt64 endClusterNum)
+        {
+            m_data = data;
+            m_startClusterNumber = startClusterNum;
+            m_endClusterNumber = endClusterNum;
         }
     }
 
