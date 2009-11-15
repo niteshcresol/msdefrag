@@ -51,13 +51,6 @@ namespace MSDefragLib
             public ULARGE_INTEGER StartingLcn;
         };
 
-        private class BitmapData
-        {
-            UInt64 StartingLcn;
-            UInt64 BitmapSize;
-            Byte[] Buffer = new Byte[65536];               /* Most efficient if binary multiple. */
-        } ;
-
         private MSScanNtfs m_msScanNtfs;
 
         public MSDefragLib()
@@ -1591,28 +1584,28 @@ namespace MSDefragLib
             without completing the redraw. When redrawing is completely finished the
             flag is set to "0" (no).
         */
-        void ShowDiskmap(MSDefragDataStruct Data)
+        public void ShowDiskmap(MSDefragDataStruct Data)
         {
             ItemStruct Item;
-            STARTING_LCN_INPUT_BUFFER BitmapParam;
+            //STARTING_LCN_INPUT_BUFFER BitmapParam;
 
             UInt64 Lcn;
             UInt64 ClusterStart;
-            UInt16 ErrorCode;
+            //UInt16 ErrorCode;
             int Index;
             int IndexMax;
             Byte Mask;
-            int InUse;
-            int PrevInUse;
-            UInt16 w;
+            Boolean InUse = false;
+            Boolean PrevInUse = false;
+            //UInt16 w;
             int i;
 
-            Bit
+            IOWrapper.BitmapData bitmapData = null;
 
             Data.RedrawScreen = 2;                       /* Set the flag to "busy". */
 
             /* Exit if the library is not processing a disk yet. */
-            if (Data.Disk.VolumeHandle == null)
+            if (Data.Disk.VolumeHandle == IntPtr.Zero)
             {
                 Data.RedrawScreen = 0;                       /* Set the flag to "no". */
                 return;
@@ -1624,7 +1617,8 @@ namespace MSDefragLib
             /* Show the map of all the clusters in use. */
             Lcn = 0;
             ClusterStart = 0;
-            PrevInUse = 1;
+
+            PrevInUse = true;
 
             do
             {
@@ -1633,11 +1627,20 @@ namespace MSDefragLib
                 if (Data.Disk.VolumeHandle == null) break;
 
                 /* Fetch a block of cluster data. */
-                BitmapParam.StartingLcn.QuadPart = Lcn;
+//                BitmapParam.StartingLcn.QuadPart = Lcn;
 
-                ErrorCode = DeviceIoControl(Data->Disk.VolumeHandle,FSCTL_GET_VOLUME_BITMAP,
-                    &BitmapParam,sizeof(BitmapParam),&BitmapData,sizeof(BitmapData),&w,NULL);
+                bitmapData = IOWrapper.GetVolumeMap(Data.Disk.VolumeHandle);
 
+/*
+                ErrorCode = DeviceIoControl(Data.Disk.VolumeHandle,FSCTL_GET_VOLUME_BITMAP,
+                    BitmapParam,sizeof(BitmapParam),&BitmapData,sizeof(BitmapData),&w,NULL);
+
+*/
+/*
+                if (bitmapData == null)
+                {
+                    IOWrapper.GetMessage();
+                }
                 if (ErrorCode != 0)
                 {
                     ErrorCode = NO_ERROR;
@@ -1646,116 +1649,111 @@ namespace MSDefragLib
                 }
                 if ((ErrorCode != NO_ERROR) && (ErrorCode != ERROR_MORE_DATA)) break;
 
+*/
                 /* Sanity check. */
-                if (Lcn >= BitmapData.StartingLcn + BitmapData.BitmapSize) break;
+                if (Lcn >= bitmapData.StartingLcn + bitmapData.BitmapSize) break;
 
                 /* Analyze the clusterdata. We resume where the previous block left off. */
-                Lcn = BitmapData.StartingLcn;
+                Lcn = bitmapData.StartingLcn;
                 Index = 0;
                 Mask = 1;
-                IndexMax = sizeof(BitmapData.Buffer);
+                IndexMax = bitmapData.Buffer.Length;
 
-                if (BitmapData.BitmapSize / 8 < IndexMax) IndexMax = (int)(BitmapData.BitmapSize / 8);
-
-                while ((Index < IndexMax) && (*Data->Running == RUNNING))
+                while ((Index < IndexMax) && (Data.Running == true))
                 {
-                    InUse = (BitmapData.Buffer[Index] & Mask);
+                    //InUse = (bitmapData.Buffer[Index] & Mask);
+                    InUse = bitmapData.Buffer[Index];
 
                     /* If at the beginning of the disk then copy the InUse value as our
                     starting value. */
                     if (Lcn == 0) PrevInUse = InUse;
 
                     /* At the beginning and end of an Exclude draw the cluster. */
-                    if ((Lcn == Data->MftExcludes[0].Start) || (Lcn == Data->MftExcludes[0].End) ||
-                        (Lcn == Data->MftExcludes[1].Start) || (Lcn == Data->MftExcludes[1].End) ||
-                        (Lcn == Data->MftExcludes[2].Start) || (Lcn == Data->MftExcludes[2].End))
+                    if ((Lcn == Data.MftExcludes[0].Start) || (Lcn == Data.MftExcludes[0].End) ||
+                        (Lcn == Data.MftExcludes[1].Start) || (Lcn == Data.MftExcludes[1].End) ||
+                        (Lcn == Data.MftExcludes[2].Start) || (Lcn == Data.MftExcludes[2].End))
                     {
-                        if ((Lcn == Data->MftExcludes[0].End) ||
-                            (Lcn == Data->MftExcludes[1].End) ||
-                            (Lcn == Data->MftExcludes[2].End))
+                        if ((Lcn == Data.MftExcludes[0].End) ||
+                            (Lcn == Data.MftExcludes[1].End) ||
+                            (Lcn == Data.MftExcludes[2].End))
                         {
-                            m_jkGui->DrawCluster(Data,ClusterStart,Lcn,colors.COLORUNMOVABLE);
-                        } else if (PrevInUse == 0)
+                            DrawCluster(Data,ClusterStart,Lcn,colors.COLORUNMOVABLE);
+                        }
+                        else if (PrevInUse == false)
                         {
-                            m_jkGui->DrawCluster(Data,ClusterStart,Lcn,colors.COLOREMPTY);
-                        } else {
-                            m_jkGui->DrawCluster(Data,ClusterStart,Lcn,color.COLORALLOCATED);
+                            DrawCluster(Data,ClusterStart,Lcn,colors.COLOREMPTY);
+                        }
+                        else
+                        {
+                            DrawCluster(Data,ClusterStart,Lcn,colors.COLORALLOCATED);
                         }
 
-                        InUse = 1;
-                        PrevInUse = 1;
+                        InUse = true;
+                        PrevInUse = true;
                         ClusterStart = Lcn;
                     }
 
-                    if ((PrevInUse == 0) && (InUse != 0))
+                    if ((PrevInUse == false) && (InUse != false))
                     {          /* Free */
-                        m_jkGui->DrawCluster(Data,ClusterStart,Lcn,colors.COLOREMPTY);
+                        DrawCluster(Data,ClusterStart,Lcn,colors.COLOREMPTY);
                         ClusterStart = Lcn;
                     }
 
-                    if ((PrevInUse != 0) && (InUse == 0))
+                    if ((PrevInUse != false) && (InUse == false))
                     {          /* In use */
-                        m_jkGui->DrawCluster(Data,ClusterStart,Lcn,colors.COLORALLOCATED);
+                        DrawCluster(Data,ClusterStart,Lcn,colors.COLORALLOCATED);
                         ClusterStart = Lcn;
                     }
 
                     PrevInUse = InUse;
 
-                    if (Mask == 128)
-                    {
-                        Mask = 1;
-                        Index = Index + 1;
-                    } else {
-                        Mask = Mask << 1;
-                    }
-
-                    Lcn = Lcn + 1;
+                    Index++;
+                    Lcn++;
                 }
 
-            } while ((ErrorCode == ERROR_MORE_DATA) &&
-                     (Lcn < BitmapData.StartingLcn + BitmapData.BitmapSize));
+            } while (Lcn < bitmapData.StartingLcn + bitmapData.BitmapSize);
 
-            if ((Lcn > 0) && (*Data->RedrawScreen == 2))
+            if ((Lcn > 0) && (Data.RedrawScreen == 2))
             {
-                if (PrevInUse == 0)
+                if (PrevInUse == false)
                 {          /* Free */
-                    m_jkGui->DrawCluster(Data,ClusterStart,Lcn,colors.COLOREMPTY);
+                    DrawCluster(Data,ClusterStart,Lcn,colors.COLOREMPTY);
                 }
 
-                if (PrevInUse != 0)
+                if (PrevInUse != false)
                 {          /* In use */
-                    m_jkGui->DrawCluster(Data,ClusterStart,Lcn,colors.COLORALLOCATED);
+                    DrawCluster(Data,ClusterStart,Lcn,colors.COLORALLOCATED);
                 }
             }
 
             /* Show the MFT zones. */
             for (i = 0; i < 3; i++)
             {
-                if (*Data->RedrawScreen != 2) break;
-                if (Data->MftExcludes[i].Start <= 0) continue;
-                m_jkGui->DrawCluster(Data,Data->MftExcludes[i].Start,Data->MftExcludes[i].End,colors.COLORMFT);
+                if (Data.RedrawScreen != 2) break;
+                if (Data.MftExcludes[i].Start <= 0) continue;
+                DrawCluster(Data,Data.MftExcludes[i].Start, Data.MftExcludes[i].End, colors.COLORMFT);
             }
 
             /* Colorize all the files on the screen.
                 Note: the "$BadClus" file on NTFS disks maps the entire disk, so we have to
                 ignore it. */
-            for (Item = TreeSmallest(Data->ItemTree); Item != NULL; Item = TreeNext(Item))
+            for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
             {
                 if (Data.Running != true) break;
                 if (Data.RedrawScreen != 2) break;
 
-                if ((Item->LongFilename != null) &&
-                        ((Item->LongFilename.CompareTo("$BadClus") == 0) ||
-                        (Item->LongFilename.CompareTo("$BadClus:$Bad:$DATA") == 0)))
+                if ((Item.LongFilename != null) &&
+                        ((Item.LongFilename.CompareTo("$BadClus") == 0) ||
+                        (Item.LongFilename.CompareTo("$BadClus:$Bad:$DATA") == 0)))
                 {
                     continue;
                 }
 
-                ColorizeItem(Data,Item,0,0,NO);
+                ColorizeItem(Data,Item,0,0,false);
             }
 
             /* Set the flag to "no". */
-            if (*Data->RedrawScreen == 2) *Data->RedrawScreen = 0;
+            if (Data.RedrawScreen == 2) Data.RedrawScreen = 0;
         }
 
 /*
@@ -3748,7 +3746,7 @@ namespace MSDefragLib
 //		        if (*Data->Running != RUNNING) break;
 
 		        /* If requested then redraw the diskmap. */
-		        //		if (*Data->RedrawScreen == 1) m_jkGui->ShowDiskmap(Data);
+		        if (Data.RedrawScreen == 1) ShowDiskmap(Data);
 
 		        /* Construct the full path's of the item. The MFT contains only the filename, plus
 		        a pointer to the directory. We have to construct the full paths's by joining
@@ -3874,7 +3872,7 @@ namespace MSDefragLib
 	        /* Force the percentage to 100%. */
 	        Data.PhaseDone = Data.PhaseTodo;
 
-        //	jkGui->DrawCluster(Data,0,0,0);
+            DrawCluster(Data,0,0,0);
 
 	        /* Calculate the begin of the zone's. */
 	        CalculateZones(Data);
@@ -5293,6 +5291,8 @@ namespace MSDefragLib
 	        */
             IOWrapper.ElevatePermissions();
 
+            Data.Disk.VolumeHandle = IOWrapper.OpenVolume("C:");
+
             /*
                         if ((OpenProcessToken(GetCurrentProcess(),TOKEN_ADJUST_PRIVILEGES|TOKEN_QUERY,
                             ref ProcessTokenHandle) != 0) &&
@@ -5405,7 +5405,7 @@ namespace MSDefragLib
             //                }
             //            }
 
-            BitArray bitmap = IOWrapper.GetVolumeMap("C:");
+            BitArray bitmap = IOWrapper.GetVolumeMap(Data.Disk.VolumeHandle).Buffer;
 
             /* Show debug message: "Opening volume '%s' at mountpoint '%s'" */
             // Data->ShowDebug(0,NULL,Data->DebugMsg[29],Data->Disk.VolumeName,Data->Disk.MountPoint);
@@ -5472,6 +5472,9 @@ namespace MSDefragLib
             //            }
 
             Data.TotalClusters = (UInt64)bitmap.Count/*bitmap.StartingLcn + bitmap.BitmapSize*/;
+
+            bool res = IOWrapper.DeviceIoControl(Data.Disk.VolumeHandle, FSCTL_GET_NTFS_VOLUME_DATA,
+                NULL, 0, &NtfsData, sizeof(NtfsData), &w, NULL);
 #if AAA
 
 
@@ -5540,7 +5543,7 @@ namespace MSDefragLib
             //            Data->ShowDebug(0,NULL,"Input mask: %s",Data->IncludeMask);
 
             /* Defragment and optimize. */
-            //            ShowDiskmap(Data);
+            ShowDiskmap(Data);
 
 /*
             if (Data.Running == RunningState.Running)
@@ -5831,16 +5834,14 @@ namespace MSDefragLib
 
 */
 
-        /* Run the defragger/optimizer. See the .h file for a full explanation. */
+        /* Run the defragger/optimizer */
         public void RunJkDefrag(
             String Path,
 			UInt16 Mode,
 			Int16 Speed,
             UInt16 FreeSpace,
 			List<String> Excludes,
-			List<String> SpaceHogs
-//			int *Running,
-			/*WCHAR **DebugMsg*/)
+			List<String> SpaceHogs)
         {
             MSDefragDataStruct Data = new MSDefragDataStruct();
 
@@ -5885,6 +5886,7 @@ namespace MSDefragLib
 	        *Data.Running = RUNNING;
 
 */
+            Data.Running = true;
 	        /*
 	        if (RedrawScreen == NULL) {
 	        Data.RedrawScreen = &DefaultRedrawScreen;
@@ -5893,6 +5895,8 @@ namespace MSDefragLib
 	        }
 	        *Data.RedrawScreen = 0;
 	        */
+
+            Data.RedrawScreen = 0;
 
 /*
 	        if ((DebugMsg == NULL) || (DebugMsg[0] == NULL))

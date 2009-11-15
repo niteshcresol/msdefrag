@@ -2198,14 +2198,17 @@ namespace MSDefragLib
 
 		        /* Draw the item on the screen. */
                 //jkGui->ShowAnalyze(Data,Item);
-                //if (*Data->RedrawScreen == NO)
-                //{
-                //  m_jkLib->ColorizeItem(Data,Item,0,0,NO);
-                //} else {
-                //  m_jkGui->ShowDiskmap(Data);
-                //}
 
-                m_msDefragLib.ColorizeItem(Data, Item, 0, 0, false);
+                if (Data.RedrawScreen == 0)
+                {
+                    m_msDefragLib.ColorizeItem(Data, Item, 0, 0, false);
+                }
+                else
+                {
+                    m_msDefragLib.ShowDiskmap(Data);
+                }
+
+//                m_msDefragLib.ColorizeItem(Data, Item, 0, 0, false);
 
 		        if (Stream != null) Stream = Stream.Next;
 
@@ -2248,8 +2251,6 @@ namespace MSDefragLib
             Int64 tempOffset = 11;
 
             NTFS_BOOT_SECTOR nbs = Buffer.ToNTFS_BOOT_SECTOR(ref tempOffset);
-
-            int i = 1;
 
             return true;
         }

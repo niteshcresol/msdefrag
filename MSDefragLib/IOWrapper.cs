@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections;
+using Microsoft.Win32.SafeHandles;
 
 namespace MSDefragLib
 {
@@ -88,20 +89,53 @@ namespace MSDefragLib
 
         #region Wrapper1: GetVolumeMap
 
+        public class BitmapData
+        {
+            public UInt64 StartingLcn;
+            public UInt64 BitmapSize;
+            public BitArray Buffer;
+        } ;
+
         /// <summary>
         /// Get cluster usage for a device
         /// </summary>
         /// <param name="DeviceName">use "c:"</param>
         /// <returns>a bitarray for each cluster</returns>
-        static public BitArray GetVolumeMap(String DeviceName)
+        static public BitmapData GetVolumeMap(String DeviceName)
         {
-            IntPtr pAlloc = IntPtr.Zero;
             IntPtr hDevice = IntPtr.Zero;
+
+            BitmapData retValue = new BitmapData();
 
             try
             {
                 hDevice = OpenVolume(DeviceName);
 
+                retValue = GetVolumeMap(hDevice);
+
+            }
+            finally
+            {
+                CloseHandle(hDevice);
+                hDevice = IntPtr.Zero;
+            }
+
+            return retValue;
+        }
+
+        /// <summary>
+        /// Get cluster usage for a device
+        /// </summary>
+        /// <param name="DeviceName">use "c:"</param>
+        /// <returns>a bitarray for each cluster</returns>
+        static public BitmapData GetVolumeMap(IntPtr hDevice)
+        {
+            IntPtr pAlloc = IntPtr.Zero;
+
+            BitmapData retValue = new BitmapData();
+
+            try
+            {
                 Int64 i64 = 0;
 
                 GCHandle handle = GCHandle.Alloc(i64, GCHandleType.Pinned);
@@ -129,12 +163,12 @@ namespace MSDefragLib
                 }
                 handle.Free();
 
-                Int64 StartingLcn = (Int64)Marshal.PtrToStructure(pDest, typeof(Int64));
-//                Debug.Assert(StartingLcn == 0);
-                pDest = (IntPtr)((Int64)pDest + 8);
-                Int64 BitmapSize = (Int64)Marshal.PtrToStructure(pDest, typeof(Int64));
+                retValue.StartingLcn = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
 
-                Int32 byteSize = (int)(BitmapSize / 8);
+                pDest = (IntPtr)((Int64)pDest + 8);
+                retValue.BitmapSize = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
+
+                Int32 byteSize = (int)(retValue.BitmapSize / 8);
                 byteSize++; // round up - even with no remainder
 
                 IntPtr BitmapBegin = (IntPtr)((Int64)pDest + 8);
@@ -143,15 +177,97 @@ namespace MSDefragLib
 
                 Marshal.Copy(BitmapBegin, byteArr, 0, (Int32)byteSize);
 
-                BitArray retVal = new BitArray(byteArr);
-                retVal.Length = (int)BitmapSize; // truncate to exact cluster count
-                return retVal;
+                retValue.Buffer = new BitArray(byteArr);
+                retValue.Buffer.Length = (int)retValue.BitmapSize; // truncate to exact cluster count
+
+                return retValue;
             }
             finally
             {
-                CloseHandle(hDevice);
-                hDevice = IntPtr.Zero;
+                Marshal.FreeHGlobal(pAlloc);
+                pAlloc = IntPtr.Zero;
+            }
+        }
 
+        public class NTFS_VOLUME_DATA_BUFFER
+        {
+          UInt64 VolumeSerialNumber;
+          UInt64 NumberSectors;
+          UInt64 TotalClusters;
+          UInt64 FreeClusters;
+          UInt64 TotalReserved;
+          DWORD         BytesPerSector;
+          DWORD         BytesPerCluster;
+          DWORD         BytesPerFileRecordSegment;
+          DWORD         ClustersPerFileRecordSegment;
+          UInt64 MftValidDataLength;
+          UInt64 MftStartLcn;
+          UInt64 Mft2StartLcn;
+          UInt64 MftZoneStart;
+          UInt64 MftZoneEnd;
+        };
+
+        /// <summary>
+        /// Get information about NTFS filesystem
+        /// </summary>
+        /// <param name="DeviceName">use "c:"</param>
+        /// <returns>a bitarray for each cluster</returns>
+        static public BitmapData GetNtfsInfo(IntPtr hDevice)
+        {
+            IntPtr pAlloc = IntPtr.Zero;
+
+            BitmapData retValue = new BitmapData();
+
+            try
+            {
+                Int64 i64 = 0;
+
+                GCHandle handle = GCHandle.Alloc(i64, GCHandleType.Pinned);
+                IntPtr p = handle.AddrOfPinnedObject();
+
+                uint q = 1024 * 1024 * 64 + 2 * 8;
+
+                uint size = 0;
+                pAlloc = Marshal.AllocHGlobal((int)q);
+                IntPtr pDest = pAlloc;
+
+                bool fResult = DeviceIoControl(
+                    hDevice,
+                    FSConstants.FSCTL_GET_NTFS_VOLUME_DATA,
+                    p,
+                    (uint)Marshal.SizeOf(i64),
+                    pDest,
+                    q,
+                    ref size,
+                    IntPtr.Zero);
+
+                if (!fResult)
+                {
+                    throw new Exception(Marshal.GetLastWin32Error().ToString());
+                }
+                handle.Free();
+
+                retValue.StartingLcn = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
+
+                pDest = (IntPtr)((Int64)pDest + 8);
+                retValue.BitmapSize = (UInt64)Marshal.PtrToStructure(pDest, typeof(UInt64));
+
+                Int32 byteSize = (int)(retValue.BitmapSize / 8);
+                byteSize++; // round up - even with no remainder
+
+                IntPtr BitmapBegin = (IntPtr)((Int64)pDest + 8);
+
+                byte[] byteArr = new byte[byteSize];
+
+                Marshal.Copy(BitmapBegin, byteArr, 0, (Int32)byteSize);
+
+                retValue.Buffer = new BitArray(byteArr);
+                retValue.Buffer.Length = (int)retValue.BitmapSize; // truncate to exact cluster count
+
+                return retValue;
+            }
+            finally
+            {
                 Marshal.FreeHGlobal(pAlloc);
                 pAlloc = IntPtr.Zero;
             }
@@ -460,17 +576,6 @@ namespace MSDefragLib
             public UInt32 OffsetHigh;
             public UIntPtr hEvent;
         }
-/*
-
-        [DllImport( "kernel32.dll", CharSet=CharSet.Auto )]
-        public static extern Boolean ReadFile(
-            IntPtr hFile,
-            Byte[] lpBuffer,
-            UInt64 nNumberOfBytesToRead,
-            UInt64 lpNumberOfBytesRead,
-            OVERLAPPED lpOverlapped
-        );
-*/
 
         [System.Runtime.InteropServices.DllImport("kernel32", SetLastError = true)]
         public static extern unsafe bool ReadFile
@@ -495,8 +600,6 @@ namespace MSDefragLib
             }
             return n;
         }
-
-
     }
 
 
@@ -512,6 +615,8 @@ namespace MSDefragLib
 
         const uint FILE_ANY_ACCESS = 0;
         const uint FILE_SPECIAL_ACCESS = FILE_ANY_ACCESS;
+
+        public static uint FSCTL_GET_NTFS_VOLUME_DATA = CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 25, METHOD_BUFFERED, FILE_ANY_ACCESS); 
 
         //FSCTL_GET_VOLUME_BITMAP
         //
