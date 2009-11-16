@@ -799,7 +799,7 @@ namespace MSDefragLib
 
         public void ShowDebug(int level, String output)
         {
-            m_lastMessage = output;
+            m_lastMessage = "#" + level + "#" + output;
 
             //if (level < 6)
             //    System.Console.WriteLine(output);
@@ -2207,8 +2207,6 @@ namespace MSDefragLib
                 {
                     m_msDefragLib.ShowDiskmap(Data);
                 }
-
-//                m_msDefragLib.ColorizeItem(Data, Item, 0, 0, false);
 
 		        if (Stream != null) Stream = Stream.Next;
 

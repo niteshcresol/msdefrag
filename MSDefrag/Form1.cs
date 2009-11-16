@@ -37,22 +37,28 @@ namespace MSDefrag
         SolidBrush backBrush = new SolidBrush(Color.Blue);
         SolidBrush fontBrush = new SolidBrush(Color.Yellow);
 
+        public Int32 maxSquare = 5000;
+
         // This will be called whenever the list changes.
         private void ShowChanges(object sender, EventArgs e)
         {
             m_message = m_msDefragLib.GetLastMessage();
 
-            AddStatusMessage(m_message);
+            Int32 level = System.Convert.ToInt32(m_message.Substring(1, 1));
+
+            AddStatusMessage(level, m_message);
         }
 
-        private void AddStatusMessage(String message)
+        private void AddStatusMessage(Int32 level, String message)
         {
-            for (int ii = 0; ii < messages.Length - 1; ii++)
-            {
-                messages[ii] = messages[ii + 1];
-            }
+            messages[level] = message;
 
-            messages[maxMessages - 1] = message;
+            //for (int ii = 0; ii < messages.Length - 1; ii++)
+            //{
+            //    messages[ii] = messages[ii + 1];
+            //}
+
+            //messages[maxMessages - 1] = message;
 
             PaintStatus();
         }
@@ -103,7 +109,7 @@ namespace MSDefrag
             {
                 DrawClusterEventArgs2 dcea = (DrawClusterEventArgs2)e;
 
-                m_clusters = m_msDefragLib.GetClusterList(500, (Int64)dcea.m_startClusterNumber, (Int64)dcea.m_endClusterNumber);
+                m_clusters = m_msDefragLib.GetClusterList(dcea.m_data, maxSquare, (Int64)dcea.m_startClusterNumber, (Int64)dcea.m_endClusterNumber);
 
                 PaintClusters(dcea.m_data, (UInt64)dcea.m_startClusterNumber, (UInt64)dcea.m_endClusterNumber);
             }
@@ -136,16 +142,20 @@ namespace MSDefrag
                 Int32 numClustersX = pictureBox1.Width / 5;
                 Int32 numClustersY = pictureBox1.Height / 5;
 
-                Int32 allClusters = numClustersX * numClustersY;
+//                Int32 allClusters = numClustersX * numClustersY;
+                Int32 allClusters = maxSquare;
+
                 Double clusterPerSquare = Data.TotalClusters / (UInt64)allClusters;
 
                 Int32 startSquare = (Int32)(startClusterNumber / clusterPerSquare);
-                Int32 endSquare = (Int32)(endClusterNumber / clusterPerSquare) + 1;
+                Int32 endSquare = (Int32)(endClusterNumber / clusterPerSquare);
 
-                for (int ii = startSquare; ii < endSquare; ii++)
+                for (int ii = 0; ii <= endSquare - startSquare; ii++)
                 {
-                    Int32 posX = (Int32)(ii % numClustersX);
-                    Int32 posY = (Int32)(ii / numClustersX);
+                    Int32 clusterNumber = startSquare + ii;
+
+                    Int32 posX = (Int32)(clusterNumber % numClustersX);
+                    Int32 posY = (Int32)(clusterNumber / numClustersX);
 
                     Rectangle rec = new Rectangle(posX * 5, posY * 5, 4, 4);
 
@@ -192,7 +202,7 @@ namespace MSDefrag
 
                     String kkk = "Cluster: " + startClusterNumber + " - " + endClusterNumber;
 
-                    AddStatusMessage(kkk);
+                    AddStatusMessage(1, kkk);
 
                     g.DrawImageUnscaled(bmp, 0, 0);
 
@@ -201,7 +211,7 @@ namespace MSDefrag
             }
             catch (System.Exception e)
             {
-                AddStatusMessage(e.Message);
+                AddStatusMessage(3, e.Message);
                 m_msDefragLib.DrawClusterEvent -= new MSDefragLib.MSDefragLib.DrawClusterHandler(DrawCluster);
             }
         }
@@ -274,7 +284,7 @@ namespace MSDefrag
 
                     String kkk = "Cluster: " + clusterNumber;
 
-                    AddStatusMessage(kkk);
+                    AddStatusMessage(1, kkk);
 
                     g.DrawImageUnscaled(bmp, 0, 0);
 
@@ -348,7 +358,7 @@ namespace MSDefrag
 
                 String kkk = "Cluster: " + clusterNumber;
 
-                AddStatusMessage(kkk);
+                AddStatusMessage(1, kkk);
 
                 g.DrawImageUnscaled(bmp, 0, 0);
 

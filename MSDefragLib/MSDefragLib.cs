@@ -1503,6 +1503,13 @@ namespace MSDefragLib
 		        */
 		        SegmentBegin = RealVcn;
 
+                UInt64 maxSegment = RealVcn + Fragment.NextVcn - Vcn;
+
+                if (maxSegment > Data.TotalClusters)
+                {
+                    maxSegment = Data.TotalClusters;
+                }
+
 		        while (SegmentBegin < RealVcn + Fragment.NextVcn - Vcn)
 		        {
 			        SegmentEnd = RealVcn + Fragment.NextVcn - Vcn;
@@ -1575,6 +1582,8 @@ namespace MSDefragLib
         }
 
         List<MSDefragLib.colors> m_clusterData = null;
+        List<> m_clusterSquares = null;
+
 
         /*
             Show a map on the screen of all the clusters on disk. The map shows
@@ -6150,8 +6159,8 @@ namespace MSDefragLib
 
         public void ShowDebug(int level, String output)
         {
-            m_lastMessage = output;
-//            if (level < 6)
+            m_lastMessage = "#" + level + "#" + output;
+            //            if (level < 6)
 //                System.Console.WriteLine(output);
 
             OnShowDebug(EventArgs.Empty);
@@ -6237,14 +6246,14 @@ namespace MSDefragLib
             return clusters;
         }
 
-        public List<colors> GetClusterList(Int32 numClusters, Int64 startClusterNumber, Int64 endClusterNumber)
+        public List<colors> GetClusterList(MSDefragDataStruct data, Int32 numClusters, Int64 startClusterNumber, Int64 endClusterNumber)
         {
             List<colors> clusters = new List<colors>(numClusters);
 
-            int numClustersPerSquare = m_clusterData.Count / numClusters;
+            int numClustersPerSquare = (Int32)(data.TotalClusters / (UInt32)numClusters);
 
             int startSquare = (Int32)(startClusterNumber / numClustersPerSquare);
-            int endSquare = (Int32)(endClusterNumber / numClustersPerSquare) + 1;
+            int endSquare = (Int32)(endClusterNumber / numClustersPerSquare);
 
             for (int ii = startSquare; ii <= endSquare; ii++)
             {
@@ -6281,7 +6290,7 @@ namespace MSDefragLib
                             }
                             break;
                         case colors.COLORMFT:
-                            clusters[ii] = colors.COLORMFT;
+                            col = colors.COLORMFT;
                             break;
                         case colors.COLORSPACEHOG:
                             if (col != colors.COLORUNMOVABLE)
@@ -6333,7 +6342,6 @@ namespace MSDefragLib
                 m_clusterData[(Int32)ii] = col; 
 
 //                DrawClusterEventArgs e = new DrawClusterEventArgs(data, ii, col);
-
 //                OnDrawCluster(e);
             }
 
@@ -6369,6 +6377,18 @@ namespace MSDefragLib
             m_startClusterNumber = startClusterNum;
             m_endClusterNumber = endClusterNum;
         }
+    }
+
+    public class ClusterSquare
+    {
+        public UInt64 m_squareIndex;
+        public MSDefragLib.colors color;
+    }
+
+    public class ClusterStructure
+    {
+        public Boolean m_isDirty;
+        public MSDefragLib.colors color;
     }
 
 }
