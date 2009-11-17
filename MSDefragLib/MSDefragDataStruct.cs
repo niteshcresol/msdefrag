@@ -79,7 +79,7 @@ namespace MSDefragLib
     public class MSDefragDataStruct
     {
 	    public UInt16 Phase;                             /* The current Phase (1...3). */
-        UInt16 Zone;                              /* The current Zone (0..2) for Phase 3. */
+        public UInt16 Zone;                              /* The current Zone (0..2) for Phase 3. */
 	    public Boolean Running;                          /* If not RUNNING then stop defragging. */
 	    public int RedrawScreen;                     /* 0:no, 1:request, 2: busy. */
 	    public Boolean UseLastAccessTime;                /* If TRUE then use LastAccessTime for SpaceHogs. */
@@ -123,7 +123,7 @@ namespace MSDefragLib
         public UInt64 CountFragmentedBytes;          /* Bytes in fragmented files. */
         public UInt64 CountAllClusters;              /* Clusters in analysed files. */
         public UInt64 CountFragmentedClusters;       /* Clusters in fragmented files. */
-	    double AverageDistance;                /* Between end and begin of files. */
+	    public double AverageDistance;                /* Between end and begin of files. */
 
 	    /* Counters used to calculate the percentage of work done. */
 

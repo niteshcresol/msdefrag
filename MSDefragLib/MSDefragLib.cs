@@ -179,9 +179,14 @@ namespace MSDefragLib
             }
         }
 
-        /* Compare a string with a mask, case-insensitive. If it matches then return
-           true, otherwise false. The mask may contain wildcard characters '?' (any
-           character) '*' (any characters). */
+        /// <summary>
+        /// Compare a string with a mask, case-insensitive. If it matches then return
+        /// true, otherwise false. The mask may contain wildcard characters '?' (any
+        /// character) '*' (any characters).
+        /// </summary>
+        /// <param name="Filename"></param>
+        /// <param name="Mask"></param>
+        /// <returns></returns>
         Boolean MatchMask(String Filename, String Mask)
         {
             Wildcard wildcard = new Wildcard(Mask, RegexOptions.IgnoreCase);
@@ -191,7 +196,6 @@ namespace MSDefragLib
             return false;
 
         }
-
 
         /* Search case-insensitive for a substring. */
 /*
@@ -243,39 +247,8 @@ namespace MSDefragLib
         public String SystemErrorStr(Int32 ErrorCode)
         {
             String message = IOWrapper.GetMessage(ErrorCode);
-            //String s1;
-            //String p1;
-//	        WCHAR *p1;
-
-            //FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-            //    NULL, ErrorCode, 0, s1, BUFSIZ, NULL);
-
-            ///* Strip trailing whitespace. */
-            //p1 = wcschr(s1,'\0');
-
-            //while (p1 != s1)
-            //{
-            //    p1--;
-
-            //    if ((*p1 != ' ') && (*p1 != '\t') && (*p1 != '\n') && (*p1 != '\r')) break;
-
-            //    *p1 = '\0';
-            //}
-
-            ///* Add error number. */
-            //swprintf_s(Out,Width,"[%lu] %s",ErrorCode,s1);
             return message;
         }
-
-/*
-        / * Translate character to lowercase. * /
-        WCHAR JKDefragLib::LowerCase(WCHAR c)
-        {
-	        if ((c >= 'A') && (c <= 'Z')) return((c - 'A') + 'a');
-
-	        return(c);
-        }
-*/
 
         /* Dump a block of data to standard output, for debugging purposes. */
         public void ShowHex(MSDefragDataStruct Data, Array Buffer, UInt64 Count)
@@ -334,57 +307,6 @@ namespace MSDefragLib
         //		jkGui->ShowDebug(2,NULL,L"%s",s1);
 	        }
         }
-
-/*
-
-        Compare a string with a mask, case-insensitive. If it matches then return
-        YES, otherwise NO. The mask may contain wildcard characters '?' (any
-        character) '*' (any characters).
-
-        */
-/*
-        int JKDefragLib::MatchMask(WCHAR *String, WCHAR *Mask)
-        {
-	        WCHAR *m;
-	        WCHAR *s;
-
-	        if (String == NULL) return NO;                / * Just to speed up things. * /
-	        if (Mask == NULL) return NO;
-	        if (wcscmp(Mask,L"*") == 0) return YES;
-
-	        m = Mask;
-	        s = String;
-
-	        while ((*m != '\0') && (*s != '\0'))
-	        {
-		        if ((LowerCase(*m) != LowerCase(*s)) && (*m != '?'))
-		        {
-			        if (*m != '*') return NO;
-
-			        m++;
-
-			        if (*m == '\0') return YES;
-
-			        while (*s != '\0')
-			        {
-				        if (MatchMask(s,m) == YES) return YES;
-				        s++;
-			        }
-
-			        return NO;
-		        }
-
-		        m++;
-		        s++;
-	        }
-
-	        while (*m == '*') m++;
-
-	        if ((*s == '\0') && (*m == '\0')) return YES;
-
-	        return NO;
-        }
-*/
 
         /*
 
@@ -1761,8 +1683,8 @@ namespace MSDefragLib
                 if (Data.RedrawScreen != 2) break;
 
                 if ((Item.LongFilename != null) &&
-                        ((Item.LongFilename.CompareTo("$BadClus") == 0) ||
-                        (Item.LongFilename.CompareTo("$BadClus:$Bad:$DATA") == 0)))
+                    ((Item.LongFilename.CompareTo("$BadClus") == 0) ||
+                     (Item.LongFilename.CompareTo("$BadClus:$Bad:$DATA") == 0)))
                 {
                     continue;
                 }
@@ -2040,8 +1962,6 @@ namespace MSDefragLib
 	        int Iterate;
 	        int i;
 
-        //	JKDefragGui *jkGui = JKDefragGui::getInstance();
-
 	        /* Calculate the number of clusters in movable items for every zone. */
             for (Zone = 0; Zone <= 2; Zone++)
             {
@@ -2087,10 +2007,10 @@ namespace MSDefragLib
 		        for (Zone = 0; Zone <= 2; Zone++) OldZoneEnd[Zone] = ZoneEnd[Zone];
 
 		        /* Show debug info. */
-        //		jkGui->ShowDebug(4,NULL,L"Zone calculation, iteration %u: 0 - %I64d - %I64d - %I64d",Iterate,
-        //			ZoneEnd[0],ZoneEnd[1],ZoneEnd[2]);
+        		ShowDebug(4, String.Format("Zone calculation, iteration {0:G}: 0 - {0:G} - {0:G} - {0:G}",
+                    Iterate, ZoneEnd[0], ZoneEnd[1], ZoneEnd[2]));
 
-		        /* Reset the SizeOfUnmovableFragments array. We are going to (re)calculate these numbers
+                /* Reset the SizeOfUnmovableFragments array. We are going to (re)calculate these numbers
 		        based on the just calculates ZoneEnd's. */
 		        for (Zone = 0; Zone <= 2; Zone++) SizeOfUnmovableFragments[Zone] = 0;
 
@@ -2872,175 +2792,147 @@ namespace MSDefragLib
 
 	        return(NULL);
         }
+*/
 
-        / * Update some numbers in the DefragData. * /
-        void JKDefragLib::CallShowStatus(struct DefragDataStruct *Data, int Phase, int Zone)
+        /* Update some numbers in the DefragData. */
+        void CallShowStatus(ref MSDefragDataStruct Data, int Phase, int Zone)
         {
-	        struct ItemStruct *Item;
+	        ItemStruct Item;
 
-	        STARTING_LCN_INPUT_BUFFER BitmapParam;
+	        STARTING_LCN_INPUT_BUFFER BitmapParam = new STARTING_LCN_INPUT_BUFFER();
 
-	        struct
-	        {
-		        ULONG64 StartingLcn;
-		        ULONG64 BitmapSize;
-
-		        BYTE Buffer[65536];               / * Most efficient if binary multiple. * /
-	        } BitmapData;
-
-	        ULONG64 Lcn;
-	        ULONG64 ClusterStart;
+	        UInt64 Lcn;
+	        UInt64 ClusterStart;
 
 	        int Index;
 	        int IndexMax;
 
-	        BYTE Mask;
+	        Boolean InUse;
+	        Boolean PrevInUse;
 
-	        int InUse;
-	        int PrevInUse;
+	        Int64 Count;
+	        Int64 Factor;
+	        Int64 Sum;
 
-	        DWORD ErrorCode;
-
-	        LONG64 Count;
-	        LONG64 Factor;
-	        LONG64 Sum;
-
-	        DWORD w;
-
-        //	JKDefragGui *jkGui = JKDefragGui::getInstance();
-
-	        / * Count the number of free gaps on the disk. * /
-	        Data->CountGaps = 0;
-	        Data->CountFreeClusters = 0;
-	        Data->BiggestGap = 0;
-	        Data->CountGapsLess16 = 0;
-	        Data->CountClustersLess16 = 0;
+	        /* Count the number of free gaps on the disk. */
+	        Data.CountGaps = 0;
+	        Data.CountFreeClusters = 0;
+	        Data.BiggestGap = 0;
+	        Data.CountGapsLess16 = 0;
+	        Data.CountClustersLess16 = 0;
 
 	        Lcn = 0;
 	        ClusterStart = 0;
-	        PrevInUse = 1;
+	        PrevInUse = true;
+
+            IOWrapper.BitmapData bitmapData = null;
 
 	        do
 	        {
-		        / * Fetch a block of cluster data. * /
+		        /* Fetch a block of cluster data. */
 		        BitmapParam.StartingLcn.QuadPart = Lcn;
-		        ErrorCode = DeviceIoControl(Data->Disk.VolumeHandle,FSCTL_GET_VOLUME_BITMAP,
-			        &BitmapParam,sizeof(BitmapParam),&BitmapData,sizeof(BitmapData),&w,NULL);
 
-		        if (ErrorCode != 0)
-		        {
-			        ErrorCode = NO_ERROR;
-		        }
-		        else
-		        {
-			        ErrorCode = GetLastError();
-		        }
+                bitmapData = IOWrapper.GetVolumeMap(Data.Disk.VolumeHandle);
 
-		        if ((ErrorCode != NO_ERROR) && (ErrorCode != ERROR_MORE_DATA)) break;
+                if (bitmapData.Buffer == null)
+                {
+                    break;
+                }
 
-		        Lcn = BitmapData.StartingLcn;
+		        Lcn = bitmapData.StartingLcn;
+
 		        Index = 0;
-		        Mask = 1;
 
-		        IndexMax = sizeof(BitmapData.Buffer);
-
-		        if (BitmapData.BitmapSize / 8 < IndexMax) IndexMax = (int)(BitmapData.BitmapSize / 8);
+		        IndexMax = bitmapData.Buffer.Count;
 
 		        while (Index < IndexMax)
 		        {
-			        InUse = (BitmapData.Buffer[Index] & Mask);
+			        InUse = bitmapData.Buffer[Index];
 
-			        if (((Lcn >= Data->MftExcludes[0].Start) && (Lcn < Data->MftExcludes[0].End)) ||
-				        ((Lcn >= Data->MftExcludes[1].Start) && (Lcn < Data->MftExcludes[1].End)) ||
-				        ((Lcn >= Data->MftExcludes[2].Start) && (Lcn < Data->MftExcludes[2].End))) {
-					        InUse = 1;
+			        if (((Lcn >= Data.MftExcludes[0].Start) && (Lcn < Data.MftExcludes[0].End)) ||
+				        ((Lcn >= Data.MftExcludes[1].Start) && (Lcn < Data.MftExcludes[1].End)) ||
+				        ((Lcn >= Data.MftExcludes[2].Start) && (Lcn < Data.MftExcludes[2].End)))
+                    {
+					    InUse = true;
 			        }
 
-			        if ((PrevInUse == 0) && (InUse != 0))
+			        if ((PrevInUse == false) && (InUse != false))
 			        {
-				        Data->CountGaps = Data->CountGaps + 1;
-				        Data->CountFreeClusters = Data->CountFreeClusters + Lcn - ClusterStart;
-				        if (Data->BiggestGap < Lcn - ClusterStart) Data->BiggestGap = Lcn - ClusterStart;
+				        Data.CountGaps = Data.CountGaps + 1;
+				        Data.CountFreeClusters = Data.CountFreeClusters + Lcn - ClusterStart;
+
+                        if (Data.BiggestGap < Lcn - ClusterStart) Data.BiggestGap = Lcn - ClusterStart;
 
 				        if (Lcn - ClusterStart < 16)
 				        {
-					        Data->CountGapsLess16 = Data->CountGapsLess16 + 1;
-					        Data->CountClustersLess16 = Data->CountClustersLess16 + Lcn - ClusterStart;
+					        Data.CountGapsLess16++;
+					        Data.CountClustersLess16 = Data.CountClustersLess16 + Lcn - ClusterStart;
 				        }
 			        }
 
-			        if ((PrevInUse != 0) && (InUse == 0)) ClusterStart = Lcn;
+			        if ((PrevInUse != false) && (InUse == false)) ClusterStart = Lcn;
 
 			        PrevInUse = InUse;
 
-			        if (Mask == 128)
-			        {
-				        Mask = 1;
-				        Index = Index + 1;
-			        }
-			        else
-			        {
-				        Mask = Mask << 1;
-			        }
-
-			        Lcn = Lcn + 1;
+    		        Index++;
+			        Lcn++;
 		        }
 
-	        } while ((ErrorCode == ERROR_MORE_DATA) && (Lcn < BitmapData.StartingLcn + BitmapData.BitmapSize));
+	        } while ((bitmapData.Buffer != null) && (Lcn < bitmapData.StartingLcn + bitmapData.BitmapSize));
 
-	        if (PrevInUse == 0)
+	        if (PrevInUse == false)
 	        {
-		        Data->CountGaps = Data->CountGaps + 1;
-		        Data->CountFreeClusters = Data->CountFreeClusters + Lcn - ClusterStart;
+		        Data.CountGaps = Data.CountGaps + 1;
+		        Data.CountFreeClusters = Data.CountFreeClusters + Lcn - ClusterStart;
 
-		        if (Data->BiggestGap < Lcn - ClusterStart) Data->BiggestGap = Lcn - ClusterStart;
+		        if (Data.BiggestGap < Lcn - ClusterStart) Data.BiggestGap = Lcn - ClusterStart;
 
 		        if (Lcn - ClusterStart < 16)
 		        {
-			        Data->CountGapsLess16 = Data->CountGapsLess16 + 1;
-			        Data->CountClustersLess16 = Data->CountClustersLess16 + Lcn - ClusterStart;
+			        Data.CountGapsLess16 = Data.CountGapsLess16 + 1;
+			        Data.CountClustersLess16 = Data.CountClustersLess16 + Lcn - ClusterStart;
 		        }
 	        }
 
-	        / * Walk through all files and update the counters. * /
-	        Data->CountDirectories = 0;
-	        Data->CountAllFiles = 0;
-	        Data->CountFragmentedItems = 0;
-	        Data->CountAllBytes = 0;
-	        Data->CountFragmentedBytes = 0;
-	        Data->CountAllClusters = 0;
-	        Data->CountFragmentedClusters = 0;
+	        /* Walk through all files and update the counters. */
+	        Data.CountDirectories = 0;
+	        Data.CountAllFiles = 0;
+	        Data.CountFragmentedItems = 0;
+	        Data.CountAllBytes = 0;
+	        Data.CountFragmentedBytes = 0;
+	        Data.CountAllClusters = 0;
+	        Data.CountFragmentedClusters = 0;
 
-	        for (Item = TreeSmallest(Data->ItemTree); Item != NULL; Item = TreeNext(Item))
+	        for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
 	        {
-		        if ((Item->LongFilename != NULL) &&
-			        ((_wcsicmp(Item->LongFilename,L"$BadClus") == 0) ||
-			        (_wcsicmp(Item->LongFilename,L"$BadClus:$Bad:$DATA") == 0)))
+		        if ((Item.LongFilename != null) &&
+			        (Item.LongFilename.Equals("$BadClus") ||
+			         Item.LongFilename.Equals("$BadClus:$Bad:$DATA")))
 		        {
 			        continue;
 		        }
 
-		        Data->CountAllBytes = Data->CountAllBytes + Item->Bytes;
-		        Data->CountAllClusters = Data->CountAllClusters + Item->Clusters;
+		        Data.CountAllBytes = Data.CountAllBytes + Item.Bytes;
+		        Data.CountAllClusters = Data.CountAllClusters + Item.Clusters;
 
-		        if (Item->Directory == YES)
+		        if (Item.Directory == true)
 		        {
-			        Data->CountDirectories = Data->CountDirectories + 1;
+			        Data.CountDirectories++;
 		        }
 		        else
 		        {
-			        Data->CountAllFiles = Data->CountAllFiles + 1;
+			        Data.CountAllFiles++;
 		        }
 
 		        if (FragmentCount(Item) > 1)
 		        {
-			        Data->CountFragmentedItems = Data->CountFragmentedItems + 1;
-			        Data->CountFragmentedBytes = Data->CountFragmentedBytes + Item->Bytes;
-			        Data->CountFragmentedClusters = Data->CountFragmentedClusters + Item->Clusters;
+			        Data.CountFragmentedItems++;
+			        Data.CountFragmentedBytes += Item.Bytes;
+			        Data.CountFragmentedClusters += Item.Clusters;
 		        }
 	        }
 
-	        / * Calculate the average distance between the end of any file to the begin of
+	        /* Calculate the average distance between the end of any file to the begin of
 	        any other file. After reading a file the harddisk heads will have to move to
 	        the beginning of another file. The number is a measure of how fast files can
 	        be accessed.
@@ -3070,21 +2962,21 @@ namespace MSDefragLib
 	        For the above example:
 	        Average = ( (1-3)*(107+312) + (3-3)*(595+645) + 5-3)*(917+923) ) / ( 3 * (3-1) ) = 473.6666
 
-	        * /
+	        */
 	        Count = 0;
 
-	        for (Item = TreeSmallest(Data->ItemTree); Item != NULL; Item = TreeNext(Item))
+	        for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
 	        {
-		        if ((Item->LongFilename != NULL) &&
-			        ((_wcsicmp(Item->LongFilename,L"$BadClus") == 0) ||
-			        (_wcsicmp(Item->LongFilename,L"$BadClus:$Bad:$DATA") == 0)))
+		        if ((Item.LongFilename != null) &&
+			        (Item.LongFilename.Equals("$BadClus") ||
+			         Item.LongFilename.Equals("$BadClus:$Bad:$DATA")))
 		        {
 			        continue;
 		        }
 
-		        if (Item->Clusters == 0) continue;
+		        if (Item.Clusters == 0) continue;
 
-		        Count = Count + 1;
+		        Count++;
 	        }
 
 	        if (Count > 1)
@@ -3092,37 +2984,38 @@ namespace MSDefragLib
 		        Factor = 1 - Count;
 		        Sum = 0;
 
-		        for (Item = TreeSmallest(Data->ItemTree); Item != NULL; Item = TreeNext(Item))
+		        for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
 		        {
-			        if ((Item->LongFilename != NULL) &&
-				        ((_wcsicmp(Item->LongFilename,L"$BadClus") == 0) ||
-				        (_wcsicmp(Item->LongFilename,L"$BadClus:$Bad:$DATA") == 0)))
-			        {
-				        continue;
-			        }
+                    if ((Item.LongFilename != null) &&
+                        (Item.LongFilename.Equals("$BadClus") ||
+                         Item.LongFilename.Equals("$BadClus:$Bad:$DATA")))
+                    {
+                        continue;
+                    }
 
-			        if (Item->Clusters == 0) continue;
+			        if (Item.Clusters == 0) continue;
 
-			        Sum = Sum + Factor * (GetItemLcn(Item) * 2 + Item->Clusters);
+			        Sum = Sum + Factor * (Int64)((GetItemLcn(Item) * 2 + Item.Clusters));
 
 			        Factor = Factor + 2;
 		        }
 
-		        Data->AverageDistance = Sum / (double)(Count * (Count - 1));
+		        Data.AverageDistance = Sum / (double)(Count * (Count - 1));
 	        }
 	        else
 	        {
-		        Data->AverageDistance = 0;
+		        Data.AverageDistance = 0;
 	        }
 
-	        Data->Phase = Phase;
-	        Data->Zone = Zone;
-	        Data->PhaseDone = 0;
-	        Data->PhaseTodo = 0;
+	        Data.Phase = (UInt16)Phase;
+	        Data.Zone = (UInt16)Zone;
+	        Data.PhaseDone = 0;
+	        Data.PhaseTodo = 0;
 
         //	jkGui->ShowStatus(Data);
         }
 
+/*
         / * For debugging only: compare the data with the output from the
         FSCTL_GET_RETRIEVAL_POINTERS function call.
         Note: Reparse points will usually be flagged as different. A reparse point is
@@ -3690,29 +3583,13 @@ namespace MSDefragLib
 
 	        int i;
 
-//	        CallShowStatus(Data,1,-1);             /* "Phase 1: Analyze" */
+	        CallShowStatus(ref Data,1,-1);             /* "Phase 1: Analyze" */
 
 	        /* Fetch the current time in the ULONG64 format (1 second = 10000000). */
             Time1 = DateTime.Now;
             Time2 = Time1.ToFileTime();
             Time3 = Time2;
             SystemTime = Time3;
-
-/*
-	        GetSystemTime(&Time1);
-
-	        if (SystemTimeToFileTime(&Time1,&Time2) == FALSE)
-	        {
-		        SystemTime = 0;
-	        }
-	        else
-	        {
-		        Time3.LowPart = Time2.dwLowDateTime;
-		        Time3.HighPart = Time2.dwHighDateTime;
-
-		        SystemTime = Time3.QuadPart;
-	        }
-*/
 
 	        /* Scan NTFS disks. */
             Result = m_msScanNtfs.AnalyzeNtfsVolume(ref Data);
@@ -6128,14 +6005,14 @@ namespace MSDefragLib
         protected virtual void OnShowDebug(EventArgs e)
         {
             if (ShowDebugEvent != null)
+            {
                 ShowDebugEvent(this, e);
+            }
         }
 
         public void ShowDebug(int level, String output)
         {
             m_lastMessage = "#" + level + "#" + output;
-            //            if (level < 6)
-//                System.Console.WriteLine(output);
 
             OnShowDebug(EventArgs.Empty);
         }
@@ -6320,10 +6197,6 @@ namespace MSDefragLib
 
             Int32 squareBegin = (Int32)(clusterBegin / clusterPerSquare);
             Int32 squareEnd = (Int32)(clusterEnd / clusterPerSquare);
-
-            //DrawClusterEventArgs2 e = new DrawClusterEventArgs2(squareBegin, squareEnd);
-
-            //OnDrawCluster(e);
         }
 
         List<MSDefragLib.colors> m_clusterData = null;
@@ -6353,7 +6226,12 @@ namespace MSDefragLib
 
         private void UpdateClusterInfo(UInt64 clusterBegin, UInt64 clusterEnd, MSDefragLib.colors col)
         {
-            for (UInt64 ii = clusterBegin; ii < clusterEnd; ii++)
+            if (clusterBegin > m_data.TotalClusters)
+            {
+                return;
+            }
+
+            for (UInt64 ii = clusterBegin; (ii < m_data.TotalClusters) && (ii < clusterEnd); ii++)
             {
                 m_clusterData[(Int32)ii] = col; 
             }
@@ -6423,10 +6301,13 @@ namespace MSDefragLib
                     }
                 }
 
-                if (m_clusterSquares[ii].m_color != col)
+                if (ii < m_numSquares)
                 {
-                    m_clusterSquares[ii].m_color = col;
-                    m_clusterSquares[ii].m_isDirty = true;
+                    if (m_clusterSquares[ii].m_color != col)
+                    {
+                        m_clusterSquares[ii].m_color = col;
+                        m_clusterSquares[ii].m_isDirty = true;
+                    }
                 }
 
                 ii++;
@@ -6451,6 +6332,81 @@ namespace MSDefragLib
             }
 
             return list;
+        }
+
+        private void ParseSquares()
+        {
+            Double clusterPerSquare = m_data.TotalClusters / (UInt64)m_numSquares;
+
+            Int64 clusterIndex = 0;
+
+            for (Int64 squareIndex = 0; squareIndex < m_clusterSquares.Count; squareIndex++)
+            {
+                Int64 lastClusterIndex = clusterIndex + clusterPerSquare;
+
+                if (lastClusterIndex > m_clusterData.Count - 1)
+                {
+                    lastClusterIndex = m_clusterData.Count - 1;
+                }
+
+                for (UInt64 jj = clusterIndex; jj <= lastClusterIndex; jj++)
+                {
+                    colors clusterColor = m_clusterData[(Int32)jj];
+
+                    switch (clusterColor)
+                    {
+                        case colors.COLORBUSY:
+                            col = colors.COLORBUSY;
+                            maxColReached = true;
+                            break;
+                        case colors.COLORUNMOVABLE:
+                            col = colors.COLORUNMOVABLE;
+                            break;
+                        case colors.COLORALLOCATED:
+                            if (col == colors.COLOREMPTY)
+                            {
+                                col = colors.COLORALLOCATED;
+                            }
+                            break;
+                        case colors.COLORFRAGMENTED:
+                            if (col != colors.COLORUNMOVABLE)
+                            {
+                                col = colors.COLORFRAGMENTED;
+                            }
+                            break;
+                        case colors.COLORMFT:
+                            col = colors.COLORMFT;
+                            break;
+                        case colors.COLORSPACEHOG:
+                            if (col != colors.COLORUNMOVABLE)
+                            {
+                                col = colors.COLORSPACEHOG;
+                            }
+                            break;
+                        case colors.COLORUNFRAGMENTED:
+                            if ((col == colors.COLOREMPTY) || (col == colors.COLORALLOCATED))
+                            {
+                                col = colors.COLORUNFRAGMENTED;
+                            }
+                            break;
+                        default:
+                            col = colors.COLOREMPTY;
+                            break;
+                    }
+                }
+
+                if (ii < m_numSquares)
+                {
+                    if (m_clusterSquares[ii].m_color != col)
+                    {
+                        m_clusterSquares[ii].m_color = col;
+                        m_clusterSquares[ii].m_isDirty = true;
+                    }
+                }
+
+                ii++;
+
+            } while (ii < squareEnd);
         }
 
         private MSDefragDataStruct m_data = null;
@@ -6505,12 +6461,38 @@ namespace MSDefragLib
         public Boolean m_isDirty;
         public Int32 m_squareIndex;
         public MSDefragLib.colors m_color;
+
+        public Int32 m_clusterBeginIndex;
+        public Int32 m_clusterEndIndex;
+
+        public List<Colors> m_colors;
     }
 
+    public class Colors
+    {
+        public Colors(MSDefragLib.colors color)
+        {
+            m_color = color;
+            m_numColors = 0;
+        }
+
+        public MSDefragLib.colors m_color;
+        public Int64 m_numColors;
+    }
+
+    /// <summary>
+    /// Structure for describing cluster
+    /// </summary>
     public class ClusterStructure
     {
-        public MSDefragLib.colors color;
-    }
+        public ClusterStructure(UInt64 clusterIndex, MSDefragLib.colors color)
+        {
+            m_clusterIndex = clusterIndex;
+            m_color = color;
+        }
 
+        public UInt64 m_clusterIndex;
+        public MSDefragLib.colors m_color;
+    }
 
 }

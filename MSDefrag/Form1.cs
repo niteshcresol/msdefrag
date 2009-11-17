@@ -14,38 +14,17 @@ namespace MSDefrag
 {
     public partial class Form1 : Form
     {
-        MSDefragLib.MSDefragLib m_msDefragLib;
-
         public void Defrag()
         {
             m_msDefragLib.RunJkDefrag("C:\\*", 2, 100, 10, null, null);
         }
-
-        String m_message;
-
-        private const int maxMessages = 5;
-
-        String[] messages = new String[maxMessages];
-
-        Bitmap bmp = new Bitmap(1000, 500);
-        Bitmap statusBmp = new Bitmap(1000, 300);
-        
-        Rectangle m_rec = new Rectangle(0, 300, 1000, 500);
-        Rectangle m_rec2 = new Rectangle(0, 0, 1000, 500);
-        
-        Font m_font = new Font("Tahoma", 10);
-
-        SolidBrush backBrush = new SolidBrush(Color.Blue);
-        SolidBrush fontBrush = new SolidBrush(Color.Yellow);
-
-        public Int32 maxSquare = 5000;
 
         // This will be called whenever the list changes.
         private void ShowChanges(object sender, EventArgs e)
         {
             m_message = m_msDefragLib.GetLastMessage();
 
-            Int32 level = System.Convert.ToInt32(m_message.Substring(1, 1));
+            Int32 level = Convert.ToInt32(m_message.Substring(1, 1));
 
             AddStatusMessage(level, m_message.Substring(3));
         }
@@ -53,15 +32,6 @@ namespace MSDefrag
         private void AddStatusMessage(Int32 level, String message)
         {
             messages[level] = message;
-
-            //for (int ii = 0; ii < messages.Length - 1; ii++)
-            //{
-            //    messages[ii] = messages[ii + 1];
-            //}
-
-            //messages[maxMessages - 1] = message;
-
-            PaintStatus();
         }
 
         private void PaintStatus()
@@ -88,6 +58,7 @@ namespace MSDefrag
             catch (System.Exception e)
             {
                 AddStatusMessage(3, e.Message);
+
                 m_msDefragLib.ShowDebugEvent -= new MSDefragLib.MSDefragLib.ShowDebugHandler(ShowChanges);
             }
         }
@@ -100,17 +71,9 @@ namespace MSDefrag
             {
                 DrawClusterEventArgs2 dcea = (DrawClusterEventArgs2)e;
 
-//                m_clusters = m_msDefragLib.GetClusterList(dcea.m_data, maxSquare, (Int64)dcea.m_startClusterNumber, (Int64)dcea.m_endClusterNumber);
-
-//                PaintClusters(dcea.m_data, (UInt64)dcea.m_startClusterNumber, (UInt64)dcea.m_endClusterNumber);
                 DrawSquares(dcea.m_squareBegin, dcea.m_squareEnd);
             }
         }
-
-        private static System.Timers.Timer aTimer;
-        private static Form1 m_form;
-
-        Thread defragThread = null;
 
         public Form1()
         {
@@ -143,19 +106,8 @@ namespace MSDefrag
         private static void OnTimedEvent(object source, ElapsedEventArgs e)
         {
             m_form.DrawSquares(0, m_form.m_numSquares);
-
-            //if (m_form.defragThread.IsAlive == false)
-            //{
-            //    aTimer.Enabled = false;
-            //}
+            m_form.PaintStatus();
         }
-
-        private const Int32 m_squareSize = 6;
-
-        Int32 m_numSquaresX = 1;
-        Int32 m_numSquaresY = 1;
-
-        private Int32 m_numSquares = 1;
 
         public void InitializeDiskMap()
         {
@@ -242,243 +194,38 @@ namespace MSDefrag
             }
         }
 
-        private void PaintClusters(MSDefragDataStruct Data, UInt64 startClusterNumber, UInt64 endClusterNumber)
-        {
-            try
-            {
-                Graphics g = pictureBox1.CreateGraphics();
+        private static System.Timers.Timer aTimer;
+        private static Form1 m_form;
 
-                Graphics g1 = Graphics.FromImage(bmp);
+        Thread defragThread = null;
 
-                Int32 numClustersX = pictureBox1.Width / 5;
-                Int32 numClustersY = pictureBox1.Height / 5;
+        MSDefragLib.MSDefragLib m_msDefragLib = null;
 
-//                Int32 allClusters = numClustersX * numClustersY;
-                Int32 allClusters = maxSquare;
+        String m_message;
 
-                Double clusterPerSquare = Data.TotalClusters / (UInt64)allClusters;
+        private const int maxMessages = 5;
 
-                Int32 startSquare = (Int32)(startClusterNumber / clusterPerSquare);
-                Int32 endSquare = (Int32)(endClusterNumber / clusterPerSquare);
+        String[] messages = new String[maxMessages];
 
-                for (int ii = 0; ii <= endSquare - startSquare; ii++)
-                {
-                    Int32 clusterNumber = startSquare + ii;
+        Bitmap bmp = new Bitmap(1000, 500);
+        Bitmap statusBmp = new Bitmap(1000, 300);
 
-                    Int32 posX = (Int32)(clusterNumber % numClustersX);
-                    Int32 posY = (Int32)(clusterNumber / numClustersX);
+        Rectangle m_rec = new Rectangle(0, 300, 1000, 500);
+        Rectangle m_rec2 = new Rectangle(0, 0, 1000, 500);
 
-                    Rectangle rec = new Rectangle(posX * 5, posY * 5, 4, 4);
+        Font m_font = new Font("Tahoma", 10);
 
-                    Color col = Color.White;
+        SolidBrush backBrush = new SolidBrush(Color.Blue);
+        SolidBrush fontBrush = new SolidBrush(Color.Yellow);
 
-                    MSDefragLib.MSDefragLib.colors color = m_clusters[ii];
+        public Int32 maxSquare = 5000;
 
-                    switch (color)
-                    {
-                        case MSDefragLib.MSDefragLib.colors.COLORUNMOVABLE:
-                            col = Color.Red;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORALLOCATED:
-                            col = Color.Yellow;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORBACK:
-                            col = Color.White;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORBUSY:
-                            col = Color.Blue;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLOREMPTY:
-                            col = Color.Gray;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORFRAGMENTED:
-                            col = Color.Orange;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORMFT:
-                            col = Color.Pink;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORSPACEHOG:
-                            col = Color.GreenYellow;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORUNFRAGMENTED:
-                            col = Color.Green;
-                            break;
-                        default:
-                            col = Color.White;
-                            break;
-                    }
-                    SolidBrush brush = new SolidBrush(col);
+        private const Int32 m_squareSize = 6;
 
-                    g1.FillRectangle(brush, rec);
+        Int32 m_numSquaresX = 1;
+        Int32 m_numSquaresY = 1;
 
-                    String kkk = "Cluster: " + startClusterNumber + " - " + endClusterNumber;
+        private Int32 m_numSquares = 1;
 
-                    AddStatusMessage(1, kkk);
-
-                    g.DrawImageUnscaled(bmp, 0, 0);
-
-                    PaintStatus();
-                }
-            }
-            catch (System.Exception e)
-            {
-                AddStatusMessage(3, e.Message);
-                m_msDefragLib.DrawClusterEvent -= new MSDefragLib.MSDefragLib.DrawClusterHandler(DrawCluster);
-            }
-        }
-
-        private void PaintAllClusters(MSDefragDataStruct Data, UInt64 clusterNumber)
-        {
-            try
-            {
-                Graphics g = pictureBox1.CreateGraphics();
-
-                Graphics g1 = Graphics.FromImage(bmp);
-
-                Int32 numClustersX = pictureBox1.Width / 5;
-                Int32 numClustersY = pictureBox1.Height / 5;
-
-                Int32 allClusters = numClustersX * numClustersY;
-                Double clusterPerSquare = Data.TotalClusters / (UInt64)allClusters;
-
-
-
-
-//                for (int ii = 0; ii < m_clusters.Count; ii++)
-                int ii = (Int32)(clusterNumber / clusterPerSquare);
-                {
-                    Int32 posX = (Int32)(ii % numClustersX);
-                    Int32 posY = (Int32)(ii / numClustersX);
-
-                    Rectangle rec = new Rectangle(posX * 5, posY * 5, 4, 4);
-
-                    Color col = Color.White;
-
-                    MSDefragLib.MSDefragLib.colors color = m_clusters[ii];
-
-                    switch (color)
-                    {
-                        case MSDefragLib.MSDefragLib.colors.COLORUNMOVABLE:
-                            col = Color.Red;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORALLOCATED:
-                            col = Color.Yellow;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORBACK:
-                            col = Color.White;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORBUSY:
-                            col = Color.Blue;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLOREMPTY:
-                            col = Color.Gray;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORFRAGMENTED:
-                            col = Color.Orange;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORMFT:
-                            col = Color.Pink;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORSPACEHOG:
-                            col = Color.GreenYellow;
-                            break;
-                        case MSDefragLib.MSDefragLib.colors.COLORUNFRAGMENTED:
-                            col = Color.Green;
-                            break;
-                        default:
-                            col = Color.White;
-                            break;
-                    }
-                    SolidBrush brush = new SolidBrush(col);
-
-                    g1.FillRectangle(brush, rec);
-
-                    String kkk = "Cluster: " + clusterNumber;
-
-                    AddStatusMessage(1, kkk);
-
-                    g.DrawImageUnscaled(bmp, 0, 0);
-
-                    PaintStatus();
-                }
-            }
-            catch (System.Exception)
-            {
-                m_msDefragLib.DrawClusterEvent -= new MSDefragLib.MSDefragLib.DrawClusterHandler(DrawCluster);
-            }
-        }
-        private void PaintCluster(MSDefragDataStruct Data, UInt64 clusterNumber, MSDefragLib.MSDefragLib.colors color)
-        {
-            try
-            {
-                Graphics g = pictureBox1.CreateGraphics();
-
-                Graphics g1 = Graphics.FromImage(bmp);
-
-                Int32 numClustersX = pictureBox1.Width / 5;
-                Int32 numClustersY = pictureBox1.Height / 5;
-
-                Int32 allClusters = numClustersX * numClustersY;
-                Int32 totalClusters = (Int32)Data.TotalClusters;
-
-                Double clusterPerSquare = totalClusters / allClusters;
-
-                Int32 posX = (Int32)((clusterNumber / clusterPerSquare) % numClustersX);
-                Int32 posY = (Int32)((clusterNumber / clusterPerSquare) / numClustersX);
-
-                Rectangle rec = new Rectangle(posX * 5, posY * 5, 4, 4);
-
-                Color col = Color.White;
-
-                switch (color)
-                {
-                    case MSDefragLib.MSDefragLib.colors.COLORUNMOVABLE:
-                        col = Color.Red;
-                        break;
-                    case MSDefragLib.MSDefragLib.colors.COLORALLOCATED:
-                        col = Color.Yellow;
-                        break;
-                    case MSDefragLib.MSDefragLib.colors.COLORBACK:
-                        col = Color.White;
-                        break;
-                    case MSDefragLib.MSDefragLib.colors.COLORBUSY:
-                        col = Color.Blue;
-                        break;
-                    case MSDefragLib.MSDefragLib.colors.COLOREMPTY:
-                        col = Color.Gray;
-                        break;
-                    case MSDefragLib.MSDefragLib.colors.COLORFRAGMENTED:
-                        col = Color.Orange;
-                        break;
-                    case MSDefragLib.MSDefragLib.colors.COLORMFT:
-                        col = Color.Pink;
-                        break;
-                    case MSDefragLib.MSDefragLib.colors.COLORSPACEHOG:
-                        col = Color.GreenYellow;
-                        break;
-                    case MSDefragLib.MSDefragLib.colors.COLORUNFRAGMENTED:
-                        col = Color.Green;
-                        break;
-                    default:
-                        col = Color.White;
-                        break;
-                }
-                SolidBrush brush = new SolidBrush(col);
-
-                g1.FillRectangle(brush, rec);
-
-                String kkk = "Cluster: " + clusterNumber;
-
-                AddStatusMessage(1, kkk);
-
-                g.DrawImageUnscaled(bmp, 0, 0);
-
-                PaintStatus();
-            }
-            catch (System.Exception)
-            {
-                m_msDefragLib.DrawClusterEvent -= new MSDefragLib.MSDefragLib.DrawClusterHandler(DrawCluster);
-            }
-        }
     }
 }
