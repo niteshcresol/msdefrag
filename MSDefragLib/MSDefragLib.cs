@@ -6340,73 +6340,105 @@ namespace MSDefragLib
 
             Int64 clusterIndex = 0;
 
+            m_clusterSquares.Clear();
+
             for (Int64 squareIndex = 0; squareIndex < m_clusterSquares.Count; squareIndex++)
             {
-                Int64 lastClusterIndex = clusterIndex + clusterPerSquare;
+                Int64 lastClusterIndex = clusterIndex + (Int64)clusterPerSquare;
 
                 if (lastClusterIndex > m_clusterData.Count - 1)
                 {
                     lastClusterIndex = m_clusterData.Count - 1;
                 }
 
-                for (UInt64 jj = clusterIndex; jj <= lastClusterIndex; jj++)
+                List<MSDefragLib.colors> colors = new List<colors>();
+
+                colors.Add(new Colors(MSDefragLib.colors.COLORALLOCATED));
+                colors.Add(new Colors(MSDefragLib.colors.COLORBACK));
+                colors.Add(new Colors(MSDefragLib.colors.COLORBUSY));
+                colors.Add(new Colors(MSDefragLib.colors.COLOREMPTY));
+                colors.Add(new Colors(MSDefragLib.colors.COLORFRAGMENTED));
+                colors.Add(new Colors(MSDefragLib.colors.COLORMFT));
+                colors.Add(new Colors(MSDefragLib.colors.COLORSPACEHOG));
+                colors.Add(new Colors(MSDefragLib.colors.COLORUNFRAGMENTED));
+                colors.Add(new Colors(MSDefragLib.colors.COLORUNMOVABLE));
+
+                for (Int64 jj = clusterIndex; jj <= lastClusterIndex; jj++)
                 {
                     colors clusterColor = m_clusterData[(Int32)jj];
 
-                    switch (clusterColor)
+                    foreach (Colors col in colors)
                     {
-                        case colors.COLORBUSY:
-                            col = colors.COLORBUSY;
-                            maxColReached = true;
+                        if (col == clusterColor)
+                        {
+                            col.m_numColors++;
+
                             break;
-                        case colors.COLORUNMOVABLE:
-                            col = colors.COLORUNMOVABLE;
-                            break;
-                        case colors.COLORALLOCATED:
-                            if (col == colors.COLOREMPTY)
-                            {
-                                col = colors.COLORALLOCATED;
-                            }
-                            break;
-                        case colors.COLORFRAGMENTED:
-                            if (col != colors.COLORUNMOVABLE)
-                            {
-                                col = colors.COLORFRAGMENTED;
-                            }
-                            break;
-                        case colors.COLORMFT:
-                            col = colors.COLORMFT;
-                            break;
-                        case colors.COLORSPACEHOG:
-                            if (col != colors.COLORUNMOVABLE)
-                            {
-                                col = colors.COLORSPACEHOG;
-                            }
-                            break;
-                        case colors.COLORUNFRAGMENTED:
-                            if ((col == colors.COLOREMPTY) || (col == colors.COLORALLOCATED))
-                            {
-                                col = colors.COLORUNFRAGMENTED;
-                            }
-                            break;
-                        default:
-                            col = colors.COLOREMPTY;
-                            break;
+                        }
                     }
                 }
 
-                if (ii < m_numSquares)
+                MSDefragLib.colors maxColor = MSDefragLib.colors.COLOREMPTY;
+
+                foreach (Colors col in colors)
                 {
-                    if (m_clusterSquares[ii].m_color != col)
+                    if (col.m_numColors == 0)
                     {
-                        m_clusterSquares[ii].m_color = col;
-                        m_clusterSquares[ii].m_isDirty = true;
+                        continue;
+                    }
+
+                    switch (col)
+                    {
+                        case MSDefragLib.colors.COLORBUSY:
+                            maxColor = MSDefragLib.colors.COLORBUSY;
+                            break;
+                        case MSDefragLib.colors.COLORMFT:
+                            if (maxColor != MSDefragLib.colors.COLORBUSY)
+                            {
+                                maxColor = MSDefragLib.colors.COLORMFT;
+                            }
+                            break;
+                        case MSDefragLib.colors.COLORFRAGMENTED:
+                            if ((maxColor != MSDefragLib.colors.COLORBUSY) && (maxColor != MSDefragLib.colors.COLORMFT))
+                            {
+                                maxColor = MSDefragLib.colors.COLORFRAGMENTED;
+                            }
+                            break;
+                        case MSDefragLib.colors.COLORSPACEHOG:
+                            if ((maxColor != MSDefragLib.colors.COLORBUSY) && 
+                                (maxColor != MSDefragLib.colors.COLORMFT) &&
+                                (maxColor != MSDefragLib.colors.COLORFRAGMENTED))
+                            {
+                                maxColor = MSDefragLib.colors.COLORSPACEHOG;
+                            }
+                            break;
+                        case MSDefragLib.colors.COLORUNFRAGMENTED:
+                            if ((maxColor != MSDefragLib.colors.COLORBUSY) && 
+                                (maxColor != MSDefragLib.colors.COLORMFT) &&
+                                (maxColor != MSDefragLib.colors.COLORFRAGMENTED) &&
+                                (maxColor != MSDefragLib.colors.COLORSPACEHOG))
+                            {
+                                maxColor = MSDefragLib.colors.COLORUNFRAGMENTED;
+                            }
+                            break;
+                        case MSDefragLib.colors.COLORUNMOVABLE:
+                            if (maxColor != MSDefragLib.colors.COLORBUSY)
+                            {
+                                maxColor = MSDefragLib.colors.COLORUNMOVABLE;
+                            }
+                            break;
+                        case MSDefragLib.colors.COLORALLOCATED:
+                            if (maxColor == MSDefragLib.colors.COLOREMPTY)
+                            {
+                                maxColor = MSDefragLib.colors.COLORALLOCATED;
+                            }
+                            break;
                     }
                 }
 
-                ii++;
-
-            } while (ii < squareEnd);
+                ClusterSquare square = new ClusterSquare(squareIndex, maxColor);
+                square.m_colors = colors;
+            }
         }
 
         private MSDefragDataStruct m_data = null;
