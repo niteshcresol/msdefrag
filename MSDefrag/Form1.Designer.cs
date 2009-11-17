@@ -29,15 +29,15 @@
         private void InitializeComponent()
         {
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.panelDraw = new System.Windows.Forms.Panel();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.statusPanel = new System.Windows.Forms.Panel();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
+            this.panelDraw = new System.Windows.Forms.Panel();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.tableLayoutPanel1.SuspendLayout();
-            this.panelDraw.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.statusPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
+            this.panelDraw.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // tableLayoutPanel1
@@ -69,37 +69,17 @@
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 10F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 17.05426F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 4.457365F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(676, 516);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(1292, 866);
             this.tableLayoutPanel1.TabIndex = 0;
-            // 
-            // panelDraw
-            // 
-            this.tableLayoutPanel1.SetColumnSpan(this.panelDraw, 8);
-            this.panelDraw.Controls.Add(this.pictureBox1);
-            this.panelDraw.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelDraw.Location = new System.Drawing.Point(18, 127);
-            this.panelDraw.Name = "panelDraw";
-            this.tableLayoutPanel1.SetRowSpan(this.panelDraw, 7);
-            this.panelDraw.Size = new System.Drawing.Size(632, 359);
-            this.panelDraw.TabIndex = 0;
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(632, 359);
-            this.pictureBox1.TabIndex = 0;
-            this.pictureBox1.TabStop = false;
             // 
             // statusPanel
             // 
             this.tableLayoutPanel1.SetColumnSpan(this.statusPanel, 8);
             this.statusPanel.Controls.Add(this.pictureBox2);
             this.statusPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.statusPanel.Location = new System.Drawing.Point(18, 3);
+            this.statusPanel.Location = new System.Drawing.Point(33, 3);
             this.statusPanel.Name = "statusPanel";
-            this.statusPanel.Size = new System.Drawing.Size(632, 107);
+            this.statusPanel.Size = new System.Drawing.Size(1212, 184);
             this.statusPanel.TabIndex = 1;
             // 
             // pictureBox2
@@ -107,23 +87,43 @@
             this.pictureBox2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pictureBox2.Location = new System.Drawing.Point(0, 0);
             this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(632, 107);
+            this.pictureBox2.Size = new System.Drawing.Size(1212, 184);
             this.pictureBox2.TabIndex = 0;
             this.pictureBox2.TabStop = false;
+            // 
+            // panelDraw
+            // 
+            this.tableLayoutPanel1.SetColumnSpan(this.panelDraw, 8);
+            this.panelDraw.Controls.Add(this.pictureBox1);
+            this.panelDraw.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panelDraw.Location = new System.Drawing.Point(33, 211);
+            this.panelDraw.Name = "panelDraw";
+            this.tableLayoutPanel1.SetRowSpan(this.panelDraw, 7);
+            this.panelDraw.Size = new System.Drawing.Size(1212, 607);
+            this.panelDraw.TabIndex = 0;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(1212, 607);
+            this.pictureBox1.TabIndex = 0;
+            this.pictureBox1.TabStop = false;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(676, 516);
+            this.ClientSize = new System.Drawing.Size(1292, 866);
             this.Controls.Add(this.tableLayoutPanel1);
             this.Name = "Form1";
             this.Text = "Form1";
             this.tableLayoutPanel1.ResumeLayout(false);
-            this.panelDraw.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.statusPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
+            this.panelDraw.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
 
         }
