@@ -123,7 +123,7 @@ namespace MSDefrag
 
         private void DrawSquares(Int32 squareBegin, Int32 squareEnd)
         {
-            List<MSDefragLib.ClusterSquare> squaresList = m_msDefragLib.GetSquareList(squareBegin, squareEnd);
+            List<MSDefragLib.ClusterSquare> squaresList = m_msDefragLib.GetSquareList();
 
             try
             {
@@ -203,7 +203,7 @@ namespace MSDefrag
 
         String m_message;
 
-        private const int maxMessages = 5;
+        private const int maxMessages = 7;
 
         String[] messages = new String[maxMessages];
 

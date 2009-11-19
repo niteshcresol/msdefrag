@@ -1489,7 +1489,7 @@ namespace MSDefragLib
 			        }
 
 			        /* Colorize the segment. */
-                    DrawCluster(Data,Fragment.Lcn + SegmentBegin - RealVcn, Fragment.Lcn + SegmentEnd - RealVcn,Color);
+                    DrawCluster(Fragment.Lcn + SegmentBegin - RealVcn, Fragment.Lcn + SegmentEnd - RealVcn,Color);
 
 			        /* Next segment. */
 			        SegmentBegin = SegmentEnd;
@@ -1616,15 +1616,15 @@ namespace MSDefragLib
                             (Lcn == Data.MftExcludes[1].End) ||
                             (Lcn == Data.MftExcludes[2].End))
                         {
-                            DrawCluster(Data,ClusterStart,Lcn,colors.COLORUNMOVABLE);
+                            DrawCluster(ClusterStart,Lcn,colors.COLORUNMOVABLE);
                         }
                         else if (PrevInUse == false)
                         {
-                            DrawCluster(Data,ClusterStart,Lcn,colors.COLOREMPTY);
+                            DrawCluster(ClusterStart,Lcn,colors.COLOREMPTY);
                         }
                         else
                         {
-                            DrawCluster(Data,ClusterStart,Lcn,colors.COLORALLOCATED);
+                            DrawCluster(ClusterStart,Lcn,colors.COLORALLOCATED);
                         }
 
                         InUse = true;
@@ -1634,13 +1634,13 @@ namespace MSDefragLib
 
                     if ((PrevInUse == false) && (InUse != false))
                     {          /* Free */
-                        DrawCluster(Data,ClusterStart,Lcn,colors.COLOREMPTY);
+                        DrawCluster(ClusterStart, Lcn, colors.COLOREMPTY);
                         ClusterStart = Lcn;
                     }
 
                     if ((PrevInUse != false) && (InUse == false))
                     {          /* In use */
-                        DrawCluster(Data,ClusterStart,Lcn,colors.COLORALLOCATED);
+                        DrawCluster(ClusterStart, Lcn, colors.COLORALLOCATED);
                         ClusterStart = Lcn;
                     }
 
@@ -1656,12 +1656,12 @@ namespace MSDefragLib
             {
                 if (PrevInUse == false)
                 {          /* Free */
-                    DrawCluster(Data,ClusterStart,Lcn,colors.COLOREMPTY);
+                    DrawCluster(ClusterStart, Lcn, colors.COLOREMPTY);
                 }
 
                 if (PrevInUse != false)
                 {          /* In use */
-                    DrawCluster(Data,ClusterStart,Lcn,colors.COLORALLOCATED);
+                    DrawCluster(ClusterStart, Lcn, colors.COLORALLOCATED);
                 }
             }
 
@@ -1671,7 +1671,7 @@ namespace MSDefragLib
                 if (Data.RedrawScreen != 2) break;
                 if (Data.MftExcludes[i].Start <= 0) continue;
 
-                DrawCluster(Data,Data.MftExcludes[i].Start, Data.MftExcludes[i].End, colors.COLORMFT);
+                DrawCluster(Data.MftExcludes[i].Start, Data.MftExcludes[i].End, colors.COLORMFT);
             }
 
             /* Colorize all the files on the screen.
@@ -3619,7 +3619,7 @@ namespace MSDefragLib
 	        /* Update the diskmap with the colors. */
             Data.PhaseDone = Data.PhaseTodo;
 
-            DrawCluster(Data,0,0,0);
+            DrawCluster(0, m_data.TotalClusters, colors.COLOREMPTY);
 
 	        /* Setup the progress counter and the file/dir counters. */
 	        Data.PhaseDone = 0;
@@ -3763,7 +3763,7 @@ namespace MSDefragLib
 	        /* Force the percentage to 100%. */
 	        Data.PhaseDone = Data.PhaseTodo;
 
-            DrawCluster(Data,0,0,0);
+            DrawCluster(0,0,0);
 
 	        /* Calculate the begin of the zone's. */
 	        CalculateZones(ref Data);
@@ -6030,143 +6030,6 @@ namespace MSDefragLib
             return m_lastMessage;
         }
 
-        public List<colors> GetClusterList(Int32 numClusters)
-        {
-            List<colors> clusters = new List<colors>(numClusters);
-
-            int numClustersPerSquare = m_clusterData.Count / numClusters;
-
-            for (int ii = 0; ii < numClusters - 1; ii++)
-            {
-                Int64 startCluster = ii * numClustersPerSquare;
-                Int64 endCluster = startCluster + numClustersPerSquare;
-
-                colors col = colors.COLOREMPTY;
-
-                Boolean maxColReached = false;
-
-                for (Int64 jj = startCluster; (!maxColReached) && jj < endCluster; jj++)
-                {
-                    colors clusterColor = m_clusterData[(Int32)jj];
-
-                    switch (clusterColor)
-                    {
-                        case colors.COLORBUSY:
-                            col = colors.COLORBUSY;
-                            maxColReached = true;
-                            break;
-                        case colors.COLORUNMOVABLE:
-                            col = colors.COLORUNMOVABLE;
-                            break;
-                        case colors.COLORALLOCATED:
-                            if (col == colors.COLOREMPTY)
-                            {
-                                col = colors.COLORALLOCATED;
-                            }
-                            break;
-                        case colors.COLORFRAGMENTED:
-                            if (col != colors.COLORUNMOVABLE)
-                            {
-                                col = colors.COLORFRAGMENTED;
-                            }
-                            break;
-                        case colors.COLORMFT:
-                            clusters[ii] = colors.COLORMFT;
-                            break;
-                        case colors.COLORSPACEHOG:
-                            if (col != colors.COLORUNMOVABLE)
-                            {
-                                col = colors.COLORSPACEHOG;
-                            }
-                            break;
-                        case colors.COLORUNFRAGMENTED:
-                            if ((col == colors.COLOREMPTY) || (col == colors.COLORALLOCATED))
-                            {
-                                col = colors.COLORUNFRAGMENTED;
-                            }
-                            break;
-                        default:
-                            col = colors.COLOREMPTY;
-                            break;
-                    }
-                }
-
-                clusters.Add(col);
-            }
-
-            return clusters;
-        }
-
-        public List<colors> GetClusterList(MSDefragDataStruct data, Int32 numClusters, Int64 startClusterNumber, Int64 endClusterNumber)
-        {
-            List<colors> clusters = new List<colors>(numClusters);
-
-            int numClustersPerSquare = (Int32)(data.TotalClusters / (UInt32)numClusters);
-
-            int startSquare = (Int32)(startClusterNumber / numClustersPerSquare);
-            int endSquare = (Int32)(endClusterNumber / numClustersPerSquare);
-
-            for (int ii = startSquare; ii <= endSquare; ii++)
-            {
-                Int64 startCluster = ii * numClustersPerSquare;
-                Int64 endCluster = startCluster + numClustersPerSquare + 1;
-
-                colors col = colors.COLOREMPTY;
-
-                Boolean maxColReached = false;
-
-                for (Int64 jj = startCluster; (!maxColReached) && jj < endCluster; jj++)
-                {
-                    colors clusterColor = m_clusterData[(Int32)jj];
-
-                    switch (clusterColor)
-                    {
-                        case colors.COLORBUSY:
-                            col = colors.COLORBUSY;
-                            maxColReached = true;
-                            break;
-                        case colors.COLORUNMOVABLE:
-                            col = colors.COLORUNMOVABLE;
-                            break;
-                        case colors.COLORALLOCATED:
-                            if (col == colors.COLOREMPTY)
-                            {
-                                col = colors.COLORALLOCATED;
-                            }
-                            break;
-                        case colors.COLORFRAGMENTED:
-                            if (col != colors.COLORUNMOVABLE)
-                            {
-                                col = colors.COLORFRAGMENTED;
-                            }
-                            break;
-                        case colors.COLORMFT:
-                            col = colors.COLORMFT;
-                            break;
-                        case colors.COLORSPACEHOG:
-                            if (col != colors.COLORUNMOVABLE)
-                            {
-                                col = colors.COLORSPACEHOG;
-                            }
-                            break;
-                        case colors.COLORUNFRAGMENTED:
-                            if ((col == colors.COLOREMPTY) || (col == colors.COLORALLOCATED))
-                            {
-                                col = colors.COLORUNFRAGMENTED;
-                            }
-                            break;
-                        default:
-                            col = colors.COLOREMPTY;
-                            break;
-                    }
-                }
-
-                clusters.Add(col);
-            }
-
-            return clusters;
-        }
-
         public delegate void DrawClusterHandler(object sender, EventArgs e);
 
         public event DrawClusterHandler DrawClusterEvent;
@@ -6186,140 +6049,90 @@ namespace MSDefragLib
             }
         }
 
-        private void DrawCluster(MSDefragDataStruct data, UInt64 clusterBegin, UInt64 clusterEnd, colors col)
+        private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, colors col)
         {
             ShowDebug(3, "Cluster: " + clusterBegin);
 
-            UpdateClusterInfo(clusterBegin, clusterEnd, col);
-            UpdateSquares(clusterBegin, clusterEnd);
-
-            Double clusterPerSquare = m_data.TotalClusters / (UInt64)m_numSquares;
-
-            Int32 squareBegin = (Int32)(clusterBegin / clusterPerSquare);
-            Int32 squareEnd = (Int32)(clusterEnd / clusterPerSquare);
+            UpdateSquares((Int64)clusterBegin, (Int64)clusterEnd, col);
         }
 
-        List<MSDefragLib.colors> m_clusterData = null;
-        List<ClusterSquare> m_clusterSquares = null;
-
-        private Int32 m_numSquares = 0;
-
-        public Int32 NumSquares
-        { 
-            set
-            {
-                m_numSquares = value;
-
-                m_clusterSquares = new List<ClusterSquare>(m_numSquares);
-
-                for (Int32 ii = 0; ii <= m_numSquares; ii++)
-                {
-                    m_clusterSquares.Add(new ClusterSquare(ii, colors.COLOREMPTY));
-                }
-            }
-
-            get
-            {
-                return m_numSquares;
-            }
-        }
-
-        private void UpdateClusterInfo(UInt64 clusterBegin, UInt64 clusterEnd, MSDefragLib.colors col)
+        private void UpdateSquares(Int64 clusterBegin, Int64 clusterEnd, colors color)
         {
-            if (clusterBegin > m_data.TotalClusters)
-            {
-                return;
-            }
+            Double clusterPerSquare = (Double)m_data.TotalClusters / (Double)(m_numSquares);
 
-            for (UInt64 ii = clusterBegin; (ii < m_data.TotalClusters) && (ii < clusterEnd); ii++)
+            if (m_clusterSquares.Count == 0)
             {
-                m_clusterData[(Int32)ii] = col; 
+                ParseSquares();
             }
-        }
-
-        private void UpdateSquares(UInt64 clusterBegin, UInt64 clusterEnd)
-        {
-            Double clusterPerSquare = m_data.TotalClusters / (UInt64)m_numSquares;
 
             Int32 squareBegin = (Int32)(clusterBegin / clusterPerSquare);
             Int32 squareEnd = (Int32)(clusterEnd / clusterPerSquare);
 
-            Int32 ii = squareBegin;
-            
-            do
+            if (squareEnd >= m_numSquares)
             {
-                UInt64 squareClusterBegin = (UInt64)(ii * clusterPerSquare);
-                UInt64 squareClusterEnd = (UInt64)(squareClusterBegin + clusterPerSquare);
+                squareEnd = m_numSquares - 1;
+            }
 
-                colors col = colors.COLOREMPTY;
+            for (Int32 ii = squareBegin; ii <= squareEnd; ii++)
+            {
+                ClusterSquare clusterSquare = m_clusterSquares[ii];
+                Int64 clusterBeginIndex = clusterSquare.m_clusterBeginIndex;
+                Int64 clusterEndIndex = clusterSquare.m_clusterEndIndex;
 
-                Boolean maxColReached = false;
-
-                for (UInt64 jj = squareClusterBegin; (!maxColReached) && (jj < squareClusterEnd); jj++)
+                for (Int64 jj = clusterBeginIndex; jj < clusterEndIndex; jj++)
                 {
-                    colors clusterColor = m_clusterData[(Int32)jj];
-
-                    switch (clusterColor)
+                    if ((jj < clusterBegin) || (jj > clusterEnd))
                     {
-                        case colors.COLORBUSY:
-                            col = colors.COLORBUSY;
-                            maxColReached = true;
-                            break;
-                        case colors.COLORUNMOVABLE:
-                            col = colors.COLORUNMOVABLE;
-                            break;
-                        case colors.COLORALLOCATED:
-                            if (col == colors.COLOREMPTY)
+                        continue;
+                    }
+
+                    colors oldColor = m_clusterData[(Int32)jj];
+
+                    m_clusterData[(Int32)jj] = color;
+
+                    foreach (Colors squareColors in clusterSquare.m_colors)
+                    {
+                        if (squareColors.m_color == oldColor)
+                        {
+                            if (squareColors.m_numColors > 0)
                             {
-                                col = colors.COLORALLOCATED;
+                                squareColors.m_numColors--;
                             }
-                            break;
-                        case colors.COLORFRAGMENTED:
-                            if (col != colors.COLORUNMOVABLE)
-                            {
-                                col = colors.COLORFRAGMENTED;
-                            }
-                            break;
-                        case colors.COLORMFT:
-                            col = colors.COLORMFT;
-                            break;
-                        case colors.COLORSPACEHOG:
-                            if (col != colors.COLORUNMOVABLE)
-                            {
-                                col = colors.COLORSPACEHOG;
-                            }
-                            break;
-                        case colors.COLORUNFRAGMENTED:
-                            if ((col == colors.COLOREMPTY) || (col == colors.COLORALLOCATED))
-                            {
-                                col = colors.COLORUNFRAGMENTED;
-                            }
-                            break;
-                        default:
-                            col = colors.COLOREMPTY;
-                            break;
+                        }
+
+                        if (squareColors.m_color == color)
+                        {
+                            squareColors.m_numColors++;
+                        }
                     }
                 }
 
-                if (ii < m_numSquares)
+                colors maxColor = GetMaxSquareColor(clusterSquare.m_colors);
+
+                if (maxColor != clusterSquare.m_color)
                 {
-                    if (m_clusterSquares[ii].m_color != col)
-                    {
-                        m_clusterSquares[ii].m_color = col;
-                        m_clusterSquares[ii].m_isDirty = true;
-                    }
+                    clusterSquare.m_color = maxColor;
+                    clusterSquare.m_isDirty = true;
                 }
-
-                ii++;
-
-            } while (ii < squareEnd);
+            }
         }
 
-        public List<ClusterSquare> GetSquareList(Int32 squareBegin, Int32 squareEnd)
+        /// <summary>
+        /// Function returns list of all "dirty" squares that need to be updated.
+        /// </summary>
+        /// <param name="squareBegin">First square number</param>
+        /// <param name="squareEnd">Last square number</param>
+        /// <returns>List of dirty squares</returns>
+        public List<ClusterSquare> GetSquareList()
         {
+            if (m_clusterSquares.Count == 0)
+            {
+                return null;
+            }
+
             List<ClusterSquare> list = new List<ClusterSquare>();
 
-            for (Int32 ii = squareBegin; ii <= squareEnd; ii++ )
+            for (Int32 ii = 0; ii < m_clusterSquares.Count; ii++ )
             {
                 ClusterSquare clusterSquare = m_clusterSquares[ii];
 
@@ -6334,24 +6147,26 @@ namespace MSDefragLib
             return list;
         }
 
+        /// <summary>
+        /// This function parses whole cluster list and updates square information.
+        /// </summary>
         private void ParseSquares()
         {
-            Double clusterPerSquare = m_data.TotalClusters / (UInt64)m_numSquares;
-
-            Int64 clusterIndex = 0;
+            Double clusterPerSquare = (Double)m_data.TotalClusters / (Double)(m_numSquares);
 
             m_clusterSquares.Clear();
 
-            for (Int64 squareIndex = 0; squareIndex < m_clusterSquares.Count; squareIndex++)
+            for (Int32 squareIndex = 0; squareIndex < m_numSquares; squareIndex++)
             {
-                Int64 lastClusterIndex = clusterIndex + (Int64)clusterPerSquare;
+                Int64 clusterIndex = (Int64)(squareIndex * clusterPerSquare);
+                Int64 lastClusterIndex = clusterIndex + (Int64)clusterPerSquare - 1;
 
                 if (lastClusterIndex > m_clusterData.Count - 1)
                 {
                     lastClusterIndex = m_clusterData.Count - 1;
                 }
 
-                List<MSDefragLib.colors> colors = new List<colors>();
+                List<Colors> colors = new List<Colors>();
 
                 colors.Add(new Colors(MSDefragLib.colors.COLORALLOCATED));
                 colors.Add(new Colors(MSDefragLib.colors.COLORBACK));
@@ -6369,7 +6184,7 @@ namespace MSDefragLib
 
                     foreach (Colors col in colors)
                     {
-                        if (col == clusterColor)
+                        if (col.m_color == clusterColor)
                         {
                             col.m_numColors++;
 
@@ -6378,70 +6193,107 @@ namespace MSDefragLib
                     }
                 }
 
-                MSDefragLib.colors maxColor = MSDefragLib.colors.COLOREMPTY;
+                MSDefragLib.colors maxColor = GetMaxSquareColor(colors);
 
-                foreach (Colors col in colors)
-                {
-                    if (col.m_numColors == 0)
-                    {
-                        continue;
-                    }
-
-                    switch (col)
-                    {
-                        case MSDefragLib.colors.COLORBUSY:
-                            maxColor = MSDefragLib.colors.COLORBUSY;
-                            break;
-                        case MSDefragLib.colors.COLORMFT:
-                            if (maxColor != MSDefragLib.colors.COLORBUSY)
-                            {
-                                maxColor = MSDefragLib.colors.COLORMFT;
-                            }
-                            break;
-                        case MSDefragLib.colors.COLORFRAGMENTED:
-                            if ((maxColor != MSDefragLib.colors.COLORBUSY) && (maxColor != MSDefragLib.colors.COLORMFT))
-                            {
-                                maxColor = MSDefragLib.colors.COLORFRAGMENTED;
-                            }
-                            break;
-                        case MSDefragLib.colors.COLORSPACEHOG:
-                            if ((maxColor != MSDefragLib.colors.COLORBUSY) && 
-                                (maxColor != MSDefragLib.colors.COLORMFT) &&
-                                (maxColor != MSDefragLib.colors.COLORFRAGMENTED))
-                            {
-                                maxColor = MSDefragLib.colors.COLORSPACEHOG;
-                            }
-                            break;
-                        case MSDefragLib.colors.COLORUNFRAGMENTED:
-                            if ((maxColor != MSDefragLib.colors.COLORBUSY) && 
-                                (maxColor != MSDefragLib.colors.COLORMFT) &&
-                                (maxColor != MSDefragLib.colors.COLORFRAGMENTED) &&
-                                (maxColor != MSDefragLib.colors.COLORSPACEHOG))
-                            {
-                                maxColor = MSDefragLib.colors.COLORUNFRAGMENTED;
-                            }
-                            break;
-                        case MSDefragLib.colors.COLORUNMOVABLE:
-                            if (maxColor != MSDefragLib.colors.COLORBUSY)
-                            {
-                                maxColor = MSDefragLib.colors.COLORUNMOVABLE;
-                            }
-                            break;
-                        case MSDefragLib.colors.COLORALLOCATED:
-                            if (maxColor == MSDefragLib.colors.COLOREMPTY)
-                            {
-                                maxColor = MSDefragLib.colors.COLORALLOCATED;
-                            }
-                            break;
-                    }
-                }
-
-                ClusterSquare square = new ClusterSquare(squareIndex, maxColor);
+                ClusterSquare square = new ClusterSquare(squareIndex, maxColor, clusterIndex, lastClusterIndex);
                 square.m_colors = colors;
+
+                m_clusterSquares.Add(square);
             }
         }
 
+        private static MSDefragLib.colors GetMaxSquareColor(List<Colors> colors)
+        {
+            MSDefragLib.colors maxColor = MSDefragLib.colors.COLOREMPTY;
+
+            foreach (Colors col in colors)
+            {
+                if (col.m_numColors == 0)
+                {
+                    continue;
+                }
+
+                switch (col.m_color)
+                {
+                    case MSDefragLib.colors.COLORBUSY:
+                        maxColor = MSDefragLib.colors.COLORBUSY;
+                        break;
+                    case MSDefragLib.colors.COLORMFT:
+                        if (maxColor != MSDefragLib.colors.COLORBUSY)
+                        {
+                            maxColor = MSDefragLib.colors.COLORMFT;
+                        }
+                        break;
+                    case MSDefragLib.colors.COLORFRAGMENTED:
+                        if ((maxColor != MSDefragLib.colors.COLORBUSY) && (maxColor != MSDefragLib.colors.COLORMFT))
+                        {
+                            maxColor = MSDefragLib.colors.COLORFRAGMENTED;
+                        }
+                        break;
+                    case MSDefragLib.colors.COLORSPACEHOG:
+                        if ((maxColor != MSDefragLib.colors.COLORBUSY) &&
+                            (maxColor != MSDefragLib.colors.COLORMFT) &&
+                            (maxColor != MSDefragLib.colors.COLORFRAGMENTED))
+                        {
+                            maxColor = MSDefragLib.colors.COLORSPACEHOG;
+                        }
+                        break;
+                    case MSDefragLib.colors.COLORUNFRAGMENTED:
+                        if ((maxColor != MSDefragLib.colors.COLORBUSY) &&
+                            (maxColor != MSDefragLib.colors.COLORMFT) &&
+                            (maxColor != MSDefragLib.colors.COLORFRAGMENTED) &&
+                            (maxColor != MSDefragLib.colors.COLORSPACEHOG))
+                        {
+                            maxColor = MSDefragLib.colors.COLORUNFRAGMENTED;
+                        }
+                        break;
+                    case MSDefragLib.colors.COLORUNMOVABLE:
+                        if (maxColor != MSDefragLib.colors.COLORBUSY)
+                        {
+                            maxColor = MSDefragLib.colors.COLORUNMOVABLE;
+                        }
+                        break;
+                    case MSDefragLib.colors.COLORALLOCATED:
+                        if (maxColor == MSDefragLib.colors.COLOREMPTY)
+                        {
+                            maxColor = MSDefragLib.colors.COLORALLOCATED;
+                        }
+                        break;
+                }
+            }
+            return maxColor;
+        }
+
+        #region Variables
+
         private MSDefragDataStruct m_data = null;
+
+        List<MSDefragLib.colors> m_clusterData = null;
+        List<ClusterSquare> m_clusterSquares = null;
+
+        private Int32 m_numSquares = 0;
+
+        public Int32 NumSquares
+        {
+            set
+            {
+                m_numSquares = value;
+
+                m_clusterSquares = new List<ClusterSquare>(m_numSquares);
+
+                //for (Int32 ii = 0; ii <= m_numSquares; ii++)
+                //{
+                //    m_clusterSquares.Add(new ClusterSquare(ii, colors.COLOREMPTY, 0, 100));
+                //}
+            }
+
+            get
+            {
+                return m_numSquares;
+            }
+        }
+
+        #endregion
     }
 
     public class DrawClusterEventArgs : EventArgs 
@@ -6483,10 +6335,13 @@ namespace MSDefragLib
 
     public class ClusterSquare
     {
-        public ClusterSquare(Int32 squareIndex, MSDefragLib.colors color)
+        public ClusterSquare(Int32 squareIndex, MSDefragLib.colors color, Int64 clusterBegin, Int64 clusterEnd)
         {
             m_squareIndex = squareIndex;
             m_color = color;
+            m_clusterBeginIndex = clusterBegin;
+            m_clusterEndIndex = clusterEnd;
+
             m_isDirty = true;
         }
 
@@ -6494,8 +6349,8 @@ namespace MSDefragLib
         public Int32 m_squareIndex;
         public MSDefragLib.colors m_color;
 
-        public Int32 m_clusterBeginIndex;
-        public Int32 m_clusterEndIndex;
+        public Int64 m_clusterBeginIndex;
+        public Int64 m_clusterEndIndex;
 
         public List<Colors> m_colors;
     }
