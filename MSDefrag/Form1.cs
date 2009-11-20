@@ -22,14 +22,20 @@ namespace MSDefrag
         // This will be called whenever the list changes.
         private void ShowChanges(object sender, EventArgs e)
         {
-            m_message = m_msDefragLib.GetLastMessage();
+            String message = "";
+            UInt32 level = 0;
 
-            Int32 level = Convert.ToInt32(m_message.Substring(1, 1));
-
-            AddStatusMessage(level, m_message.Substring(3));
+            if (e is MSScanNtfsEventArgs)
+            {
+                MSScanNtfsEventArgs ev = (MSScanNtfsEventArgs)e;
+                message = ev.m_message;
+                level = ev.m_level;
+            }
+            
+            AddStatusMessage(level, message);
         }
 
-        private void AddStatusMessage(Int32 level, String message)
+        private void AddStatusMessage(UInt32 level, String message)
         {
             messages[level] = message;
         }
@@ -62,8 +68,6 @@ namespace MSDefrag
                 m_msDefragLib.ShowDebugEvent -= new MSDefragLib.MSDefragLib.ShowDebugHandler(ShowChanges);
             }
         }
-
-        List<MSDefragLib.MSDefragLib.colors> m_clusters = null;
 
         private void DrawCluster(object sender, EventArgs e)
         {
@@ -99,7 +103,7 @@ namespace MSDefrag
 
             aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
 
-            aTimer.Interval = 100;
+            aTimer.Interval = 1000;
             aTimer.Enabled = true;
         }
 
@@ -131,15 +135,15 @@ namespace MSDefrag
 
                 Graphics g1 = Graphics.FromImage(bmp);
 
-                AddStatusMessage(1, "Square: " + squareBegin);
-
                 foreach (MSDefragLib.ClusterSquare square in squaresList)
                 {
                     Int32 squareIndex = square.m_squareIndex;
-                    MSDefragLib.MSDefragLib.colors color = square.m_color;
+                    MSDefragLib.MSDefragLib.CLUSTER_COLORS color = square.m_color;
 
                     Int32 posX = (Int32)(squareIndex % m_numSquaresX);
                     Int32 posY = (Int32)(squareIndex / m_numSquaresX);
+
+                    AddStatusMessage(1, "Square: " + squareIndex);
 
                     Rectangle rec = new Rectangle(posX * m_squareSize, posY * m_squareSize, m_squareSize - 1, m_squareSize - 1);
 
@@ -147,31 +151,31 @@ namespace MSDefrag
 
                     switch (color)
                     {
-                        case MSDefragLib.MSDefragLib.colors.COLORUNMOVABLE:
+                        case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORUNMOVABLE:
                             col = Color.Red;
                             break;
-                        case MSDefragLib.MSDefragLib.colors.COLORALLOCATED:
+                        case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORALLOCATED:
                             col = Color.Yellow;
                             break;
-                        case MSDefragLib.MSDefragLib.colors.COLORBACK:
+                        case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORBACK:
                             col = Color.White;
                             break;
-                        case MSDefragLib.MSDefragLib.colors.COLORBUSY:
+                        case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORBUSY:
                             col = Color.Blue;
                             break;
-                        case MSDefragLib.MSDefragLib.colors.COLOREMPTY:
+                        case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLOREMPTY:
                             col = Color.White;
                             break;
-                        case MSDefragLib.MSDefragLib.colors.COLORFRAGMENTED:
+                        case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORFRAGMENTED:
                             col = Color.Orange;
                             break;
-                        case MSDefragLib.MSDefragLib.colors.COLORMFT:
+                        case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORMFT:
                             col = Color.Pink;
                             break;
-                        case MSDefragLib.MSDefragLib.colors.COLORSPACEHOG:
+                        case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORSPACEHOG:
                             col = Color.GreenYellow;
                             break;
-                        case MSDefragLib.MSDefragLib.colors.COLORUNFRAGMENTED:
+                        case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORUNFRAGMENTED:
                             col = Color.Green;
                             break;
                         default:
@@ -200,8 +204,6 @@ namespace MSDefrag
         Thread defragThread = null;
 
         MSDefragLib.MSDefragLib m_msDefragLib = null;
-
-        String m_message;
 
         private const int maxMessages = 7;
 

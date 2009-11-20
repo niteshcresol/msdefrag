@@ -756,6 +756,18 @@ namespace MSDefragLib
         }
     }
 
+    public class MSScanNtfsEventArgs : EventArgs
+    {
+        public UInt32 m_level;
+        public String m_message;
+
+        public MSScanNtfsEventArgs(UInt32 level, String message)
+        {
+            m_level = level;
+            m_message = message;
+        }
+    }
+
     class MSScanNtfs
     {
         const UInt64 MFTBUFFERSIZE = 256 * 1024;
@@ -792,25 +804,16 @@ namespace MSDefragLib
         protected virtual void OnShowDebug(EventArgs e)
         {
             if (ShowDebugEvent != null)
+            {
                 ShowDebugEvent(this, e);
+            }
         }
 
-        String m_lastMessage;
-
-        public void ShowDebug(int level, String output)
+        public void ShowDebug(UInt32 level, String output)
         {
-            m_lastMessage = "#" + level + "#" + output;
+            MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
 
-            //if (level < 6)
-            //    System.Console.WriteLine(output);
-            EventArgs e = new EventArgs();
-
-            OnShowDebug(EventArgs.Empty);
-        }
-
-        public String GetLastMessage()
-        {
-            return m_lastMessage;
+            OnShowDebug(e);
         }
 
         String StreamTypeNames(ATTRIBUTE_TYPE StreamType)
@@ -1575,8 +1578,6 @@ namespace MSDefragLib
 
 	        String p1;
             //String s1;
-
-            //JKDefragGui *jkGui = JKDefragGui::getInstance();
 
 	        /* Sanity checks. */
             if ((Buffer == null) || (BufLength == 0)) return;
