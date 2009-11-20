@@ -6079,30 +6079,36 @@ namespace MSDefragLib
                 return null;
             }
 
-            List<ClusterSquare> list = new List<ClusterSquare>();
-
             if (ggg)
             {
-                return list;
+                return null;
             }
 
             ggg = true;
 
-            for (Int32 ii = 0; ii < m_clusterSquares.Count; ii++)
-            {
-                ClusterSquare clusterSquare = m_clusterSquares[ii];
 
-                if (clusterSquare.m_isDirty)
-                {
-                    list.Add(clusterSquare);
+            var squareList =
+                from a in m_clusterSquares
+                where a.m_isDirty == true
+                select a;
 
-                    clusterSquare.m_isDirty = false;
-                }
-            }
+            //List<ClusterSquare> list = new List<ClusterSquare>();
+
+            //for (Int32 ii = 0; ii < m_clusterSquares.Count; ii++)
+            //{
+            //    ClusterSquare clusterSquare = m_clusterSquares[ii];
+
+            //    if (clusterSquare.m_isDirty)
+            //    {
+            //        list.Add(clusterSquare);
+
+            //        clusterSquare.m_isDirty = false;
+            //    }
+            //}
 
             ggg = false;
 
-            return list;
+            return squareList.ToList();
         }
 
         /// <summary>
