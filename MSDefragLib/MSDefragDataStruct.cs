@@ -76,30 +76,37 @@ namespace MSDefragLib
         public UInt64 End;
     };
 
+    public enum RunningState : int
+    {
+        STOPPED = 0,
+        RUNNING,
+        STOPPING
+    }
+
     public class MSDefragDataStruct
     {
 	    public UInt16 Phase;                             /* The current Phase (1...3). */
         public UInt16 Zone;                              /* The current Zone (0..2) for Phase 3. */
-	    public Boolean Running;                          /* If not RUNNING then stop defragging. */
-	    public int RedrawScreen;                     /* 0:no, 1:request, 2: busy. */
+        public RunningState Running;                     /* If not RUNNING then stop defragging. */
+	    public int RedrawScreen;                         /* 0:no, 1:request, 2: busy. */
 	    public Boolean UseLastAccessTime;                /* If TRUE then use LastAccessTime for SpaceHogs. */
-	    public int CannotMoveDirs;                    /* If bigger than 20 then do not move dirs. */
+	    public int CannotMoveDirs;                       /* If bigger than 20 then do not move dirs. */
 
-	    public String IncludeMask;                    /* Example: "c:\t1\*" */
+	    public String IncludeMask;                       /* Example: "c:\t1\*" */
 	    public DiskStruct Disk;
 
-	    public UInt16 FreeSpace;                      /* Percentage of total disk size 0..100. */
+	    public UInt16 FreeSpace;                          /* Percentage of total disk size 0..100. */
 
 	    /* Tree in memory with information about all the files. */
 
 	    public ItemStruct ItemTree;
 	    public int BalanceCount;
-	    public List<String> Excludes;                      /* Array with exclude masks. */
-	    public Boolean UseDefaultSpaceHogs;              /* TRUE: use the built-in SpaceHogs. */
-	    public List<String> SpaceHogs;                     /* Array with SpaceHog masks. */
-	    public UInt64[] Zones/*[4]*/ = new UInt64[4];                      /* Begin (LCN) of the zones. */
+	    public List<String> Excludes;                     /* Array with exclude masks. */
+	    public Boolean UseDefaultSpaceHogs;               /* TRUE: use the built-in SpaceHogs. */
+	    public List<String> SpaceHogs;                    /* Array with SpaceHog masks. */
+	    public UInt64[] Zones/*[4]*/ = new UInt64[4];     /* Begin (LCN) of the zones. */
 
-	    public List<ExcludesStruct> MftExcludes/*[3]*/;  /* List of clusters reserved for the MFT. */
+	    public List<ExcludesStruct> MftExcludes/*[3]*/;   /* List of clusters reserved for the MFT. */
 
 	    /* Counters filled before Phase 1. */
 

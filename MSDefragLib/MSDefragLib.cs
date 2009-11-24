@@ -435,7 +435,7 @@ namespace MSDefragLib
         }
 
         /* Slow the program down. */
-        public void SlowDown(MSDefragDataStruct Data)
+        public void SlowDown()
         {
             DateTime Time;
             //__timeb64 Time;
@@ -444,7 +444,7 @@ namespace MSDefragLib
 	        Int64 Delay;
 
 	        /* Sanity check. */
-	        if ((Data.Speed <= 0) || (Data.Speed >= 100)) return;
+            if ((m_data.Speed <= 0) || (m_data.Speed >= 100)) return;
 
 	        /*
                 Calculate the time we have to sleep so that the wall time is 100% and the
@@ -456,17 +456,17 @@ namespace MSDefragLib
             Now = Time.ToFileTime();
             //Now = Time.time * 1000 + Time.millitm;
 
-	        if (Now > Data.LastCheckpoint)
+            if (Now > m_data.LastCheckpoint)
 	        {
-		        Data.RunningTime += Now - Data.LastCheckpoint;
+                m_data.RunningTime += Now - m_data.LastCheckpoint;
 	        }
 
-	        if (Now < Data.StartTime) Data.StartTime = Now;    /* Should never happen. */
+            if (Now < m_data.StartTime) m_data.StartTime = Now;    /* Should never happen. */
 
 	        /* Sleep. */
-	        if (Data.RunningTime > 0)
+            if (m_data.RunningTime > 0)
 	        {
-		        Delay = Data.RunningTime * 100 / Data.Speed - (Now - Data.StartTime);
+                Delay = m_data.RunningTime * 100 / m_data.Speed - (Now - m_data.StartTime);
 
 		        if (Delay > 30000) Delay = 30000;
 
@@ -477,7 +477,7 @@ namespace MSDefragLib
             //_ftime64_s(&Time);
             Time = DateTime.Now;
 
-            Data.LastCheckpoint = Time.ToFileTime();
+            m_data.LastCheckpoint = Time.ToFileTime();
             //Data.LastCheckpoint = Time.time * 1000 + Time.millitm;
         }
 
@@ -598,7 +598,7 @@ namespace MSDefragLib
         }
 */
         /* Insert a record into the tree. The tree is sorted by LCN (Logical Cluster Number). */
-        public void TreeInsert(ref MSDefragDataStruct Data, ItemStruct New)
+        public void TreeInsert(ItemStruct New)
         {
 	        ItemStruct Here;
 	        ItemStruct Ins;
@@ -620,7 +620,7 @@ namespace MSDefragLib
 	        NewLcn = GetItemLcn(New);
 
 	        /* Locate the place where the record should be inserted. */
-	        Here = Data.ItemTree;
+	        Here = m_data.ItemTree;
 
             Ins = null;
 
@@ -653,7 +653,7 @@ namespace MSDefragLib
 
 	        if (Ins == null)
 	        {
-		        Data.ItemTree = New;
+		        m_data.ItemTree = New;
 	        }
 	        else
 	        {
@@ -668,23 +668,22 @@ namespace MSDefragLib
 	        }
 
 	        /* If there have been less than 1000 inserts then return. */
-	        Data.BalanceCount = Data.BalanceCount + 1;
+	        m_data.BalanceCount ++;
 
-	        if (Data.BalanceCount < 1000) return;
+	        if (m_data.BalanceCount < 1000) return;
 
-	        /*
-                Balance the tree.
+	        /*  Balance the tree.
 	            It's difficult to explain what exactly happens here. For an excellent
 	            tutorial see:
-	            http://www.stanford.edu/~blp/avl/libavl.html/Balancing-a-BST.html
-	        */
+	            http://www.stanford.edu/~blp/avl/libavl.html/Balancing-a-BST.html  */
 
-	        Data.BalanceCount = 0;
+	        m_data.BalanceCount = 0;
 
 	        /* Convert the tree into a vine. */
-	        A = Data.ItemTree;
+	        A = m_data.ItemTree;
 	        C = A;
-	        Count = 0;
+
+            Count = 0;
 
 	        while (A != null)
 	        {
@@ -701,7 +700,7 @@ namespace MSDefragLib
 		        /* Rotate left at A. */
 		        B = A.Bigger;
 
-		        if (Data.ItemTree == A) Data.ItemTree = B;
+		        if (m_data.ItemTree == A) m_data.ItemTree = B;
 
 		        A.Bigger = B.Smaller;
 
@@ -750,7 +749,7 @@ namespace MSDefragLib
 			        if (A == null) break;
 
 			        /* Rotate right at A. */
-			        if (Data.ItemTree == A) Data.ItemTree = B;
+                    if (m_data.ItemTree == A) m_data.ItemTree = B;
 
 			        A.Smaller = B.Bigger;
 
@@ -1281,14 +1280,18 @@ namespace MSDefragLib
 
 	        return(Fragments);
         }
-        /*
 
-        Return YES if the block in the item starting at Offset with Size clusters
-        is fragmented, otherwise return NO.
-        Note: this function does not ask Windows for a fresh list of fragments,
-        it only looks at cached information in memory.
-
-        */
+        /// <summary>
+        /// Return true if the block in the item starting at Offset with Size clusters
+        /// is fragmented, otherwise return false.
+        /// 
+        /// Note: this function does not ask Windows for a fresh list of fragments,
+        ///       it only looks at cached information in memory.
+        /// </summary>
+        /// <param name="Item"></param>
+        /// <param name="Offset"></param>
+        /// <param name="Size"></param>
+        /// <returns></returns>
         Boolean IsFragmented(ItemStruct Item, UInt64 Offset, UInt64 Size)
         {
 	        FragmentListStruct Fragment;
@@ -1298,11 +1301,9 @@ namespace MSDefragLib
             UInt64 Vcn;
             UInt64 NextLcn;
 
-	        /*
-                Walk through all fragments. If a fragment is found where either the
-	            begin or the end of the fragment is inside the block then the file is
-	            fragmented and return YES.
-            */
+	        /*  Walk through all fragments. If a fragment is found where either the
+             *  begin or the end of the fragment is inside the block then the file is
+             *  fragmented and return YES. */
 	        FragmentBegin = 0;
 	        FragmentEnd = 0;
 	        Vcn = 0;
@@ -1315,18 +1316,18 @@ namespace MSDefragLib
 		        if (Fragment.Lcn != VIRTUALFRAGMENT)
 		        {
 			        /* Treat aligned fragments as a single fragment. Windows will frequently
-			        split files in fragments even though they are perfectly aligned on disk,
-			        especially system files and very large files. The defragger treats these
-			        files as unfragmented. */
+                     * split files in fragments even though they are perfectly aligned on disk,
+                     * especially system files and very large files. The defragger treats these
+                     * files as unfragmented. */
 			        if ((NextLcn != 0) && (Fragment.Lcn != NextLcn))
 			        {
 				        /* If the fragment is above the block then return NO, the block is
-				        not fragmented and we don't have to scan any further. */
+                         * not fragmented and we don't have to scan any further. */
 				        if (FragmentBegin >= Offset + Size) return false;
 
 				        /* If the first cluster of the fragment is above the first cluster of
-				        the block, or the last cluster of the fragment is before the last
-				        cluster of the block, then the block is fragmented, return YES. */
+                         * the block, or the last cluster of the fragment is before the last
+                         * cluster of the block, then the block is fragmented, return YES. */
 				        if ((FragmentBegin > Offset) ||
 					        ((FragmentEnd - 1 >= Offset) &&
 					        (FragmentEnd - 1 < Offset + Size - 1)))
@@ -1337,7 +1338,7 @@ namespace MSDefragLib
 				        FragmentBegin = FragmentEnd;
 			        }
 
-			        FragmentEnd = FragmentEnd + Fragment.NextVcn - Vcn;
+			        FragmentEnd += Fragment.NextVcn - Vcn;
 			        NextLcn = Fragment.Lcn + Fragment.NextVcn - Vcn;
 		        }
 
@@ -1356,11 +1357,10 @@ namespace MSDefragLib
 		        return true;
 	        }
 
-	        /* Return NO, the item is not fragmented inside the block. */
+	        /* Return false, the item is not fragmented inside the block. */
 	        return false;
         }
 
-        /// 
         /// <summary>
         /// Colorize an item (file, directory) on the screen in the proper color
         /// (fragmented, unfragmented, unmovable, empty). If specified then highlight
@@ -1371,13 +1371,12 @@ namespace MSDefragLib
         /// not virtual clusters.
         /// </summary>
         /// 
-        /// <param name="Data"></param>
         /// <param name="Item"></param>
         /// <param name="BusyOffset">Number of first cluster to be highlighted.</param>
         /// <param name="BusySize">Number of clusters to be highlighted.</param>
-        /// <param name="UnDraw">YES to undraw the file from the screen.</param>
+        /// <param name="UnDraw">true to undraw the file from the screen.</param>
         /// 
-        public void ColorizeItem(MSDefragDataStruct Data,
+        public void ColorizeItem(
             ItemStruct Item,
 	        UInt64 BusyOffset,
 	        UInt64 BusySize,
@@ -1406,10 +1405,8 @@ namespace MSDefragLib
 
 	        while (Fragment != null)
 	        {
-		        /*
-		            Ignore virtual fragments. They do not occupy space on disk and
-                    do not require colorization.
-		        */
+		        /* Ignore virtual fragments. They do not occupy space on disk and
+                 * do not require colorization. */
 		        if (Fragment.Lcn > VIRTUALFRAGMENT)
 		        {
 			        Vcn = Fragment.NextVcn;
@@ -1418,20 +1415,18 @@ namespace MSDefragLib
 			        continue;
 		        }
 
-		        /*
-		            Walk through all the segments of the file. A segment is usually
-		            the same as a fragment, but if a fragment spans across a boundary
-		            then we must determine the color of the left and right parts
-		            individually. So we pretend the fragment is divided into segments
-		            at the various possible boundaries.
-		        */
+		        /* Walk through all the segments of the file. A segment is usually
+                 * the same as a fragment, but if a fragment spans across a boundary
+                 * then we must determine the color of the left and right parts
+                 * individually. So we pretend the fragment is divided into segments
+                 * at the various possible boundaries.*/
 		        SegmentBegin = RealVcn;
 
                 UInt64 maxSegment = RealVcn + Fragment.NextVcn - Vcn;
 
-                if (maxSegment > Data.TotalClusters)
+                if (maxSegment > m_data.TotalClusters)
                 {
-                    maxSegment = Data.TotalClusters;
+                    maxSegment = m_data.TotalClusters;
                 }
 
 		        while (SegmentBegin < RealVcn + Fragment.NextVcn - Vcn)
@@ -1443,10 +1438,10 @@ namespace MSDefragLib
 			        {
                         Color = CLUSTER_COLORS.COLORUNFRAGMENTED;
 
-                        if (Item.SpaceHog == true) Color = CLUSTER_COLORS.COLORSPACEHOG;
-                        if (Fragmented == true) Color = CLUSTER_COLORS.COLORFRAGMENTED;
-                        if (Item.Unmovable == true) Color = CLUSTER_COLORS.COLORUNMOVABLE;
-                        if (Item.Exclude == true) Color = CLUSTER_COLORS.COLORUNMOVABLE;
+                        if (Item.SpaceHog) Color = CLUSTER_COLORS.COLORSPACEHOG;
+                        if (Fragmented) Color = CLUSTER_COLORS.COLORFRAGMENTED;
+                        if (Item.Unmovable) Color = CLUSTER_COLORS.COLORUNMOVABLE;
+                        if (Item.Exclude) Color = CLUSTER_COLORS.COLORUNMOVABLE;
 
 				        if ((Vcn + SegmentBegin - RealVcn < BusyOffset) &&
 					        (Vcn + SegmentEnd - RealVcn > BusyOffset))
@@ -1471,18 +1466,18 @@ namespace MSDefragLib
 
 				        for (i = 0; i < 3; i++)
 				        {
-					        if ((Fragment.Lcn + SegmentBegin - RealVcn < Data.MftExcludes[i].Start) &&
-						        (Fragment.Lcn + SegmentEnd - RealVcn > Data.MftExcludes[i].Start))
+					        if ((Fragment.Lcn + SegmentBegin - RealVcn < m_data.MftExcludes[i].Start) &&
+						        (Fragment.Lcn + SegmentEnd - RealVcn > m_data.MftExcludes[i].Start))
 					        {
-						        SegmentEnd = RealVcn + Data.MftExcludes[i].Start - Fragment.Lcn;
+                                SegmentEnd = RealVcn + m_data.MftExcludes[i].Start - Fragment.Lcn;
 					        }
 
-					        if ((Fragment.Lcn + SegmentBegin - RealVcn >= Data.MftExcludes[i].Start) &&
-						        (Fragment.Lcn + SegmentBegin - RealVcn < Data.MftExcludes[i].End))
+                            if ((Fragment.Lcn + SegmentBegin - RealVcn >= m_data.MftExcludes[i].Start) &&
+                                (Fragment.Lcn + SegmentBegin - RealVcn < m_data.MftExcludes[i].End))
 					        {
-						        if (Fragment.Lcn + SegmentEnd - RealVcn > Data.MftExcludes[i].End)
+                                if (Fragment.Lcn + SegmentEnd - RealVcn > m_data.MftExcludes[i].End)
 						        {
-							        SegmentEnd = RealVcn + Data.MftExcludes[i].End - Fragment.Lcn;
+                                    SegmentEnd = RealVcn + m_data.MftExcludes[i].End - Fragment.Lcn;
 						        }
 
                                 Color = CLUSTER_COLORS.COLORMFT;
@@ -1498,24 +1493,25 @@ namespace MSDefragLib
 		        }
 
 		        /* Next fragment. */
-		        RealVcn = RealVcn + Fragment.NextVcn - Vcn;
+		        RealVcn += Fragment.NextVcn - Vcn;
 
 		        Vcn = Fragment.NextVcn;
 		        Fragment = Fragment.Next;
 	        }
         }
 
-        /*
-            Show a map on the screen of all the clusters on disk. The map shows
-            which clusters are free and which are in use.
-         
-            The Data->RedrawScreen flag controls redrawing of the screen. It is set
-            to "2" (busy) when the subroutine starts. If another thread changes it to
-            "1" (request) while the subroutine is busy then it will immediately exit
-            without completing the redraw. When redrawing is completely finished the
-            flag is set to "0" (no).
-        */
-        public void ShowDiskmap(MSDefragDataStruct Data)
+        /// <summary>
+        /// Show a map on the screen of all the clusters on disk. The map shows
+        /// which clusters are free and which are in use.
+        ///  
+        /// The Data->RedrawScreen flag controls redrawing of the screen. It is set
+        /// to "2" (busy) when the subroutine starts. If another thread changes it to
+        /// "1" (request) while the subroutine is busy then it will immediately exit
+        /// without completing the redraw. When redrawing is completely finished the
+        /// flag is set to "0" (no).
+        /// </summary>
+        /// <param name="Data"></param>
+        public void ShowDiskmap()
         {
             ItemStruct Item;
             //STARTING_LCN_INPUT_BUFFER BitmapParam;
@@ -1533,12 +1529,12 @@ namespace MSDefragLib
 
             IOWrapper.BitmapData bitmapData = null;
 
-            Data.RedrawScreen = 2;                       /* Set the flag to "busy". */
+            m_data.RedrawScreen = 2;                       /* Set the flag to "busy". */
 
             /* Exit if the library is not processing a disk yet. */
-            if (Data.Disk.VolumeHandle == IntPtr.Zero)
+            if (m_data.Disk.VolumeHandle == IntPtr.Zero)
             {
-                Data.RedrawScreen = 0;                       /* Set the flag to "no". */
+                m_data.RedrawScreen = 0;                       /* Set the flag to "no". */
                 return;
             }
 
@@ -1563,14 +1559,14 @@ namespace MSDefragLib
 
             do
             {
-                if (Data.Running != true) break;
-                if (Data.RedrawScreen != 2) break;
-                if (Data.Disk.VolumeHandle == null) break;
+                if (m_data.Running != RunningState.RUNNING) break;
+                if (m_data.RedrawScreen != 2) break;
+                if (m_data.Disk.VolumeHandle == null) break;
 
                 /* Fetch a block of cluster data. */
 //                BitmapParam.StartingLcn.QuadPart = Lcn;
 
-                bitmapData = IOWrapper.GetVolumeMap(Data.Disk.VolumeHandle);
+                bitmapData = IOWrapper.GetVolumeMap(m_data.Disk.VolumeHandle);
 
 /*
                 ErrorCode = DeviceIoControl(Data.Disk.VolumeHandle,FSCTL_GET_VOLUME_BITMAP,
@@ -1600,7 +1596,7 @@ namespace MSDefragLib
                 //Mask = 1;
                 IndexMax = bitmapData.Buffer.Length;
 
-                while ((Index < IndexMax) && (Data.Running == true))
+                while ((Index < IndexMax) && (m_data.Running == RunningState.RUNNING))
                 {
                     //InUse = (bitmapData.Buffer[Index] & Mask);
                     InUse = bitmapData.Buffer[Index];
@@ -1610,13 +1606,13 @@ namespace MSDefragLib
                     if (Lcn == 0) PrevInUse = InUse;
 
                     /* At the beginning and end of an Exclude draw the cluster. */
-                    if ((Lcn == Data.MftExcludes[0].Start) || (Lcn == Data.MftExcludes[0].End) ||
-                        (Lcn == Data.MftExcludes[1].Start) || (Lcn == Data.MftExcludes[1].End) ||
-                        (Lcn == Data.MftExcludes[2].Start) || (Lcn == Data.MftExcludes[2].End))
+                    if ((Lcn == m_data.MftExcludes[0].Start) || (Lcn == m_data.MftExcludes[0].End) ||
+                        (Lcn == m_data.MftExcludes[1].Start) || (Lcn == m_data.MftExcludes[1].End) ||
+                        (Lcn == m_data.MftExcludes[2].Start) || (Lcn == m_data.MftExcludes[2].End))
                     {
-                        if ((Lcn == Data.MftExcludes[0].End) ||
-                            (Lcn == Data.MftExcludes[1].End) ||
-                            (Lcn == Data.MftExcludes[2].End))
+                        if ((Lcn == m_data.MftExcludes[0].End) ||
+                            (Lcn == m_data.MftExcludes[1].End) ||
+                            (Lcn == m_data.MftExcludes[2].End))
                         {
                             DrawCluster(ClusterStart,Lcn,CLUSTER_COLORS.COLORUNMOVABLE);
                         }
@@ -1654,7 +1650,7 @@ namespace MSDefragLib
 
             } while (Lcn < bitmapData.StartingLcn + bitmapData.BitmapSize);
 
-            if ((Lcn > 0) && (Data.RedrawScreen == 2))
+            if ((Lcn > 0) && (m_data.RedrawScreen == 2))
             {
                 if (PrevInUse == false)
                 {          /* Free */
@@ -1670,19 +1666,19 @@ namespace MSDefragLib
             /* Show the MFT zones. */
             for (i = 0; i < 3; i++)
             {
-                if (Data.RedrawScreen != 2) break;
-                if (Data.MftExcludes[i].Start <= 0) continue;
+                if (m_data.RedrawScreen != 2) break;
+                if (m_data.MftExcludes[i].Start <= 0) continue;
 
-                DrawCluster(Data.MftExcludes[i].Start, Data.MftExcludes[i].End, CLUSTER_COLORS.COLORMFT);
+                DrawCluster(m_data.MftExcludes[i].Start, m_data.MftExcludes[i].End, CLUSTER_COLORS.COLORMFT);
             }
 
             /* Colorize all the files on the screen.
                 Note: the "$BadClus" file on NTFS disks maps the entire disk, so we have to
                 ignore it. */
-            for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
             {
-                if (Data.Running != true) break;
-                if (Data.RedrawScreen != 2) break;
+                if (m_data.Running != RunningState.RUNNING) break;
+                if (m_data.RedrawScreen != 2) break;
 
                 if ((Item.LongFilename != null) &&
                     ((Item.LongFilename.CompareTo("$BadClus") == 0) ||
@@ -1691,11 +1687,11 @@ namespace MSDefragLib
                     continue;
                 }
 
-                ColorizeItem(Data,Item, 0, 0, false);
+                ColorizeItem(Item, 0, 0, false);
             }
 
             /* Set the flag to "no". */
-            if (Data.RedrawScreen == 2) Data.RedrawScreen = 0;
+            if (m_data.RedrawScreen == 2) m_data.RedrawScreen = 0;
         }
 
 /*
@@ -1947,7 +1943,7 @@ namespace MSDefragLib
         an unmovable file.
 
         */
-        void CalculateZones(ref MSDefragDataStruct Data)
+        void CalculateZones()
         {
 	        ItemStruct Item;
 
@@ -1971,11 +1967,11 @@ namespace MSDefragLib
                 SizeOfMovableFiles[Zone] = 0;
             }
 
-	        for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
 	        {
 		        if (Item.Unmovable == true) continue;
 		        if (Item.Exclude == true) continue;
-		        if ((Item.Directory == true) && (Data.CannotMoveDirs > 20)) continue;
+                if ((Item.Directory == true) && (m_data.CannotMoveDirs > 20)) continue;
 
 		        Zone = 1;
 
@@ -1994,10 +1990,10 @@ namespace MSDefragLib
 	        {
 		        /* Calculate the end of the zones. */
 		        ZoneEnd[0] = SizeOfMovableFiles[0] + SizeOfUnmovableFragments[0] +
-			        (UInt64)(Data.TotalClusters * Data.FreeSpace / 100.0);
+                    (UInt64)(m_data.TotalClusters * m_data.FreeSpace / 100.0);
 
 		        ZoneEnd[1] = ZoneEnd[0] + SizeOfMovableFiles[1] + SizeOfUnmovableFragments[1] +
-			        (UInt64)(Data.TotalClusters * Data.FreeSpace / 100.0);
+                    (UInt64)(m_data.TotalClusters * m_data.FreeSpace / 100.0);
 
 		        ZoneEnd[2] = ZoneEnd[1] + SizeOfMovableFiles[2] + SizeOfUnmovableFragments[2];
 
@@ -2019,27 +2015,27 @@ namespace MSDefragLib
 		        /* The MFT reserved areas are counted as unmovable data. */
 		        for (i = 0; i < 3; i++)
 		        {
-			        if (Data.MftExcludes[i].Start < ZoneEnd[0])
+                    if (m_data.MftExcludes[i].Start < ZoneEnd[0])
 			        {
-				        SizeOfUnmovableFragments[0] = SizeOfUnmovableFragments[0] + Data.MftExcludes[i].End - Data.MftExcludes[i].Start;
+                        SizeOfUnmovableFragments[0] = SizeOfUnmovableFragments[0] + m_data.MftExcludes[i].End - m_data.MftExcludes[i].Start;
 			        }
-			        else if (Data.MftExcludes[i].Start < ZoneEnd[1])
+                    else if (m_data.MftExcludes[i].Start < ZoneEnd[1])
 			        {
-				        SizeOfUnmovableFragments[1] = SizeOfUnmovableFragments[1] + Data.MftExcludes[i].End - Data.MftExcludes[i].Start;
+                        SizeOfUnmovableFragments[1] = SizeOfUnmovableFragments[1] + m_data.MftExcludes[i].End - m_data.MftExcludes[i].Start;
 			        }
-			        else if (Data.MftExcludes[i].Start < ZoneEnd[2])
+                    else if (m_data.MftExcludes[i].Start < ZoneEnd[2])
 			        {
-				        SizeOfUnmovableFragments[2] = SizeOfUnmovableFragments[2] + Data.MftExcludes[i].End - Data.MftExcludes[i].Start;
+                        SizeOfUnmovableFragments[2] = SizeOfUnmovableFragments[2] + m_data.MftExcludes[i].End - m_data.MftExcludes[i].Start;
 			        }
 		        }
 
 		        /* Walk through all items and count the unmovable fragments. Ignore unmovable fragments
 		        in the MFT zones, we have already counted the zones. */
-		        for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
+                for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
 		        {
 			        if ((Item.Unmovable == false) &&
 				        (Item.Exclude == false) &&
-				        ((Item.Directory == false) || (Data.CannotMoveDirs <= 20))) continue;
+                        ((Item.Directory == false) || (m_data.CannotMoveDirs <= 20))) continue;
 
 			        Vcn = 0;
 			        RealVcn = 0;
@@ -2048,9 +2044,9 @@ namespace MSDefragLib
 			        {
 				        if (Fragment.Lcn != VIRTUALFRAGMENT)
 				        {
-					        if (((Fragment.Lcn < Data.MftExcludes[0].Start) || (Fragment.Lcn >= Data.MftExcludes[0].End)) &&
-						        ((Fragment.Lcn < Data.MftExcludes[1].Start) || (Fragment.Lcn >= Data.MftExcludes[1].End)) &&
-						        ((Fragment.Lcn < Data.MftExcludes[2].Start) || (Fragment.Lcn >= Data.MftExcludes[2].End)))
+                            if (((Fragment.Lcn < m_data.MftExcludes[0].Start) || (Fragment.Lcn >= m_data.MftExcludes[0].End)) &&
+                                ((Fragment.Lcn < m_data.MftExcludes[1].Start) || (Fragment.Lcn >= m_data.MftExcludes[1].End)) &&
+                                ((Fragment.Lcn < m_data.MftExcludes[2].Start) || (Fragment.Lcn >= m_data.MftExcludes[2].End)))
 					        {
 						        if (Fragment.Lcn < ZoneEnd[0])
 						        {
@@ -2075,9 +2071,9 @@ namespace MSDefragLib
 	        }
 
 	        /* Calculated the begin of the zones. */
-	        Data.Zones[0] = 0;
+            m_data.Zones[0] = 0;
 
-	        for (i = 1; i <= 3; i++) Data.Zones[i] = ZoneEnd[i-1];
+            for (i = 1; i <= 3; i++) m_data.Zones[i] = ZoneEnd[i - 1];
         }
 /*
         / *
@@ -2797,7 +2793,7 @@ namespace MSDefragLib
 */
 
         /* Update some numbers in the DefragData. */
-        void CallShowStatus(ref MSDefragDataStruct Data, int Phase, int Zone)
+        void CallShowStatus(int Phase, int Zone)
         {
 	        ItemStruct Item;
 
@@ -2817,11 +2813,11 @@ namespace MSDefragLib
 	        Int64 Sum;
 
 	        /* Count the number of free gaps on the disk. */
-	        Data.CountGaps = 0;
-	        Data.CountFreeClusters = 0;
-	        Data.BiggestGap = 0;
-	        Data.CountGapsLess16 = 0;
-	        Data.CountClustersLess16 = 0;
+            m_data.CountGaps = 0;
+            m_data.CountFreeClusters = 0;
+            m_data.BiggestGap = 0;
+            m_data.CountGapsLess16 = 0;
+            m_data.CountClustersLess16 = 0;
 
 	        Lcn = 0;
 	        ClusterStart = 0;
@@ -2834,7 +2830,7 @@ namespace MSDefragLib
 		        /* Fetch a block of cluster data. */
 		        BitmapParam.StartingLcn.QuadPart = Lcn;
 
-                bitmapData = IOWrapper.GetVolumeMap(Data.Disk.VolumeHandle);
+                bitmapData = IOWrapper.GetVolumeMap(m_data.Disk.VolumeHandle);
 
                 if (bitmapData.Buffer == null)
                 {
@@ -2851,24 +2847,24 @@ namespace MSDefragLib
 		        {
 			        InUse = bitmapData.Buffer[Index];
 
-			        if (((Lcn >= Data.MftExcludes[0].Start) && (Lcn < Data.MftExcludes[0].End)) ||
-				        ((Lcn >= Data.MftExcludes[1].Start) && (Lcn < Data.MftExcludes[1].End)) ||
-				        ((Lcn >= Data.MftExcludes[2].Start) && (Lcn < Data.MftExcludes[2].End)))
+                    if (((Lcn >= m_data.MftExcludes[0].Start) && (Lcn < m_data.MftExcludes[0].End)) ||
+                        ((Lcn >= m_data.MftExcludes[1].Start) && (Lcn < m_data.MftExcludes[1].End)) ||
+                        ((Lcn >= m_data.MftExcludes[2].Start) && (Lcn < m_data.MftExcludes[2].End)))
                     {
 					    InUse = true;
 			        }
 
 			        if ((PrevInUse == false) && (InUse != false))
 			        {
-				        Data.CountGaps = Data.CountGaps + 1;
-				        Data.CountFreeClusters = Data.CountFreeClusters + Lcn - ClusterStart;
+                        m_data.CountGaps ++;
+                        m_data.CountFreeClusters += Lcn - ClusterStart;
 
-                        if (Data.BiggestGap < Lcn - ClusterStart) Data.BiggestGap = Lcn - ClusterStart;
+                        if (m_data.BiggestGap < Lcn - ClusterStart) m_data.BiggestGap = Lcn - ClusterStart;
 
 				        if (Lcn - ClusterStart < 16)
 				        {
-					        Data.CountGapsLess16++;
-					        Data.CountClustersLess16 = Data.CountClustersLess16 + Lcn - ClusterStart;
+                            m_data.CountGapsLess16++;
+                            m_data.CountClustersLess16 += Lcn - ClusterStart;
 				        }
 			        }
 
@@ -2884,28 +2880,28 @@ namespace MSDefragLib
 
 	        if (PrevInUse == false)
 	        {
-		        Data.CountGaps = Data.CountGaps + 1;
-		        Data.CountFreeClusters = Data.CountFreeClusters + Lcn - ClusterStart;
+                m_data.CountGaps ++;
+                m_data.CountFreeClusters += Lcn - ClusterStart;
 
-		        if (Data.BiggestGap < Lcn - ClusterStart) Data.BiggestGap = Lcn - ClusterStart;
+                if (m_data.BiggestGap < Lcn - ClusterStart) m_data.BiggestGap = Lcn - ClusterStart;
 
 		        if (Lcn - ClusterStart < 16)
 		        {
-			        Data.CountGapsLess16 = Data.CountGapsLess16 + 1;
-			        Data.CountClustersLess16 = Data.CountClustersLess16 + Lcn - ClusterStart;
+                    m_data.CountGapsLess16 ++;
+                    m_data.CountClustersLess16 += Lcn - ClusterStart;
 		        }
 	        }
 
 	        /* Walk through all files and update the counters. */
-	        Data.CountDirectories = 0;
-	        Data.CountAllFiles = 0;
-	        Data.CountFragmentedItems = 0;
-	        Data.CountAllBytes = 0;
-	        Data.CountFragmentedBytes = 0;
-	        Data.CountAllClusters = 0;
-	        Data.CountFragmentedClusters = 0;
+            m_data.CountDirectories = 0;
+            m_data.CountAllFiles = 0;
+            m_data.CountFragmentedItems = 0;
+            m_data.CountAllBytes = 0;
+            m_data.CountFragmentedBytes = 0;
+            m_data.CountAllClusters = 0;
+            m_data.CountFragmentedClusters = 0;
 
-	        for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
 	        {
 		        if ((Item.LongFilename != null) &&
 			        (Item.LongFilename.Equals("$BadClus") ||
@@ -2914,23 +2910,23 @@ namespace MSDefragLib
 			        continue;
 		        }
 
-		        Data.CountAllBytes = Data.CountAllBytes + Item.Bytes;
-		        Data.CountAllClusters = Data.CountAllClusters + Item.Clusters;
+                m_data.CountAllBytes += Item.Bytes;
+                m_data.CountAllClusters += Item.Clusters;
 
 		        if (Item.Directory == true)
 		        {
-			        Data.CountDirectories++;
+                    m_data.CountDirectories++;
 		        }
 		        else
 		        {
-			        Data.CountAllFiles++;
+                    m_data.CountAllFiles++;
 		        }
 
 		        if (FragmentCount(Item) > 1)
 		        {
-			        Data.CountFragmentedItems++;
-			        Data.CountFragmentedBytes += Item.Bytes;
-			        Data.CountFragmentedClusters += Item.Clusters;
+                    m_data.CountFragmentedItems++;
+                    m_data.CountFragmentedBytes += Item.Bytes;
+                    m_data.CountFragmentedClusters += Item.Clusters;
 		        }
 	        }
 
@@ -2967,7 +2963,7 @@ namespace MSDefragLib
 	        */
 	        Count = 0;
 
-	        for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
 	        {
 		        if ((Item.LongFilename != null) &&
 			        (Item.LongFilename.Equals("$BadClus") ||
@@ -2986,7 +2982,7 @@ namespace MSDefragLib
 		        Factor = 1 - Count;
 		        Sum = 0;
 
-		        for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
+                for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
 		        {
                     if ((Item.LongFilename != null) &&
                         (Item.LongFilename.Equals("$BadClus") ||
@@ -3002,17 +2998,17 @@ namespace MSDefragLib
 			        Factor = Factor + 2;
 		        }
 
-		        Data.AverageDistance = Sum / (double)(Count * (Count - 1));
+                m_data.AverageDistance = Sum / (double)(Count * (Count - 1));
 	        }
 	        else
 	        {
-		        Data.AverageDistance = 0;
+                m_data.AverageDistance = 0;
 	        }
 
-	        Data.Phase = (UInt16)Phase;
-	        Data.Zone = (UInt16)Zone;
-	        Data.PhaseDone = 0;
-	        Data.PhaseTodo = 0;
+            m_data.Phase = (UInt16)Phase;
+            m_data.Zone = (UInt16)Zone;
+            m_data.PhaseDone = 0;
+            m_data.PhaseTodo = 0;
 
         //	jkGui->ShowStatus(Data);
         }
@@ -3570,7 +3566,7 @@ namespace MSDefragLib
         }
 */
         /* Scan all files in a volume and store the information in a tree in memory for later use by the optimizer. */
-        void AnalyzeVolume(ref MSDefragDataStruct Data)
+        void AnalyzeVolume()
         {
 	        ItemStruct Item;
 
@@ -3585,7 +3581,7 @@ namespace MSDefragLib
 
 	        int i;
 
-	        CallShowStatus(ref Data,1,-1);             /* "Phase 1: Analyze" */
+	        CallShowStatus(1,-1);             /* "Phase 1: Analyze" */
 
 	        /* Fetch the current time in the ULONG64 format (1 second = 10000000). */
             Time1 = DateTime.Now;
@@ -3594,7 +3590,7 @@ namespace MSDefragLib
             SystemTime = Time3;
 
 	        /* Scan NTFS disks. */
-            Result = m_msScanNtfs.AnalyzeNtfsVolume(ref Data);
+            Result = m_msScanNtfs.AnalyzeNtfsVolume();
 
 	        /* Scan FAT disks. */
 //	        if ((Result == false) && (*Data->Running == RUNNING)) Result = jkScanFat->AnalyzeFatVolume(Data);
@@ -3619,34 +3615,34 @@ namespace MSDefragLib
 
 */
 	        /* Update the diskmap with the CLUSTER_COLORS. */
-            Data.PhaseDone = Data.PhaseTodo;
+            m_data.PhaseDone = m_data.PhaseTodo;
 
             DrawCluster(0, m_data.TotalClusters, CLUSTER_COLORS.COLOREMPTY);
 
 	        /* Setup the progress counter and the file/dir counters. */
-	        Data.PhaseDone = 0;
-	        Data.PhaseTodo = 0;
+            m_data.PhaseDone = 0;
+            m_data.PhaseTodo = 0;
 
-	        for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
 	        {
-		        Data.PhaseTodo++;
+                m_data.PhaseTodo++;
 	        }
 
         //	jkGui->ShowAnalyze(NULL,NULL);
 
 	        /* Walk through all the items one by one. */
-	        for (Item = TreeSmallest(Data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
 	        {
-                if (!Data.Running) break;
+                if (m_data.Running != RunningState.RUNNING) break;
 
 		        /* If requested then redraw the diskmap. */
-		        if (Data.RedrawScreen == 1) ShowDiskmap(Data);
+                if (m_data.RedrawScreen == 1) ShowDiskmap();
 
 		        /* Construct the full path's of the item. The MFT contains only the filename, plus
 		        a pointer to the directory. We have to construct the full paths's by joining
 		        all the names of the directories, and the name of the file. */
-		        if (Item.LongPath == null) Item.LongPath = GetLongPath(Data,Item);
-		        if (Item.ShortPath == null) Item.ShortPath = GetShortPath(Data,Item);
+                if (Item.LongPath == null) Item.LongPath = GetLongPath(m_data, Item);
+                if (Item.ShortPath == null) Item.ShortPath = GetShortPath(m_data, Item);
 
 		        /* Save some memory if the short and long paths are the same. */
 		        if ((Item.LongPath != null) &&
@@ -3667,25 +3663,25 @@ namespace MSDefragLib
 		        */
 
 		        /* Apply the Mask and set the Exclude flag of all items that do not match. */
-		        if ((MatchMask(Item.LongPath,Data.IncludeMask) == false) &&
-			        (MatchMask(Item.ShortPath,Data.IncludeMask) == false))
+                if ((MatchMask(Item.LongPath, m_data.IncludeMask) == false) &&
+                    (MatchMask(Item.ShortPath, m_data.IncludeMask) == false))
 		        {
 			        Item.Exclude = true;
 
-			        ColorizeItem(Data,Item,0,0,false);
+			        ColorizeItem(Item,0,0,false);
 		        }
 
 		        /* Determine if the item is to be excluded by comparing it's name with the Exclude masks. */
-		        if ((Item.Exclude == false) && (Data.Excludes != null))
+                if ((Item.Exclude == false) && (m_data.Excludes != null))
 		        {
-			        for (i = 0; Data.Excludes[i] != null; i++)
+                    for (i = 0; m_data.Excludes[i] != null; i++)
 			        {
-				        if ((MatchMask(Item.LongPath,Data.Excludes[i]) == true) ||
-					        (MatchMask(Item.ShortPath,Data.Excludes[i]) == true))
+                        if ((MatchMask(Item.LongPath, m_data.Excludes[i]) == true) ||
+                            (MatchMask(Item.ShortPath, m_data.Excludes[i]) == true))
 				        {
 					        Item.Exclude = true;
 
-					        ColorizeItem(Data,Item,0,0,false);
+					        ColorizeItem(Item,0,0,false);
 
 					        break;
 				        }
@@ -3701,29 +3697,29 @@ namespace MSDefragLib
 		        {
 			        Item.Exclude = true;
 
-			        ColorizeItem(Data,Item,0,0,false);
+			        ColorizeItem(Item,0,0,false);
 		        }
 
 		        /* The item is a SpaceHog if it's larger than 50 megabytes, or last access time
 		        is more than 30 days ago, or if it's filename matches a SpaceHog mask. */
 		        if ((Item.Exclude == false) && (Item.Directory == false))
 		        {
-			        if ((Data.UseDefaultSpaceHogs == true) && (Item.Bytes > 50 * 1024 * 1024))
+                    if ((m_data.UseDefaultSpaceHogs == true) && (Item.Bytes > 50 * 1024 * 1024))
 			        {
 				        Item.SpaceHog = true;
 			        }
-			        else if ((Data.UseDefaultSpaceHogs == true) &&
-				        (Data.UseLastAccessTime == true) &&
+                    else if ((m_data.UseDefaultSpaceHogs == true) &&
+                        (m_data.UseLastAccessTime == true) &&
 				        ((Int64)(Item.LastAccessTime + (Int64)(30 * 24 * 60 * 60) * 10000000) < SystemTime))
 			        {
 				        Item.SpaceHog = true;
 			        }
-			        else if (Data.SpaceHogs != null)
+                    else if (m_data.SpaceHogs != null)
 			        {
-				        for (i = 0; Data.SpaceHogs[i] != null; i++)
+                        for (i = 0; m_data.SpaceHogs[i] != null; i++)
 				        {
-					        if ((MatchMask(Item.LongPath,Data.SpaceHogs[i]) == true) ||
-						        (MatchMask(Item.ShortPath,Data.SpaceHogs[i]) == true))
+                            if ((MatchMask(Item.LongPath, m_data.SpaceHogs[i]) == true) ||
+                                (MatchMask(Item.ShortPath, m_data.SpaceHogs[i]) == true))
 					        {
 						        Item.SpaceHog = true;
 
@@ -3732,7 +3728,7 @@ namespace MSDefragLib
 				        }
 			        }
 
-			        if (Item.SpaceHog == true) ColorizeItem(Data,Item,0,0,false);
+			        if (Item.SpaceHog == true) ColorizeItem(Item,0,0,false);
 		        }
 
 		        /* Special exception for "http://www.safeboot.com/". */
@@ -3757,18 +3753,18 @@ namespace MSDefragLib
 		        }
 
 		        /* Update the progress percentage. */
-		        Data.PhaseDone++;
+                m_data.PhaseDone++;
 
-        //		if (Data->PhaseDone % 10000 == 0) jkGui->DrawCluster(Data,0,0,0);
+        		if (m_data.PhaseDone % 10000 == 0) ShowDebug(5, "Phase: " + m_data.PhaseDone);
 	        }
 
 	        /* Force the percentage to 100%. */
-	        Data.PhaseDone = Data.PhaseTodo;
+            m_data.PhaseDone = m_data.PhaseTodo;
 
             DrawCluster(0,0,0);
 
 	        /* Calculate the begin of the zone's. */
-	        CalculateZones(ref Data);
+	        CalculateZones();
 
 	        /* Call the ShowAnalyze() callback one last time. */
         //	jkGui->ShowAnalyze(Data,NULL);
@@ -5044,11 +5040,17 @@ namespace MSDefragLib
 	        }
         }
 */
-        /* Run the defragmenter. Input is the name of a disk, mountpoint, directory, or file,
-        and may contain wildcards '*' and '?'. */
+        /// <summary>
+        /// Run the defragmenter. Input is the name of a disk, mountpoint, directory, or file,
+        /// and may contain wildcards '*' and '?'.
+        /// </summary>
+        /// <param name="Path"></param>
+        /// <param name="Mode"></param>
         void DefragOnePath(String Path, UInt16 Mode)
         {
-	        int i;
+            #region Initialize Variables
+
+            int i;
 
 	        /*  Initialize the data. Some items are inherited from the caller and are not initialized. */
 	        m_data.Phase = 0;
@@ -5098,17 +5100,19 @@ namespace MSDefragLib
             m_data.LastCheckpoint = m_data.StartTime;
             m_data.RunningTime = 0;
 
-	        /*
-                Compare the item with the Exclude masks. If a mask matches then return,
-	            ignoring the item.
-            */
+            #endregion
+
+            #region Excludes
+
+            /* Compare the item with the Exclude masks. If a mask matches then return,
+             * ignoring the item. */
             if (m_data.Excludes != null)
 	        {
                 String matchedExclude = null;
 
                 foreach (String exclude in m_data.Excludes)
                 {
-//                    if (MatchMask(Path,exclude) == YES) break;
+                    if (MatchMask(Path,exclude) == true) break;
 
                     if ((exclude.Equals("*")) &&
                         (exclude.Length <= 3) &&
@@ -5123,26 +5127,27 @@ namespace MSDefragLib
                 if (matchedExclude != null)
                 {
                     /* Show debug message: "Ignoring volume '%s' because of exclude mask '%s'." */
-//                    Data->ShowDebug(0,NULL,Data->DebugMsg[47],Path,Data->Excludes[i]);
+                    //Data->ShowDebug(0, NULL, Data->DebugMsg[47], Path, Data->Excludes[i]);
 
                     return;
                 }
-	        }
+            }
 
-	        /* Clear the screen and show "Processing '%s'" message. */
+            #endregion
+
+            /* Clear the screen and show "Processing '%s'" message. */
             //jkGui->ClearScreen(Data->DebugMsg[14],Path);
 
-	        /*
-                Try to change our permissions so we can access special files and directories
-	            such as "C:\System Volume Information". If this does not succeed then quietly
-	            continue, we'll just have to do with whatever permissions we have.
-	            SE_BACKUP_NAME = Backup and Restore Privileges.
-	        */
+	        /* Try to change our permissions so we can access special files and directories
+             * such as "C:\System Volume Information". If this does not succeed then quietly
+             * continue, we'll just have to do with whatever permissions we have.
+             * SE_BACKUP_NAME = Backup and Restore Privileges.*/
             IOWrapper.ElevatePermissions();
 
             m_data.Disk.VolumeHandle = IOWrapper.OpenVolume("C:");
-
             m_data.Disk.MountPoint = Path;
+
+            #region Old Code
 
             /*
                         if ((OpenProcessToken(GetCurrentProcess(),TOKEN_ADJUST_PRIVILEGES|TOKEN_QUERY,
@@ -5255,8 +5260,11 @@ namespace MSDefragLib
             //                    fileStream.Close();
             //                }
             //            }
+            #endregion
 
             BitArray bitmap = IOWrapper.GetVolumeMap(m_data.Disk.VolumeHandle).Buffer;
+
+            #region Old Code
 
             /* Show debug message: "Opening volume '%s' at mountpoint '%s'" */
             // Data->ShowDebug(0,NULL,Data->DebugMsg[29],Data->Disk.VolumeName,Data->Disk.MountPoint);
@@ -5322,6 +5330,8 @@ namespace MSDefragLib
             //                return;
             //            }
 
+            #endregion
+
             m_data.TotalClusters = (UInt64)bitmap.Count/*bitmap.StartingLcn + bitmap.BitmapSize*/;
 
             IOWrapper.NTFS_VOLUME_DATA_BUFFER ntfsData = null;
@@ -5344,6 +5354,7 @@ namespace MSDefragLib
             m_data.MftExcludes[2].Start = ntfsData.Mft2StartLcn;
             m_data.MftExcludes[2].End = ntfsData.Mft2StartLcn + (UInt64)(ntfsData.MftValidDataLength / ntfsData.BytesPerCluster);
 
+            #region old code
 #if AAA
 
 
@@ -5393,10 +5404,11 @@ namespace MSDefragLib
             }
 
 #endif
+            #endregion
+
             /* Fixup the input mask.
-                - If the length is 2 or 3 characters then rewrite into "c:\*".
-                - If it does not contain a wildcard then append '*'.
-            */
+             *  - If the length is 2 or 3 characters then rewrite into "c:\*".
+             *  - If it does not contain a wildcard then append '*'.  */
             m_data.IncludeMask = Path;
 
             if ((Path.Length == 2) || (Path.Length == 3))
@@ -5409,16 +5421,14 @@ namespace MSDefragLib
                     m_data.IncludeMask = Path + "*";
                 }
 
-            //            Data->ShowDebug(0,NULL,"Input mask: %s",Data->IncludeMask);
+            ShowDebug(0, "Input mask: " + m_data.IncludeMask);
 
             /* Defragment and optimize. */
-            ShowDiskmap(m_data);
+            ShowDiskmap();
 
-/*
-            if (Data.Running == RunningState.Running)
+            if (m_data.Running == RunningState.RUNNING)
             {
-*/
-            AnalyzeVolume(ref m_data);
+                AnalyzeVolume();
 
 /*                switch (Mode)
                 {
@@ -5435,8 +5445,10 @@ namespace MSDefragLib
                     default:
                         break;
                 }
+ */
             }
-*/
+
+            #region TO BE INCLUDED
 
             //if ((*Data->Running == RUNNING) && (Mode == 1))
             //{
@@ -5508,6 +5520,10 @@ namespace MSDefragLib
 
             //if (Data->Disk.MountPoint != NULL) free(Data->Disk.MountPoint);
             //if (Data->Disk.MountPointSlash != NULL) free(Data->Disk.MountPointSlash);
+
+            #endregion
+
+            IOWrapper.CloseHandle(m_data.Disk.VolumeHandle);
         }
 /*
         / * Subfunction for DefragAllDisks(). It will ignore removable disks, and
@@ -5715,6 +5731,8 @@ namespace MSDefragLib
         {
             m_data = new MSDefragDataStruct();
 
+            #region old code
+
             //UInt64 DrivesSize;
 
             //String Drives;
@@ -5725,46 +5743,29 @@ namespace MSDefragLib
 
             //Boolean NtfsDisableLastAccessUpdate;
 
-//	        LONG Result;
+            //LONG Result;
 
-//	        HKEY Key;
+            //HKEY Key;
 
-//	        DWORD KeyDisposition;
-//	        DWORD Length;
+            //DWORD KeyDisposition;
+            //DWORD Length;
 
             //String s1/*[BUFSIZ]*/;
 
             //int i;
 
-	        /* Copy the input values to the data struct. */
+            #endregion
+
+            /* Copy the input values to the data struct. */
             m_data.Speed = Speed;
             m_data.FreeSpace = FreeSpace;
             m_data.Excludes = Excludes;
-            m_data.Running = true;
-
-            /*
-	        if (RedrawScreen == NULL) {
-	        Data.RedrawScreen = &DefaultRedrawScreen;
-	        } else {
-	        Data.RedrawScreen = RedrawScreen;
-	        }
-	        *Data.RedrawScreen = 0;
-	        */
-
+            m_data.Running = RunningState.RUNNING;
             m_data.RedrawScreen = 0;
 
-/*
-	        if ((DebugMsg == NULL) || (DebugMsg[0] == NULL))
-	        {
-		        Data.DebugMsg = DefaultDebugMsg;
-	        }
-	        else
-	        {
-		        Data.DebugMsg = DebugMsg;
-	        }
-*/
+            #region SpaceHogs
 
-	        /* Make a copy of the SpaceHogs array. */
+            /* Make a copy of the SpaceHogs array. */
             List<String> spaceHogs = new List<String>();
 
             m_data.UseDefaultSpaceHogs = true;
@@ -5839,12 +5840,10 @@ namespace MSDefragLib
 		        spaceHogs.Add("*.vob");    /* DVD */
 		        spaceHogs.Add("*.z");
 		        spaceHogs.Add("*.zip");
-	        }
+            }
 
-	        /*
-                If the NtfsDisableLastAccessUpdate setting in the registry is 1, then disable
-	            the LastAccessTime check for the spacehogs.
-            */
+            /* If the NtfsDisableLastAccessUpdate setting in the registry is 1, then disable
+             * the LastAccessTime check for the spacehogs. */
             m_data.UseLastAccessTime = true;
 
             if (m_data.UseDefaultSpaceHogs == true)
@@ -5874,12 +5873,12 @@ namespace MSDefragLib
 		        {
                     ShowDebug(1, "NtfsDisableLastAccessUpdate is active, ignoring LastAccessTime for SpaceHogs.");
 		        }
-	        }
+            }
+            #endregion
 
-	        /* 
-                If a Path is specified then call DefragOnePath() for that path. Otherwise call
-	            DefragMountpoints() for every disk in the system.
-            */
+
+            /* If a Path is specified then call DefragOnePath() for that path. Otherwise call
+             * DefragMountpoints() for every disk in the system. */
             if (!Path.Equals(""))
             {
                 DefragOnePath(Path, Mode);
@@ -5920,62 +5919,47 @@ namespace MSDefragLib
         //		jkGui->ClearScreen(Data.DebugMsg[38]);
 	        }
 */
+            m_data.Running = RunningState.STOPPED;
         }
 
-        /*
+        #region StopJKDefrag
 
-        Stop the defragger. The "Running" variable must be the same as what was given to
-        the RunJkDefrag() subroutine. Wait for a maximum of TimeOut milliseconds for the
-        defragger to stop. If TimeOut is zero then wait indefinitely. If TimeOut is
-        negative then immediately return without waiting.
-
-        */
-/*
-        void JKDefragLib::StopJkDefrag(int *Running, int TimeOut)
+        /// <summary>
+        /// Stop the defragger.
+        /// Wait for a maximum of TimeOut milliseconds for the 
+        /// defragger to stop. If TimeOut is zero then wait indefinitely.
+        /// If TimeOut is negative then immediately return without waiting.
+        /// </summary>
+        public void StopJkDefrag(int TimeOut)
         {
 	        int TimeWaited;
 
-	        / * Sanity check. * /
-	        if (Running == NULL) return;
+	        /* Sanity check. */
+	        if (m_data.Running != RunningState.RUNNING) return;
 
-	        / * All loops in the library check if the Running variable is set to
+	        /* All loops in the library check if the Running variable is set to
 	        RUNNING. If not then the loop will exit. In effect this will stop
-	        the defragger. * /
-	        if (*Running == RUNNING) *Running = STOPPING;
+	        the defragger. */
+	        m_data.Running = RunningState.STOPPING;
 
-	        / * Wait for a maximum of TimeOut milliseconds for the defragger to stop.
+	        /* Wait for a maximum of TimeOut milliseconds for the defragger to stop.
 	        If TimeOut is zero then wait indefinitely. If TimeOut is negative then
-	        immediately return without waiting. * /
+	        immediately return without waiting. */
 	        TimeWaited = 0;
 
 	        while (TimeWaited <= TimeOut)
 	        {
-		        if (*Running == STOPPED) break;
+		        if (m_data.Running == RunningState.STOPPED) break;
 
-		        Sleep(100);
+		        Thread.Sleep(100);
 
 		        if (TimeOut > 0) TimeWaited = TimeWaited + 100;
 	        }
         }
-*/
-        public delegate void ShowDebugHandler(object sender, EventArgs e);
 
-        public event ShowDebugHandler ShowDebugEvent;
+        #endregion
 
-        protected virtual void OnShowDebug(EventArgs e)
-        {
-            if (ShowDebugEvent != null)
-            {
-                ShowDebugEvent(this, e);
-            }
-        }
-
-        public void ShowDebug(UInt32 level, String output)
-        {
-            MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
-
-            OnShowDebug(e);
-        }
+        #region EventHandling
 
         public void ScanNtfsEventHandler(object sender, EventArgs e)
         {
@@ -5985,10 +5969,21 @@ namespace MSDefragLib
             }
         }
 
+        public delegate void ShowDebugHandler(object sender, EventArgs e);
         public delegate void DrawClusterHandler(object sender, EventArgs e);
+        public delegate void NotifyGuiHandler(object sender, EventArgs e);
 
         public event DrawClusterHandler DrawClusterEvent;
+        public event NotifyGuiHandler NotifyGuiEvent;
+        public event ShowDebugHandler ShowDebugEvent;
 
+        protected virtual void OnShowDebug(EventArgs e)
+        {
+            if (ShowDebugEvent != null)
+            {
+                ShowDebugEvent(this, e);
+            }
+        }
         protected virtual void OnDrawCluster(EventArgs e)
         {
             if (DrawClusterEvent != null)
@@ -6003,11 +5998,26 @@ namespace MSDefragLib
                 }
             }
         }
-
-        private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, CLUSTER_COLORS col)
+        protected virtual void OnNotifyGui(EventArgs e)
         {
-            ShowDebug(3, "Cluster: " + clusterBegin);
-            ShowDebug(0, "Done: " + m_data.PhaseDone + " / " + m_data.PhaseTodo);
+            if (NotifyGuiEvent != null)
+            {
+                if (e is NotifyGuiEventArgs)
+                {
+                    NotifyGuiEvent(this, e);
+                }
+            }
+        }
+
+        public void ShowDebug(UInt32 level, String output)
+        {
+            MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
+
+            OnShowDebug(e);
+        }
+        private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, CLUSTER_COLORS color)
+        {
+            //ShowDebug(3, "Cluster: " + clusterBegin);
 
             if ((clusterBegin < 0) || (clusterBegin > m_data.TotalClusters) ||
                 (clusterEnd < 0) || (clusterEnd > m_data.TotalClusters))
@@ -6015,11 +6025,6 @@ namespace MSDefragLib
                 return;
             }
 
-            UpdateSquares(clusterBegin, clusterEnd, col);
-        }
-
-        private void UpdateSquares(UInt64 clusterBegin, UInt64 clusterEnd, CLUSTER_COLORS color)
-        {
             Double clusterPerSquare = (Double)m_data.TotalClusters / (Double)(m_numSquares);
 
             if (m_clusterSquares.Count == 0)
@@ -6061,7 +6066,22 @@ namespace MSDefragLib
                 }
 
                 clusterSquare.SetMaxColor();
+
+                if (clusterSquare.m_isDirty)
+                {
+                    clusterSquare.m_isDirty = false;
+//                    ShowDebug(0, "Done: " + m_data.PhaseDone + " / " + m_data.PhaseTodo);
+                    ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
+                    NotifyGui(clusterSquare);
+                }
             }
+        }
+        public void NotifyGui(ClusterSquare clusterSquare)
+        {
+
+            NotifyGuiEventArgs e = new NotifyGuiEventArgs(clusterSquare);
+
+            OnNotifyGui(e);
         }
 
         private static Boolean ggg = false;
@@ -6155,9 +6175,11 @@ namespace MSDefragLib
             }
         }
 
+        #endregion
+
         #region Variables
 
-        private MSDefragDataStruct m_data = null;
+        public MSDefragDataStruct m_data = null;
 
         List<MSDefragLib.CLUSTER_COLORS> m_clusterData = null;
         List<ClusterSquare> m_clusterSquares = null;
@@ -6182,6 +6204,8 @@ namespace MSDefragLib
         #endregion
     }
 
+    #region Event classes
+
     public class DrawClusterEventArgs : EventArgs 
     {
         public UInt64 m_clusterNumber;
@@ -6195,7 +6219,6 @@ namespace MSDefragLib
             m_color = col;
         }
     }
-
     public class DrawClusterEventArgs2 : EventArgs
     {
         public UInt64 m_startClusterNumber;
@@ -6218,6 +6241,17 @@ namespace MSDefragLib
             m_squareEnd = squareEnd;
         }
     }
+    public class NotifyGuiEventArgs : EventArgs
+    {
+        public ClusterSquare m_clusterSquare;
+
+        public NotifyGuiEventArgs(ClusterSquare clusterSquare)
+        {
+            m_clusterSquare = clusterSquare;
+        }
+    }
+
+    #endregion
 
     public class ClusterSquare
     {
@@ -6350,7 +6384,6 @@ namespace MSDefragLib
 
         public Int32 [] m_colors = null;
     }
-
     public class Colors
     {
         public Colors(MSDefragLib.CLUSTER_COLORS color)
@@ -6362,6 +6395,8 @@ namespace MSDefragLib
         public MSDefragLib.CLUSTER_COLORS m_color;
         public Int64 m_numColors;
     }
+
+    #region ClusterStructure
 
     /// <summary>
     /// Structure for describing cluster
@@ -6378,4 +6413,5 @@ namespace MSDefragLib
         public MSDefragLib.CLUSTER_COLORS m_color;
     }
 
+    #endregion
 }

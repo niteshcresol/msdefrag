@@ -38,11 +38,13 @@ namespace MSDefrag
         private void AddStatusMessage(UInt32 level, String message)
         {
             messages[level] = message;
+
+            PaintStatus();
         }
 
         private void PaintStatus()
         {
-            try
+//            try
             {
                 Graphics g = pictureBox2.CreateGraphics();
 
@@ -61,12 +63,12 @@ namespace MSDefrag
 
                 g.DrawImageUnscaled(statusBmp, 0, 0);
             }
-            catch (System.Exception e)
-            {
-                AddStatusMessage(3, e.Message);
+//            catch (System.Exception e)
+            //{
+            //    AddStatusMessage(3, e.Message);
 
-                m_msDefragLib.ShowDebugEvent -= new MSDefragLib.MSDefragLib.ShowDebugHandler(ShowChanges);
-            }
+            //    m_msDefragLib.ShowDebugEvent -= new MSDefragLib.MSDefragLib.ShowDebugHandler(ShowChanges);
+            //}
         }
 
         private void DrawCluster(object sender, EventArgs e)
@@ -79,6 +81,16 @@ namespace MSDefrag
             }
         }
 
+        private void Notified(object sender, EventArgs e)
+        {
+            if (e is NotifyGuiEventArgs)
+            {
+                NotifyGuiEventArgs ngea = (NotifyGuiEventArgs)e;
+
+                DrawDirtySquare(ngea.m_clusterSquare);
+            }
+        }
+
         public Form1()
         {
             m_form = this;
@@ -87,6 +99,7 @@ namespace MSDefrag
 
             m_msDefragLib.ShowDebugEvent += new MSDefragLib.MSDefragLib.ShowDebugHandler(ShowChanges);
             m_msDefragLib.DrawClusterEvent += new MSDefragLib.MSDefragLib.DrawClusterHandler(DrawCluster);
+            m_msDefragLib.NotifyGuiEvent += new MSDefragLib.MSDefragLib.NotifyGuiHandler(Notified);
 
             InitializeComponent();
 
@@ -99,18 +112,18 @@ namespace MSDefrag
 
             defragThread.Start();
 
-            aTimer = new System.Timers.Timer(500);
+            //aTimer = new System.Timers.Timer(500);
 
-            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            //aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
 
-            aTimer.Interval = 1000;
-            aTimer.Enabled = true;
+            //aTimer.Interval = 1000;
+            //aTimer.Enabled = true;
         }
 
         private static void OnTimedEvent(object source, ElapsedEventArgs e)
         {
-            m_form.DrawSquares(0, m_form.m_numSquares);
-            m_form.PaintStatus();
+            //m_form.DrawSquares(0, m_form.m_numSquares);
+            //m_form.PaintStatus();
         }
 
         public void InitializeDiskMap()
@@ -128,8 +141,9 @@ namespace MSDefrag
         private void DrawSquares(Int32 squareBegin, Int32 squareEnd)
         {
             List<MSDefragLib.ClusterSquare> squaresList = m_msDefragLib.GetSquareList();
-
-            try
+            if (squaresList == null)
+                return;
+//            try
             {
                 Graphics g = pictureBox1.CreateGraphics();
 
@@ -143,7 +157,7 @@ namespace MSDefrag
                     Int32 posX = (Int32)(squareIndex % m_numSquaresX);
                     Int32 posY = (Int32)(squareIndex / m_numSquaresX);
 
-                    AddStatusMessage(1, "Square: " + squareIndex);
+//                    AddStatusMessage(1, "Square: " + squareIndex);
 
                     Rectangle rec = new Rectangle(posX * m_squareSize, posY * m_squareSize, m_squareSize - 1, m_squareSize - 1);
 
@@ -191,11 +205,85 @@ namespace MSDefrag
                 g.DrawImageUnscaled(bmp, 0, 0);
 
             }
-            catch (System.Exception e)
+            //catch (System.Exception e)
+            //{
+            //    AddStatusMessage(3, e.Message);
+            //    m_msDefragLib.DrawClusterEvent -= new MSDefragLib.MSDefragLib.DrawClusterHandler(DrawCluster);
+            //}
+        }
+
+        private void DrawDirtySquare(ClusterSquare square)
+        {
+            if (square == null)
             {
-                AddStatusMessage(3, e.Message);
-                m_msDefragLib.DrawClusterEvent -= new MSDefragLib.MSDefragLib.DrawClusterHandler(DrawCluster);
+                return;
             }
+
+//            try
+            {
+                Graphics g = pictureBox1.CreateGraphics();
+
+                Graphics g1 = Graphics.FromImage(bmp);
+
+                Int32 squareIndex = square.m_squareIndex;
+                MSDefragLib.MSDefragLib.CLUSTER_COLORS color = square.m_color;
+
+                Int32 posX = (Int32)(squareIndex % m_numSquaresX);
+                Int32 posY = (Int32)(squareIndex / m_numSquaresX);
+
+//                AddStatusMessage(1, "Square: " + squareIndex);
+
+                Rectangle rec = new Rectangle(posX * m_squareSize, posY * m_squareSize, m_squareSize - 1, m_squareSize - 1);
+
+                Color col = Color.White;
+
+                switch (color)
+                {
+                    case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORUNMOVABLE:
+                        col = Color.Red;
+                        break;
+                    case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORALLOCATED:
+                        col = Color.Yellow;
+                        break;
+                    case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORBACK:
+                        col = Color.White;
+                        break;
+                    case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORBUSY:
+                        col = Color.Blue;
+                        break;
+                    case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLOREMPTY:
+                        col = Color.White;
+                        break;
+                    case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORFRAGMENTED:
+                        col = Color.Orange;
+                        break;
+                    case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORMFT:
+                        col = Color.Pink;
+                        break;
+                    case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORSPACEHOG:
+                        col = Color.GreenYellow;
+                        break;
+                    case MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORUNFRAGMENTED:
+                        col = Color.Green;
+                        break;
+                    default:
+                        col = Color.White;
+                        break;
+                }
+
+                SolidBrush brush = new SolidBrush(col);
+
+                g1.FillRectangle(brush, rec);
+
+//                g.DrawImageUnscaled(bmp, 0, 0);
+                g.DrawImage(bmp, 0, 0);
+
+            }
+            //catch (System.Exception e)
+            //{
+            //    AddStatusMessage(3, e.Message);
+            //    m_msDefragLib.DrawClusterEvent -= new MSDefragLib.MSDefragLib.DrawClusterHandler(DrawCluster);
+            //}
         }
 
         private static System.Timers.Timer aTimer;
@@ -228,6 +316,28 @@ namespace MSDefrag
         Int32 m_numSquaresY = 1;
 
         private Int32 m_numSquares = 1;
+
+        private void OnGuiClosing(object sender, FormClosingEventArgs e)
+        {
+            m_msDefragLib.StopJkDefrag(1000);
+
+            if (defragThread.IsAlive)
+            {
+                try
+                {
+                    defragThread.Abort();
+                }
+                catch (System.Exception)
+                {
+
+                }
+
+                while (defragThread.IsAlive)
+                {
+                    Thread.Sleep(1000);
+                }
+            }
+        }
 
     }
 }
