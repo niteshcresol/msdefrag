@@ -5860,7 +5860,7 @@ namespace MSDefragLib
                 {
                     if (valueName.Equals("NtfsDisableLastAccessUpdate"))
                     {
-                        m_data.UseLastAccessTime = (bool)regKey.GetValue(valueName);
+                        m_data.UseLastAccessTime = Convert.ToBoolean(regKey.GetValue(valueName));
                     }
                 }
 
