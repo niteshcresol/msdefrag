@@ -814,7 +814,8 @@ namespace MSDefragLib
         {
             MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
 
-            OnShowDebug(e);
+            if (level < 6)
+                OnShowDebug(e);
         }
 
         String StreamTypeNames(ATTRIBUTE_TYPE StreamType)
@@ -2729,7 +2730,10 @@ namespace MSDefragLib
                         //    (Int64)((InodeNumber - BlockStart) * DiskInfo.BytesPerMftRecord + DiskInfo.BytesPerMftRecord)),
                         //Buffer[(InodeNumber - BlockStart) * DiskInfo.BytesPerMftRecord],
 			            DiskInfo.BytesPerMftRecord);
-	        }
+
+                if (m_msDefragLib.m_data.PhaseDone % 50 == 0)
+                    ShowDebug(1, "Done: " + m_msDefragLib.m_data.PhaseDone + "/" + m_msDefragLib.m_data.PhaseTodo);
+            }
 
             Time = DateTime.Now;
 

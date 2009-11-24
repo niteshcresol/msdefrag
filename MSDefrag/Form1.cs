@@ -87,7 +87,8 @@ namespace MSDefrag
             {
                 NotifyGuiEventArgs ngea = (NotifyGuiEventArgs)e;
 
-                DrawDirtySquare(ngea.m_clusterSquare);
+//                DrawDirtySquare(ngea.m_clusterSquare);
+                DrawSquares(0, 0);
             }
         }
 
@@ -140,9 +141,12 @@ namespace MSDefrag
 
         private void DrawSquares(Int32 squareBegin, Int32 squareEnd)
         {
-            List<MSDefragLib.ClusterSquare> squaresList = m_msDefragLib.GetSquareList();
+//            List<MSDefragLib.ClusterSquare> squaresList = m_msDefragLib.GetSquareList();
+            List<MSDefragLib.ClusterSquare> squaresList = m_msDefragLib.m_dirtySquares;
+
             if (squaresList == null)
                 return;
+
 //            try
             {
                 Graphics g = pictureBox1.CreateGraphics();
@@ -203,6 +207,8 @@ namespace MSDefrag
                 }
 
                 g.DrawImageUnscaled(bmp, 0, 0);
+                
+                m_msDefragLib.m_dirtySquares.Clear();
 
             }
             //catch (System.Exception e)
@@ -297,11 +303,11 @@ namespace MSDefrag
 
         String[] messages = new String[maxMessages];
 
-        Bitmap bmp = new Bitmap(1000, 500);
-        Bitmap statusBmp = new Bitmap(1000, 300);
+        Bitmap bmp = new Bitmap(1000, 900);
+        Bitmap statusBmp = new Bitmap(1000, 800);
 
-        Rectangle m_rec = new Rectangle(0, 300, 1000, 500);
-        Rectangle m_rec2 = new Rectangle(0, 0, 1000, 500);
+        Rectangle m_rec = new Rectangle(0, 300, 1000, 900);
+        Rectangle m_rec2 = new Rectangle(0, 0, 1000, 800);
 
         Font m_font = new Font("Tahoma", 10);
 
@@ -310,7 +316,7 @@ namespace MSDefrag
 
         public Int32 maxSquare = 5000;
 
-        private const Int32 m_squareSize = 6;
+        private const Int32 m_squareSize = 7;
 
         Int32 m_numSquaresX = 1;
         Int32 m_numSquaresY = 1;

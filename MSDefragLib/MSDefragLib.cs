@@ -3755,7 +3755,7 @@ namespace MSDefragLib
 		        /* Update the progress percentage. */
                 m_data.PhaseDone++;
 
-        		if (m_data.PhaseDone % 10000 == 0) ShowDebug(5, "Phase: " + m_data.PhaseDone);
+        		if (m_data.PhaseDone % 100 == 0) ShowDebug(1, "Phase: " + m_data.PhaseDone + " / " + m_data.PhaseTodo);
 	        }
 
 	        /* Force the percentage to 100%. */
@@ -6013,8 +6013,14 @@ namespace MSDefragLib
         {
             MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
 
-            OnShowDebug(e);
+            if (level < 6)
+                OnShowDebug(e);
         }
+
+        private const Int32 MAX_DIRTY_SQUARES = 100;
+
+        public List<ClusterSquare> m_dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
+
         private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, CLUSTER_COLORS color)
         {
             //ShowDebug(3, "Cluster: " + clusterBegin);
@@ -6071,8 +6077,13 @@ namespace MSDefragLib
                 {
                     clusterSquare.m_isDirty = false;
 //                    ShowDebug(0, "Done: " + m_data.PhaseDone + " / " + m_data.PhaseTodo);
-                    ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
-                    NotifyGui(clusterSquare);
+                    m_dirtySquares.Add(clusterSquare);
+
+                    if (m_dirtySquares.Count() == MAX_DIRTY_SQUARES)
+                    {
+                        ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
+                        NotifyGui(clusterSquare);
+                    }
                 }
             }
         }
