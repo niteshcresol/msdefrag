@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections;
+using System.Threading;
 using Microsoft.Win32.SafeHandles;
 
 namespace MSDefragLib
@@ -591,16 +592,6 @@ namespace MSDefragLib
 
         #endregion
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct OVERLAPPED
-        {
-            IntPtr Internal;
-            IntPtr InternalHigh;
-            public UInt32 Offset;
-            public UInt32 OffsetHigh;
-            public UIntPtr hEvent;
-        }
-
         [System.Runtime.InteropServices.DllImport("kernel32", SetLastError = true)]
         public static extern unsafe bool ReadFile
         (
@@ -608,16 +599,16 @@ namespace MSDefragLib
             void* pBuffer,            // data buffer
             int NumberOfBytesToRead,  // number of bytes to read
             int* pNumberOfBytesRead,  // number of bytes read
-            OVERLAPPED* Overlapped            // overlapped buffer
+            NativeOverlapped* Overlapped            // overlapped buffer
         );
 
-        public static unsafe int Read(IntPtr handle, byte[] buffer, int index, int count, OVERLAPPED lpOverlapped)
+        public static unsafe int Read(IntPtr handle, byte[] buffer, int index, int count, Overlapped lpOverlapped)
         {
             int n = 0;
 
             fixed (byte* p = buffer)
             {
-                if (!ReadFile(handle, p + index, count, &n, &lpOverlapped))
+                if (!ReadFile(handle, p + index, count, &n, lpOverlapped.Pack(null, null)))
                 {
                     return 0;
                 }
