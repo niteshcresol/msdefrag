@@ -93,7 +93,8 @@ namespace MSDefragLib
         AttributeEA = 0xE0,
         AttributePropertySet = 0xF0,
         AttributeLoggedUtilityStream = 0x100,
-        AttributeAll = 0xFF
+        AttributeAll = 0xFF,
+        AttributeEndOfList = -1
     };
 
     class ATTRIBUTE
@@ -512,33 +513,40 @@ namespace MSDefragLib
 
         public ATTRIBUTE_TYPE ToATTRIBUTE_TYPE(ref Int64 offset)
         {
-            ATTRIBUTE_TYPE at = new ATTRIBUTE_TYPE();
+            // http://msdn.microsoft.com/en-us/library/bb470038%28VS.85%29.aspx
+            // It is a DWORD containing enumerated values
+            UInt32 val = ToUInt32(ref offset);
 
-            UInt32 val = ToUInt32(ref offset); // TODO: Check if this is correct
-
+            // the attribute type code may contain a special value -1 (or 0xFFFFFFFF) which 
+            // may be present as a filler to mark the end of an attribute list. In that case,
+            // the rest of the attribute should be ignored, and the attribute list should not
+            // be scanned further.
             switch (val)
             {
-                case 0x00: at = ATTRIBUTE_TYPE.AttributeInvalid; break;
-                case 0x10: at = ATTRIBUTE_TYPE.AttributeStandardInformation; break;
-                case 0x20: at = ATTRIBUTE_TYPE.AttributeAttributeList; break;
-                case 0x30: at = ATTRIBUTE_TYPE.AttributeFileName; break;
-                case 0x40: at = ATTRIBUTE_TYPE.AttributeObjectId; break;
-                case 0x50: at = ATTRIBUTE_TYPE.AttributeSecurityDescriptor; break;
-                case 0x60: at = ATTRIBUTE_TYPE.AttributeVolumeName; break;
-                case 0x70: at = ATTRIBUTE_TYPE.AttributeVolumeInformation; break;
-                case 0x80: at = ATTRIBUTE_TYPE.AttributeData; break;
-                case 0x90: at = ATTRIBUTE_TYPE.AttributeIndexRoot; break;
-                case 0xA0: at = ATTRIBUTE_TYPE.AttributeIndexAllocation; break;
-                case 0xB0: at = ATTRIBUTE_TYPE.AttributeBitmap; break;
-                case 0xC0: at = ATTRIBUTE_TYPE.AttributeReparsePoint; break;
-                case 0xD0: at = ATTRIBUTE_TYPE.AttributeEAInformation; break;
-                case 0xE0: at = ATTRIBUTE_TYPE.AttributeEA; break;
-                case 0xF0: at = ATTRIBUTE_TYPE.AttributePropertySet; break;
-                case 0x100: at = ATTRIBUTE_TYPE.AttributeLoggedUtilityStream; break;
-                case 0xFF: at = ATTRIBUTE_TYPE.AttributeAll; break;
+                case 0xFFFFFFFF: return ATTRIBUTE_TYPE.AttributeEndOfList;
+                case 0x00: return ATTRIBUTE_TYPE.AttributeInvalid;
+                case 0x10: return ATTRIBUTE_TYPE.AttributeStandardInformation;
+                case 0x20: return ATTRIBUTE_TYPE.AttributeAttributeList;
+                case 0x30: return ATTRIBUTE_TYPE.AttributeFileName;
+                case 0x40: return ATTRIBUTE_TYPE.AttributeObjectId;
+                case 0x50: return ATTRIBUTE_TYPE.AttributeSecurityDescriptor;
+                case 0x60: return ATTRIBUTE_TYPE.AttributeVolumeName;
+                case 0x70: return ATTRIBUTE_TYPE.AttributeVolumeInformation;
+                case 0x80: return ATTRIBUTE_TYPE.AttributeData;
+                case 0x90: return ATTRIBUTE_TYPE.AttributeIndexRoot;
+                case 0xA0: return ATTRIBUTE_TYPE.AttributeIndexAllocation;
+                case 0xB0: return ATTRIBUTE_TYPE.AttributeBitmap;
+                case 0xC0: return ATTRIBUTE_TYPE.AttributeReparsePoint;
+                case 0xD0: return ATTRIBUTE_TYPE.AttributeEAInformation;
+                case 0xE0: return ATTRIBUTE_TYPE.AttributeEA;
+                case 0xF0: return ATTRIBUTE_TYPE.AttributePropertySet;
+                case 0x100: return ATTRIBUTE_TYPE.AttributeLoggedUtilityStream;
+                case 0xFF: return ATTRIBUTE_TYPE.AttributeAll;
+                default:
+                    throw new NotSupportedException();
             }
 
-            return at;
+            throw new NotSupportedException();
         }
 
         public ATTRIBUTE ToATTRIBUTE(ref Int64 offset)
@@ -546,14 +554,15 @@ namespace MSDefragLib
             ATTRIBUTE attr = new ATTRIBUTE();
 
             attr.AttributeType = ToATTRIBUTE_TYPE(ref offset);
-
-            attr.Length = ToUInt32(ref offset);
-            attr.Nonresident = ToBoolean(ref offset);
-            attr.NameLength = ToByte(ref offset);
-            attr.NameOffset = ToUInt16(ref offset);
-            attr.Flags = ToUInt16(ref offset);
-            attr.AttributeNumber = ToUInt16(ref offset);
-
+            if (attr.AttributeType != ATTRIBUTE_TYPE.AttributeEndOfList)
+            {
+                attr.Length = ToUInt32(ref offset);
+                attr.Nonresident = ToBoolean(ref offset);
+                attr.NameLength = ToByte(ref offset);
+                attr.NameOffset = ToUInt16(ref offset);
+                attr.Flags = ToUInt16(ref offset);
+                attr.AttributeNumber = ToUInt16(ref offset);
+            }
             return attr;
         }
 
@@ -653,13 +662,16 @@ namespace MSDefragLib
             ATTRIBUTE_LIST al = new ATTRIBUTE_LIST();
 
             al.AttributeType = ToATTRIBUTE_TYPE(ref offset);
-            al.Length = ToUInt16(ref offset);
-            al.NameLength = ToByte(ref offset);
-            al.NameOffset = ToByte(ref offset);
-            al.LowestVcn = ToUInt64(ref offset);
-            al.FileReferenceNumber = ToINODE_REFERENCE(ref offset);
-            al.Instance = ToUInt16(ref offset);
-            al.AlignmentOrReserved = new UInt16[3];
+            if (al.AttributeType != ATTRIBUTE_TYPE.AttributeEndOfList)
+            {
+                al.Length = ToUInt16(ref offset);
+                al.NameLength = ToByte(ref offset);
+                al.NameOffset = ToByte(ref offset);
+                al.LowestVcn = ToUInt64(ref offset);
+                al.FileReferenceNumber = ToINODE_REFERENCE(ref offset);
+                al.Instance = ToUInt16(ref offset);
+                al.AlignmentOrReserved = new UInt16[3];
+            }
             return al;
         }
 
@@ -854,8 +866,10 @@ namespace MSDefragLib
                     return ("$PROPERTY_SET");               /* guess, not documented */
                 case ATTRIBUTE_TYPE.AttributeLoggedUtilityStream:
                     return ("$LOGGED_UTILITY_STREAM");
+                case ATTRIBUTE_TYPE.AttributeInvalid:
+                    return "";
 	            default:
-                    return("");
+                    throw new NotSupportedException();
 	        }
         }
 
@@ -1290,6 +1304,7 @@ namespace MSDefragLib
 
                     if (Index >= RunDataLength)
                     {
+                        throw new InvalidOperationException();
                         ShowDebug(2, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. Inode {0:G}.",
                             InodeData.Inode));
 
@@ -1766,12 +1781,14 @@ namespace MSDefragLib
                 Walk through all the attributes and gather information. AttributeLists are
 	            skipped and interpreted later. 
             */
-	        for (AttributeOffset = 0; AttributeOffset < BufLength; AttributeOffset = AttributeOffset + Attribute.Length)
+	        for (AttributeOffset = 0; AttributeOffset < BufLength; AttributeOffset += Attribute.Length)
 	        {
                 //Attribute = (ATTRIBUTE)Buffer[AttributeOffset];
                 Int64 tempOffset = (Int64)AttributeOffset;
                 Attribute = Buffer.ToATTRIBUTE(ref tempOffset);
 
+                if (Attribute.AttributeType == ATTRIBUTE_TYPE.AttributeEndOfList)
+                    break;
 		        /* Exit the loop if end-marker. */
 		        if ((AttributeOffset + 4 <= BufLength) && (Attribute.AttributeType == ATTRIBUTE_TYPE.AttributeInvalid)) break;
 
@@ -1925,12 +1942,13 @@ namespace MSDefragLib
 	            defined in the DATA attribute, and/or contain a continuation of the DATA or
 	            BITMAP attributes.
             */
-	        for (AttributeOffset = 0; AttributeOffset < BufLength; AttributeOffset = AttributeOffset + Attribute.Length)
+	        for (AttributeOffset = 0; AttributeOffset < BufLength; AttributeOffset += Attribute.Length)
 	        {
                 Int64 tempOffset = (Int64)AttributeOffset;
                 Attribute = Buffer.ToATTRIBUTE(ref tempOffset);
                 //Attribute = (ATTRIBUTE)Buffer[AttributeOffset];
 
+                if (Attribute.AttributeType == ATTRIBUTE_TYPE.AttributeEndOfList) break;
 		        if (Attribute.AttributeType == ATTRIBUTE_TYPE.AttributeInvalid) break;
 		        if (Attribute.AttributeType != ATTRIBUTE_TYPE.AttributeAttributeList) continue;
 
