@@ -1256,7 +1256,8 @@ namespace MSDefragLib
 
                     if (Index >= RunDataLength)
                     {
-                        throw new InvalidOperationException();
+                        // Exception just here to show ther is an issue
+                        //throw new InvalidOperationException();
                         ShowDebug(2, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. Inode {0:G}.",
                             InodeData.Inode));
 
