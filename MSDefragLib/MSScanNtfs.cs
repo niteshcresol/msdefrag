@@ -327,26 +327,18 @@ namespace MSDefragLib
 
         public Byte GetValue(Int64 index)
         {
-            Byte val = 0;
-
-            if (index < m_bytes.Length)
-            {
-                val = m_bytes[index];
-            }
-
-            return val;
+            return m_bytes[index];
         }
 
         public void SetValue(Int64 index, Byte value)
         {
-            if (index < m_bytes.Length)
-            {
-                m_bytes[index] = value;
-            }
+            m_bytes[index] = value;
         }
 
         public void Initialize(Int64 length)
         {
+            if (length != (int)length)
+                throw new Exception("This implementation does not support byte arrays with a length bigger than 32 bits");
             m_bytes = new Byte[length];
         }
 
@@ -361,12 +353,13 @@ namespace MSDefragLib
 
             for (int ii = 0; ii < length; ii++)
             {
-                ba.SetValue(ii, GetValue(index + ii));
+                ba.SetValue(ii, m_bytes[index + ii]);
             }
 
             return ba;
         }
 
+        //TODO: check if this matters: offset is truncated to 32 bits
         public UInt16Array ToUInt16Array(Int64 index, Int64 length)
         {
             UInt16Array ba = new UInt16Array();
@@ -379,89 +372,48 @@ namespace MSDefragLib
 
             int jj = 0;
 
-            for (int ii = 0; ii < length; )
+            for (int ii = 0; ii < length; ii+=2)
             {
-                Byte val = GetValue(index + ii++);
-                Byte val2 = GetValue(index + ii++);
-
-                ba.SetValue(jj++, (UInt16)(val2 << (1 << 3) | val));
+                ba.SetValue(jj++, BitConverter.ToUInt16(m_bytes, (int)index+ii));
             }
 
             return ba;
         }
 
+        //TODO: check if this matters: offset is truncated to 32 bits
         public Byte ToByte(ref Int64 offset)
         {
-            Byte retValue = 0;
-
-            for (Int64 ii = sizeof(Byte) - 1; ii >= 0; ii--)
-            {
-                Byte val = GetValue(offset + ii);
-                
-                retValue = (Byte)((retValue << (sizeof(Byte) << 3)) | val);
-            }
-
+            Byte retValue = m_bytes[(int)offset];
             offset += sizeof(Byte);
-
             return retValue;
         }
 
         public Boolean ToBoolean(ref Int64 offset)
         {
-            Boolean retValue = false;
-
-            Byte val = ToByte(ref offset);
-
-            retValue = (val != 0);
-
-            return retValue;
+            return (ToByte(ref offset) != 0);
         }
 
+        //TODO: check if this matters: offset is truncated to 32 bits
         public UInt16 ToUInt16(ref Int64 offset)
         {
-            UInt16 retValue = 0;
-
-            for (Int64 ii = sizeof(UInt16) - 1; ii >= 0; ii--)
-            {
-                Byte val = GetValue(offset + ii);
-
-                retValue = (UInt16)((retValue << (sizeof(Byte) << 3)) | val);
-            }
-
+            UInt16 retValue = BitConverter.ToUInt16(m_bytes, (int)offset);
             offset += sizeof(UInt16);
-
             return retValue;
         }
 
+        //TODO: check if this matters: offset is truncated to 32 bits
         public UInt32 ToUInt32(ref Int64 offset)
         {
-            UInt32 retValue = 0;
-
-            for (Int64 ii = sizeof(UInt32) - 1; ii >= 0; ii--)
-            {
-                Byte val = GetValue(offset + ii);
-
-                retValue = (retValue << (sizeof(Byte) << 3)) | val;
-            }
-
+            UInt32 retValue = BitConverter.ToUInt32(m_bytes, (int)offset);
             offset += sizeof(UInt32);
-
             return retValue;
         }
 
+        //TODO: check if this matters: offset is truncated to 32 bits
         public UInt64 ToUInt64(ref Int64 offset)
         {
-            UInt64 retValue = 0;
-
-            for (Int64 ii = sizeof(UInt64) - 1; ii >= 0; ii--)
-            {
-                Byte val = GetValue(offset + ii);
-
-                retValue = (retValue << (sizeof(Byte) << 3)) | val;
-            }
-
+            UInt64 retValue = BitConverter.ToUInt64(m_bytes, (int)offset);
             offset += sizeof(UInt64);
-
             return retValue;
         }
 
