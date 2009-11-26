@@ -14,20 +14,6 @@ namespace MSDefragLib
         FAT32 = 32
     };
 
-    public class DiskStruct
-    {
-	    public IntPtr    VolumeHandle;
-
-	    public String    MountPoint;          /* Example: "c:" */
-	    String    MountPointSlash;     /* Example: "c:\" */
-	    String    VolumeName/*[52]*/;       /* Example: "\\?\Volume{08439462-3004-11da-bbca-806d6172696f}" */
-	    String    VolumeNameSlash/*[52]*/;  /* Example: "\\?\Volume{08439462-3004-11da-bbca-806d6172696f}\" */
-
-	    public DiskType  Type;
-
-	    public UInt64   MftLockedClusters;    /* Number of clusters at begin of MFT that cannot be moved. */
-    };
-
     /* List in memory of the fragments of a file. */
 
     public class FragmentListStruct

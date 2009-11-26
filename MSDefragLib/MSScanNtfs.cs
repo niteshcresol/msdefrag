@@ -977,8 +977,6 @@ namespace MSDefragLib
 	        UInt64 ExtentLcn;
 	        UInt64 ExtentLength;
 
-            Overlapped gOverlapped = new Overlapped();
-
             Int32 BytesRead = 0;
 
             //Boolean Result;
@@ -1120,10 +1118,7 @@ namespace MSDefragLib
                     ExtentLength, ExtentLcn / (DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster),
                 	ExtentVcn - Offset));
 
-                gOverlapped.OffsetLow = (int)ExtentLcn;
-                gOverlapped.OffsetHigh = (int)(ExtentLcn >> 32);
-		        gOverlapped.EventHandleIntPtr = IntPtr.Zero;
-
+                Overlapped gOverlapped = OverlappedBuilder.Get(ExtentLcn);
                 Byte[] Buffer2 = new Byte[ExtentLength];
 
                 BytesRead = IOWrapper.Read(m_msDefragLib.m_data.Disk.VolumeHandle, Buffer.m_bytes, (Int32)(ExtentVcn - Offset), (Int32)ExtentLength, gOverlapped);
@@ -1552,8 +1547,6 @@ namespace MSDefragLib
 	        UInt64 RealVcn;
 	        UInt64 RefInodeVcn;
 
-            Overlapped gOverlapped = new Overlapped();
-
 	        Int32 BytesRead = 0;
 
             //Boolean Result;
@@ -1661,10 +1654,7 @@ namespace MSDefragLib
 		        tempVcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerSector *
 				        DiskInfo.SectorsPerCluster + RefInode * DiskInfo.BytesPerMftRecord;
 
-                gOverlapped.OffsetLow = (int)tempVcn;
-                gOverlapped.OffsetHigh = (int)(tempVcn >> 32);
-                gOverlapped.EventHandleIntPtr = IntPtr.Zero;
-
+                Overlapped gOverlapped = OverlappedBuilder.Get(tempVcn);
                 Byte[] tempBuffer = new Byte[DiskInfo.BytesPerMftRecord];
 
                 BytesRead = IOWrapper.Read(m_msDefragLib.m_data.Disk.VolumeHandle, Buffer2.m_bytes, 0, (Int32)DiskInfo.BytesPerMftRecord, gOverlapped);
@@ -2203,15 +2193,11 @@ namespace MSDefragLib
         {
             Int32 NTFS_BOOT_SECTOR_SIZE = 512;
             ByteArray Buffer = new ByteArray();
-            Overlapped gOverlapped = new Overlapped();
             Int32 BytesRead = 0;
 
             Buffer.Initialize(NTFS_BOOT_SECTOR_SIZE);
 
-            gOverlapped.OffsetLow = 0;
-            gOverlapped.OffsetHigh = 0;
-            gOverlapped.EventHandleIntPtr = IntPtr.Zero;
-
+            Overlapped gOverlapped = OverlappedBuilder.Get();
 //            m_msDefragLib.m_data.Disk.VolumeHandle = IOWrapper.OpenVolume("C:");
 
             BytesRead = IOWrapper.Read(m_msDefragLib.m_data.Disk.VolumeHandle, Buffer.m_bytes, 0, NTFS_BOOT_SECTOR_SIZE, gOverlapped);
@@ -2291,11 +2277,7 @@ namespace MSDefragLib
             //
             //////////////////////////////////////////////////////////////////////////
 
-            Overlapped gOverlapped = new Overlapped();
-            gOverlapped.OffsetLow = 0;
-	        gOverlapped.OffsetHigh = 0;
-            gOverlapped.EventHandleIntPtr = IntPtr.Zero;
-            
+            Overlapped gOverlapped = OverlappedBuilder.Get();
             // Data.Disk.VolumeHandle = IOWrapper.OpenVolume("C:");
 
             Buffer.Initialize((Int64)MFTBUFFERSIZE);
@@ -2394,11 +2376,7 @@ namespace MSDefragLib
             UInt64 tempLcn = DiskInfo.MftStartLcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
             //Trans.QuadPart         = DiskInfo.MftStartLcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
 
-            Overlapped gOverlapped2 = new Overlapped();
-            gOverlapped2.OffsetLow = (int)tempLcn;
-	        gOverlapped2.OffsetHigh = (int)(tempLcn >> 32);
-            gOverlapped2.EventHandleIntPtr = IntPtr.Zero;
-
+            Overlapped gOverlapped2 = OverlappedBuilder.Get(tempLcn);
             BytesRead = IOWrapper.Read(m_msDefragLib.m_data.Disk.VolumeHandle, Buffer.m_bytes, 0, (Int32)DiskInfo.BytesPerMftRecord, gOverlapped2);
 
             if (BytesRead != (Int32)DiskInfo.BytesPerMftRecord)
@@ -2501,12 +2479,7 @@ namespace MSDefragLib
                     tempLcn = Fragment.Lcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
 //			        Trans.QuadPart = Fragment.Lcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
 
-                    Overlapped gOverlapped3 = new Overlapped();
-
-                    gOverlapped3.OffsetLow = (int)tempLcn;
-                    gOverlapped3.OffsetHigh = (int)(tempLcn >> 32);
-                    gOverlapped3.EventHandleIntPtr = IntPtr.Zero;
-
+                    Overlapped gOverlapped3 = OverlappedBuilder.Get(tempLcn);
                     UInt64 numClusters = Fragment.NextVcn - Vcn;
                     Int32 numBytes = (Int32)(numClusters * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster);
                     Int32 startIndex = (Int32)(RealVcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster);
@@ -2668,12 +2641,7 @@ namespace MSDefragLib
                     //Trans.QuadPart = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerSector *
                     //        DiskInfo.SectorsPerCluster + BlockStart * DiskInfo.BytesPerMftRecord;
 
-                    Overlapped gOverlapped4 = new Overlapped();
-
-                    gOverlapped4.OffsetLow = (int)tempLcn;
-                    gOverlapped4.OffsetHigh = (int)(tempLcn >> 32);
-                    gOverlapped4.EventHandleIntPtr = IntPtr.Zero;
-
+                    Overlapped gOverlapped4 = OverlappedBuilder.Get(tempLcn);
                     ShowDebug(6, String.Format("Reading block of {0:G} Inodes from MFT into memory, {1:G} bytes from LCN={2:G}",
                           BlockEnd - BlockStart,((BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord),
                           tempLcn / (DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster)));
