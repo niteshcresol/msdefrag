@@ -7,6 +7,9 @@ using System.Runtime.InteropServices;
 
 namespace MSDefragLib
 {
+    /// <summary>
+    /// Class for describing boot sector
+    /// </summary>
     class NTFS_BOOT_SECTOR
     {
         public UInt16 bytesPerSector;
@@ -32,6 +35,9 @@ namespace MSDefragLib
         public UInt32 unused7;
     }
 
+    /// <summary>
+    /// Class for describing Inode
+    /// </summary>
     class INODE_REFERENCE
     {
         public UInt32 InodeNumberLowPart;
@@ -40,6 +46,9 @@ namespace MSDefragLib
         public UInt16 SequenceNumber;
     };
 
+    /// <summary>
+    /// Class for describing NTFS record header
+    /// </summary>
     class NTFS_RECORD_HEADER
     {
         public UInt32 Type;                     /* File type, for example 'FILE' */
@@ -50,30 +59,35 @@ namespace MSDefragLib
         public UInt64 Lsn;                      /* $LogFile Sequence Number (LSN) */
     };
 
+    /// <summary>
+    /// Class for describing File record header
+    /// </summary>
     class FILE_RECORD_HEADER
     {
         public NTFS_RECORD_HEADER RecHdr;
 
-        public UInt16 SequenceNumber;                  /* Sequence number */
-        public UInt16 LinkCount;                       /* Hard link count */
+        public UInt16 SequenceNumber;           /* Sequence number */
+        public UInt16 LinkCount;                /* Hard link count */
 
         public UInt16 AttributeOffset;          /* Offset to the first Attribute */
         public UInt16 Flags;                    /* Flags. bit 1 = in use, bit 2 = directory, bit 4 & 8 = unknown. */
 
         public UInt32 BytesInUse;               /* Real size of the FILE record */
-
-        public UInt32 BytesAllocated;                  /* Allocated size of the FILE record */
+        public UInt32 BytesAllocated;           /* Allocated size of the FILE record */
 
         public INODE_REFERENCE BaseFileRecord;  /* File reference to the base FILE record */
 
-        public UInt16 NextAttributeNumber;             /* Next Attribute Id */
-        public UInt16 Padding;                         /* Align to 4 UCHAR boundary (XP) */
+        public UInt16 NextAttributeNumber;      /* Next Attribute Id */
+        public UInt16 Padding;                  /* Align to 4 UCHAR boundary (XP) */
 
         public UInt32 MFTRecordNumber;          /* Number of this MFT Record (XP) */
 
-        public UInt16 UpdateSeqNum;                    /*  */
+        public UInt16 UpdateSeqNum;             /*  */
     };
 
+    /// <summary>
+    /// Enumerator containing all atribute types
+    /// </summary>
     enum ATTRIBUTE_TYPE
     {
         AttributeInvalid = 0x00,                /* Not defined by Windows */
@@ -97,6 +111,9 @@ namespace MSDefragLib
         AttributeEndOfList = -1
     };
 
+    /// <summary>
+    /// Class describing attribute
+    /// </summary>
     class ATTRIBUTE
     {
         public ATTRIBUTE_TYPE AttributeType;
@@ -108,6 +125,9 @@ namespace MSDefragLib
         public UInt16 AttributeNumber;
     };
 
+    /// <summary>
+    /// Class for describing Resident attribute
+    /// </summary>
     class RESIDENT_ATTRIBUTE
     {
         public ATTRIBUTE Attribute;
@@ -116,6 +136,9 @@ namespace MSDefragLib
         public UInt16 Flags;                           // 0x0001 = Indexed
     };
 
+    /// <summary>
+    /// Class for describing Non Resident attribute
+    /// </summary>
     class NONRESIDENT_ATTRIBUTE
     {
         public ATTRIBUTE Attribute;
@@ -130,6 +153,9 @@ namespace MSDefragLib
         public UInt64 CompressedSize;                  // Only when compressed
     };
 
+    /// <summary>
+    /// Class describing standard information about file
+    /// </summary>
     struct STANDARD_INFORMATION
     {
         public UInt64 CreationTime;
@@ -146,6 +172,9 @@ namespace MSDefragLib
         public UInt64 Usn;                             // NTFS 3.0 only
     };
 
+    /// <summary>
+    /// Class describing attribute list
+    /// </summary>
     class ATTRIBUTE_LIST
     {
         public ATTRIBUTE_TYPE AttributeType;
@@ -158,6 +187,9 @@ namespace MSDefragLib
         public UInt16[] AlignmentOrReserved/*[3]*/;
     };
 
+    /// <summary>
+    /// Class describing Filename attribute
+    /// </summary>
     class FILENAME_ATTRIBUTE
     {
         public INODE_REFERENCE ParentDirectory;
@@ -174,42 +206,44 @@ namespace MSDefragLib
         public String Name/*[1]*/;
     };
 
-    /*
-       The NTFS scanner will construct an ItemStruct list in memory, but needs some
-       extra information while constructing it. The following structs wrap the ItemStruct
-       into a new struct with some extra info, discarded when the ItemStruct list is
-       ready.
-
-       A single Inode can contain multiple streams of data. Every stream has it's own
-       list of fragments. The name of a stream is the same as the filename plus two
-       extensions separated by colons:
-             filename:"stream name":"stream type"
-
-       For example:
-             myfile.dat:stream1:$DATA
-
-       The "stream name" is an empty string for the default stream, which is the data
-       of regular files. The "stream type" is one of the following strings:
-          0x10      $STANDARD_INFORMATION
-          0x20      $ATTRIBUTE_LIST
-          0x30      $FILE_NAME
-          0x40  NT  $VOLUME_VERSION
-          0x40  2K  $OBJECT_ID
-          0x50      $SECURITY_DESCRIPTOR
-          0x60      $VOLUME_NAME
-          0x70      $VOLUME_INFORMATION
-          0x80      $DATA
-          0x90      $INDEX_ROOT
-          0xA0      $INDEX_ALLOCATION
-          0xB0      $BITMAP
-          0xC0  NT  $SYMBOLIC_LINK
-          0xC0  2K  $REPARSE_POINT
-          0xD0      $EA_INFORMATION
-          0xE0      $EA
-          0xF0  NT  $PROPERTY_SET
-          0x100 2K  $LOGGED_UTILITY_STREAM
-    */
-
+    /// <summary>
+    /// Class describing Stream
+    /// 
+    /// The NTFS scanner will construct an ItemStruct list in memory, but needs some
+    /// extra information while constructing it. The following structs wrap the ItemStruct
+    /// into a new struct with some extra info, discarded when the ItemStruct list is
+    /// ready.
+    /// 
+    /// A single Inode can contain multiple streams of data. Every stream has it's own
+    /// list of fragments. The name of a stream is the same as the filename plus two
+    /// extensions separated by colons:
+    /// 
+    /// filename:"stream name":"stream type"
+    /// 
+    /// For example:
+    ///   myfile.dat:stream1:$DATA
+    ///   
+    /// The "stream name" is an empty string for the default stream, which is the data
+    /// of regular files. The "stream type" is one of the following strings:
+    ///    0x10      $STANDARD_INFORMATION
+    ///    0x20      $ATTRIBUTE_LIST
+    ///    0x30      $FILE_NAME
+    ///    0x40  NT  $VOLUME_VERSION
+    ///    0x40  2K  $OBJECT_ID
+    ///    0x50      $SECURITY_DESCRIPTOR
+    ///    0x60      $VOLUME_NAME
+    ///    0x70      $VOLUME_INFORMATION
+    ///    0x80      $DATA
+    ///    0x90      $INDEX_ROOT
+    ///    0xA0      $INDEX_ALLOCATION
+    ///    0xB0      $BITMAP
+    ///    0xC0  NT  $SYMBOLIC_LINK
+    ///    0xC0  2K  $REPARSE_POINT
+    ///    0xD0      $EA_INFORMATION
+    ///    0xE0      $EA
+    ///    0xF0  NT  $PROPERTY_SET
+    ///   0x100  2K  $LOGGED_UTILITY_STREAM
+    /// </summary>
     class StreamStruct
     {
 	    public StreamStruct Next;
@@ -223,7 +257,10 @@ namespace MSDefragLib
 	    public UInt64 Clusters;                 /* Total number of clusters. */
 	    public UInt64 Bytes;                    /* Total number of bytes. */
     };
-    
+
+    /// <summary>
+    /// Class describing Inode data structure
+    /// </summary>
     class InodeDataStruct
     {
         public UInt64 Inode;                    /* The Inode number. */
@@ -249,6 +286,9 @@ namespace MSDefragLib
         public UInt64 MftBitmapBytes;           /* Length of the $MFT::$BITMAP. */
     };
 
+    /// <summary>
+    /// Class describing NTFS disk information structure
+    /// </summary>
     class NtfsDiskInfoStruct
     {
         public NtfsDiskInfoStruct()
@@ -597,18 +637,7 @@ namespace MSDefragLib
 
             return si;
         }
-/*
 
-        public ATTRIBUTE_TYPE AttributeType;
-        public UInt16 Length;
-        public Byte NameLength;
-        public Byte NameOffset;
-        public UInt64 LowestVcn;
-        public INODE_REFERENCE FileReferenceNumber;
-        public UInt16 Instance;
-        List<UInt16> AlignmentOrReserved/ *[3]* /;
-
-*/
         public ATTRIBUTE_LIST ToATTRIBUTE_LIST(ref Int64 offset)
         {
             ATTRIBUTE_LIST al = new ATTRIBUTE_LIST();
@@ -739,16 +768,6 @@ namespace MSDefragLib
         const UInt64 VIRTUALFRAGMENT = UInt64.MaxValue;
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct OVERLAPPED
-        {
-            IntPtr Internal;
-            IntPtr InternalHigh;
-            public UInt32 Offset;
-            public UInt32 OffsetHigh;
-            public UIntPtr hEvent;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
         private struct ULARGE_INTEGER
         {
             public UInt32 LowPart;
@@ -825,21 +844,26 @@ namespace MSDefragLib
 	        }
         }
 
-        /*
-            Fixup the raw MFT data that was read from disk. Return TRUE if everything is ok,
-            FALSE if the MFT data is corrupt (this can also happen when we have read a
-            record past the end of the MFT, maybe it has shrunk while we were processing).
-
-            - To protect against disk failure, the last 2 bytes of every sector in the MFT are
-            not stored in the sector itself, but in the "Usa" array in the header (described
-            by UsaOffset and UsaCount). The last 2 bytes are copied into the array and the
-            Update Sequence Number is written in their place.
-
-            -   The Update Sequence Number is stored in the first item (item zero) of the "Usa"
-                array.
-
-            -   The number of bytes per sector is defined in the $Boot record.
-        */
+        /// <summary>
+        /// Fixup the raw MFT data that was read from disk. Return true if everything is ok,
+        /// false if the MFT data is corrupt (this can also happen when we have read a
+        /// record past the end of the MFT, maybe it has shrunk while we were processing).
+        /// 
+        /// - To protect against disk failure, the last 2 bytes of every sector in the MFT are
+        ///   not stored in the sector itself, but in the "Usa" array in the header (described
+        ///   by UsaOffset and UsaCount). The last 2 bytes are copied into the array and the
+        ///   Update Sequence Number is written in their place.
+        ///
+        /// - The Update Sequence Number is stored in the first item (item zero) of the "Usa"
+        ///   array.
+        ///
+        /// - The number of bytes per sector is defined in the $Boot record.
+        ///
+        /// </summary>
+        /// <param name="DiskInfo"></param>
+        /// <param name="Buffer"></param>
+        /// <param name="BufLength"></param>
+        /// <returns></returns>
         Boolean FixupRawMftdata(
                     NtfsDiskInfoStruct DiskInfo,
                     ByteArray Buffer,
@@ -1318,7 +1342,6 @@ namespace MSDefragLib
                     }
 
                     Lcn += RunOffset.Value;
-
                     Vcn += RunLength.Value;
 
                     /* Show debug message. */
@@ -1562,8 +1585,9 @@ namespace MSDefragLib
 		            not an error.
                 */
 		        if (AttributeOffset + 3 > BufLength) break;
-		        if (Attribute.AttributeType == ATTRIBUTE_TYPE.AttributeAll) break;
-		        if (Attribute.Length < 3) break;
+//		        if (Attribute.AttributeType == ATTRIBUTE_TYPE.AttributeAll) break;
+                if (Attribute.AttributeType == ATTRIBUTE_TYPE.AttributeEndOfList) break;
+                if (Attribute.Length < 3) break;
 		        if (AttributeOffset + Attribute.Length > BufLength) break;
 
 		        /*

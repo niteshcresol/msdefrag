@@ -148,8 +148,6 @@ namespace MSDefrag
                 Int32 posX = (Int32)(squareIndex % m_numSquaresX);
                 Int32 posY = (Int32)(squareIndex / m_numSquaresX);
 
-                //                    AddStatusMessage(1, "Square: " + squareIndex);
-
                 Rectangle rec = new Rectangle(posX * m_squareSize, posY * m_squareSize, m_squareSize - 1, m_squareSize - 1);
 
                 Color col = Color.White;
