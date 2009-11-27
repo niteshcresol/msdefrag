@@ -14,10 +14,10 @@ namespace MSDefragLib
             VolumeHandle = IntPtr.Zero;
         }
 
-        private IntPtr VolumeHandle
+        public IntPtr VolumeHandle
         {
             get;
-            set;
+            private set;
         }
 
         private void Open(String path)
@@ -65,13 +65,7 @@ namespace MSDefragLib
             get { return VolumeName + @"\"; }
         }
 
-        /// <summary>
-        /// Returns the filesystem of this volume
-        /// </summary>
-        public FS.Filesystem Filesystem
-        {
-            get { return BootSector.Filesystem; }
-        }
+        public DiskType Type;
 
         public UInt64 MftLockedClusters;    /* Number of clusters at begin of MFT that cannot be moved. */
 
@@ -94,22 +88,6 @@ namespace MSDefragLib
             }
         }
 
-
-        private FS.IBootSector _bootSector;
-
-        public FS.IBootSector BootSector
-        {
-            get
-            {
-                if (_bootSector == null)
-                {
-                    FS.Volume volume = new FS.Volume(VolumeHandle);
-                    _bootSector = volume.BootSector;
-                }
-                return _bootSector;
-            }
-        }
-
         public IO.IOWrapper.BitmapData VolumeBitmap
         {
             get
@@ -117,16 +95,6 @@ namespace MSDefragLib
                 return IO.IOWrapper.GetVolumeMap(VolumeHandle);
             }
         }
-
-        public IO.IOWrapper.NTFS_VOLUME_DATA_BUFFER NtfsVolumeData
-        {
-            get
-            {
-                return IO.IOWrapper.GetNtfsInfo(VolumeHandle);
-            }
-        }
-
-
 
         public void Close()
         {

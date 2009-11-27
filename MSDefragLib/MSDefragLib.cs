@@ -21,7 +21,6 @@ http://www.kessels.com/
 */
 
 using System;
-using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,6 +32,7 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using System.IO;
 using System.Runtime.InteropServices;
+using MSDefragLib.FileSystem.Ntfs;
 
 namespace MSDefragLib
 {
@@ -52,13 +52,13 @@ namespace MSDefragLib
             public ULARGE_INTEGER StartingLcn;
         };
 
-        private MSScanNtfs m_msScanNtfs;
+        private ScanNtfs m_scanNtfs;
 
         public MSDefragLib()
         {
-            m_msScanNtfs = new MSScanNtfs(this);
+            m_scanNtfs = new ScanNtfs(this);
 
-            m_msScanNtfs.ShowDebugEvent += new MSScanNtfs.ShowDebugHandler(ScanNtfsEventHandler);
+            m_scanNtfs.ShowDebugEvent += new ScanNtfs.ShowDebugHandler(ScanNtfsEventHandler);
             //ShowDebugEvent += new ShowDebugHandler(ShowDebugEventHandler);
         }
 
@@ -387,7 +387,7 @@ namespace MSDefragLib
 	        String Path = "";
 
 	        /* Sanity check. */
-            Debug.Assert(Item != null);
+	        if (Item == null) return null;
 
             Path = Data.Disk.MountPoint;
 
@@ -425,7 +425,7 @@ namespace MSDefragLib
 	        String Path = "";
 
 	        /* Sanity check. */
-	        Debug.Assert(Item != null);
+	        if (Item == null) return(null);
 
             Path = Data.Disk.MountPoint;
 
@@ -445,7 +445,7 @@ namespace MSDefragLib
 	        Int64 Delay;
 
 	        /* Sanity check. */
-	        Debug.Assert((m_data.Speed > 0) && (m_data.Speed <= 100));
+            if ((m_data.Speed <= 0) || (m_data.Speed >= 100)) return;
 
 	        /*
                 Calculate the time we have to sleep so that the wall time is 100% and the
@@ -487,7 +487,9 @@ namespace MSDefragLib
         {
 	        FragmentListStruct Fragment;
 
-	        Debug.Assert(Item != null);
+	        /* Sanity check. */
+	        if (Item == null) return(0);
+
 	        Fragment = Item.Fragments;
 
 	        while ((Fragment != null) && (Fragment.Lcn == VIRTUALFRAGMENT))
@@ -1587,9 +1589,7 @@ namespace MSDefragLib
 
 */
                 /* Sanity check. */
-                if (Lcn >= bitmapData.StartingLcn + bitmapData.BitmapSize)
-                    throw new Exception("Sanity check failed!");
-                //break;
+                if (Lcn >= bitmapData.StartingLcn + bitmapData.BitmapSize) break;
 
                 /* Analyze the clusterdata. We resume where the previous block left off. */
                 Lcn = bitmapData.StartingLcn;
@@ -3591,7 +3591,14 @@ namespace MSDefragLib
             SystemTime = Time3;
 
 	        /* Scan NTFS disks. */
-            Result = m_msScanNtfs.AnalyzeNtfsVolume();
+
+//            ScanNtfs ntfs = new ScanNtfs(this);
+
+//            ntfs.AnalyzeNtfsVolume();
+
+//            return;
+
+            Result = m_scanNtfs.AnalyzeNtfsVolume();
 
 	        /* Scan FAT disks. */
 //	        if ((Result == false) && (*Data->Running == RUNNING)) Result = jkScanFat->AnalyzeFatVolume(Data);
@@ -5334,7 +5341,14 @@ namespace MSDefragLib
 
             m_data.TotalClusters = (UInt64)bitmap.Count/*bitmap.StartingLcn + bitmap.BitmapSize*/;
 
-            IO.IOWrapper.NTFS_VOLUME_DATA_BUFFER ntfsData = m_data.Disk.NtfsVolumeData;
+            IO.IOWrapper.NTFS_VOLUME_DATA_BUFFER ntfsData = null;
+
+            ntfsData = IO.IOWrapper.GetNtfsInfo(m_data.Disk.VolumeHandle);
+
+            if (ntfsData == null)
+            {
+                return;
+            }
 
             m_data.BytesPerCluster = ntfsData.BytesPerCluster;
 
@@ -5925,9 +5939,10 @@ namespace MSDefragLib
         /// </summary>
         public void StopJkDefrag(int TimeOut)
         {
+	        int TimeWaited;
+
 	        /* Sanity check. */
-	        if (m_data.Running != RunningState.RUNNING) 
-                return;
+	        if (m_data.Running != RunningState.RUNNING) return;
 
 	        /* All loops in the library check if the Running variable is set to
 	        RUNNING. If not then the loop will exit. In effect this will stop
@@ -5937,7 +5952,7 @@ namespace MSDefragLib
 	        /* Wait for a maximum of TimeOut milliseconds for the defragger to stop.
 	        If TimeOut is zero then wait indefinitely. If TimeOut is negative then
 	        immediately return without waiting. */
-	        int TimeWaited = 0;
+	        TimeWaited = 0;
 
 	        while (TimeWaited <= TimeOut)
 	        {
