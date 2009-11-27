@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using MSDefragLib;
 using System.Threading;
 using System.Timers;
+using MSDefragLib.FileSystem.Ntfs;
 
 namespace MSDefrag
 {

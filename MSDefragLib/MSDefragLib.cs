@@ -33,6 +33,7 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using System.IO;
 using System.Runtime.InteropServices;
+using MSDefragLib.FileSystem.Ntfs;
 
 namespace MSDefragLib
 {
@@ -52,13 +53,13 @@ namespace MSDefragLib
             public ULARGE_INTEGER StartingLcn;
         };
 
-        private MSScanNtfs m_msScanNtfs;
+        private ScanNtfs m_scanNtfs;
 
         public MSDefragLib()
         {
-            m_msScanNtfs = new MSScanNtfs(this);
+            m_scanNtfs = new ScanNtfs(this);
 
-            m_msScanNtfs.ShowDebugEvent += new MSScanNtfs.ShowDebugHandler(ScanNtfsEventHandler);
+            m_scanNtfs.ShowDebugEvent += new ScanNtfs.ShowDebugHandler(ScanNtfsEventHandler);
             //ShowDebugEvent += new ShowDebugHandler(ShowDebugEventHandler);
         }
 
@@ -3591,7 +3592,14 @@ namespace MSDefragLib
             SystemTime = Time3;
 
 	        /* Scan NTFS disks. */
-            Result = m_msScanNtfs.AnalyzeNtfsVolume();
+
+//            ScanNtfs ntfs = new ScanNtfs(this);
+
+//            ntfs.AnalyzeNtfsVolume();
+
+//            return;
+
+            Result = m_scanNtfs.AnalyzeNtfsVolume();
 
 	        /* Scan FAT disks. */
 //	        if ((Result == false) && (*Data->Running == RUNNING)) Result = jkScanFat->AnalyzeFatVolume(Data);
