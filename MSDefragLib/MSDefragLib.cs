@@ -5333,14 +5333,7 @@ namespace MSDefragLib
 
             m_data.TotalClusters = (UInt64)bitmap.Count/*bitmap.StartingLcn + bitmap.BitmapSize*/;
 
-            IO.IOWrapper.NTFS_VOLUME_DATA_BUFFER ntfsData = null;
-
-            ntfsData = IO.IOWrapper.GetNtfsInfo(m_data.Disk.VolumeHandle);
-
-            if (ntfsData == null)
-            {
-                return;
-            }
+            IO.IOWrapper.NTFS_VOLUME_DATA_BUFFER ntfsData = m_data.Disk.NtfsVolumeData;
 
             m_data.BytesPerCluster = ntfsData.BytesPerCluster;
 

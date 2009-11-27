@@ -5,15 +5,6 @@ using System.Text;
 
 namespace MSDefragLib
 {
-    public enum DiskType
-    {
-        UnknownType = 0,
-        NTFS = 1,
-        FAT12 = 12,
-        FAT16 = 16,
-        FAT32 = 32
-    };
-
     /* List in memory of the fragments of a file. */
 
     public class FragmentListStruct

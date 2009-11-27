@@ -2151,23 +2151,6 @@ namespace MSDefragLib
 	        return true;
         }
 
-        public Boolean ReadBootDiskRecord()
-        {
-            Int32 NTFS_BOOT_SECTOR_SIZE = 512;
-            ByteArray Buffer = new ByteArray();
-            Int32 BytesRead = 0;
-
-            Buffer.Initialize(NTFS_BOOT_SECTOR_SIZE);
-
-            m_msDefragLib.m_data.Disk.ReadFromCluster(0, Buffer.m_bytes, 0, NTFS_BOOT_SECTOR_SIZE);
-
-            Int64 tempOffset = 11;
-
-            NTFS_BOOT_SECTOR nbs = Buffer.ToNTFS_BOOT_SECTOR(ref tempOffset);
-
-            return true;
-        }
-
         //////////////////////////////////////////////////////////////////////////
         //
         // Load the MFT into a list of ItemStruct records in memory.
@@ -2175,13 +2158,9 @@ namespace MSDefragLib
         //////////////////////////////////////////////////////////////////////////
         public Boolean AnalyzeNtfsVolume()
         {
-            ReadBootDiskRecord();
-
 	        NtfsDiskInfoStruct DiskInfo = new NtfsDiskInfoStruct();
 
 	        ByteArray Buffer = new ByteArray();
-
-	        Int32 BytesRead = 0;
 
 	        FragmentListStruct MftDataFragments;
             FragmentListStruct MftBitmapFragments;
@@ -2210,8 +2189,6 @@ namespace MSDefragLib
 
 	        Boolean Result = false;
 
-	        UInt64 ClustersPerMftRecord = 0;
-
             DateTime Time;
 
 	        Int64 StartTime = 0;
@@ -2219,44 +2196,28 @@ namespace MSDefragLib
 
 	        UInt64 u1 = 0;
 
-            //////////////////////////////////////////////////////////////////////////
-            //
-	        // Read the boot block from the disk.
-            //
-            //////////////////////////////////////////////////////////////////////////
             Buffer.Initialize((Int64)MFTBUFFERSIZE);
-
-            m_msDefragLib.m_data.Disk.ReadFromCluster(0, Buffer.m_bytes, 0, 512);
-
-            //////////////////////////////////////////////////////////////////////////
-            //
-	        // Test if the boot block is an NTFS boot block.
-            //
-            //////////////////////////////////////////////////////////////////////////
             
-            Int64 tempOffset = 3;
+            // Read the boot block from the disk.
+            FS.IBootSector bootSector = m_msDefragLib.m_data.Disk.BootSector;
 
-            if (Buffer.ToUInt64(ref tempOffset) != 0x202020205346544E)
+	        // Test if the boot block is an NTFS boot block.
+            if (bootSector.Filesystem != FS.Filesystem.NTFS)
 	        {
                 ShowDebug(2, "This is not an NTFS disk (different cookie).");
-
 		        return false;
 	        }
 
 	        /* Extract data from the bootblock. */
-            m_msDefragLib.m_data.Disk.Type = DiskType.NTFS;
+            DiskInfo.BytesPerSector = bootSector.BytesPerSector;
+            DiskInfo.SectorsPerCluster = bootSector.SectorsPerCluster;
 
-            DiskInfo.BytesPerSector = Buffer.ToUInt16(ref tempOffset);
+            DiskInfo.TotalSectors = bootSector.TotalSectors;
+            DiskInfo.MftStartLcn = bootSector.Mft1StartLcn;
+            DiskInfo.Mft2StartLcn = bootSector.Mft2StartLcn;
 
-	        /* Still to do: check for impossible values. */
-            DiskInfo.SectorsPerCluster = Buffer.ToUInt64(ref tempOffset);
-
-            tempOffset = 40;
-            DiskInfo.TotalSectors = Buffer.ToUInt64(ref tempOffset);
-            DiskInfo.MftStartLcn = Buffer.ToUInt64(ref tempOffset);
-            DiskInfo.Mft2StartLcn = Buffer.ToUInt64(ref tempOffset);
-            ClustersPerMftRecord = Buffer.ToUInt32(ref tempOffset);
-
+            UInt64 ClustersPerMftRecord = bootSector.ClustersPerMftRecord;
+            DiskInfo.ClustersPerIndexRecord = bootSector.ClustersPerIndexRecord;
 	        if (ClustersPerMftRecord >= 128)
 	        {
                 DiskInfo.BytesPerMftRecord = (UInt64)(1 << (256 - (Int16)ClustersPerMftRecord));
@@ -2265,8 +2226,6 @@ namespace MSDefragLib
 	        {
 		        DiskInfo.BytesPerMftRecord = ClustersPerMftRecord * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
 	        }
-
-            DiskInfo.ClustersPerIndexRecord = Buffer.ToUInt32(ref tempOffset);
 
             m_msDefragLib.m_data.BytesPerCluster = DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
 
@@ -2277,26 +2236,21 @@ namespace MSDefragLib
 
             ShowDebug(0, "This is an NTFS disk.");
 
-            tempOffset = 3;
-
-            ShowDebug(2, String.Format("  Disk cookie: {0:X}", Buffer.ToUInt64(ref tempOffset)));
+            ShowDebug(2, String.Format("  Disk cookie: {0:X}", bootSector.OemId));
             ShowDebug(2, String.Format("  BytesPerSector: {0:G}",DiskInfo.BytesPerSector));
             ShowDebug(2, String.Format("  TotalSectors: {0:G}", DiskInfo.TotalSectors));
             ShowDebug(2, String.Format("  SectorsPerCluster: {0:G}", DiskInfo.SectorsPerCluster));
 
-            tempOffset = 24;
-            ShowDebug(2, String.Format("  SectorsPerTrack: {0:G}", Buffer.ToUInt16(ref tempOffset)));
-            ShowDebug(2, String.Format("  NumberOfHeads: {0:G}", Buffer.ToUInt16(ref tempOffset)));
+            ShowDebug(2, String.Format("  SectorsPerTrack: {0:G}", bootSector.SectorsPerTrack));
+            ShowDebug(2, String.Format("  NumberOfHeads: {0:G}", bootSector.NumberOfHeads));
             ShowDebug(2, String.Format("  MftStartLcn: {0:G}", DiskInfo.MftStartLcn));
             ShowDebug(2, String.Format("  Mft2StartLcn: {0:G}", DiskInfo.Mft2StartLcn));
             ShowDebug(2, String.Format("  BytesPerMftRecord: {0:G}", DiskInfo.BytesPerMftRecord));
             ShowDebug(2, String.Format("  ClustersPerIndexRecord: {0:G}", DiskInfo.ClustersPerIndexRecord));
 
-            tempOffset = 21;
-            ShowDebug(2, String.Format("  MediaType: {0:X}", Buffer.ToByte(ref tempOffset)));
+            ShowDebug(2, String.Format("  MediaType: {0:X}", bootSector.MediaType));
 
-            tempOffset = 72;
-            ShowDebug(2, String.Format("  VolumeSerialNumber: {0:X}", Buffer.ToUInt64(ref tempOffset)));
+            ShowDebug(2, String.Format("  VolumeSerialNumber: {0:X}", bootSector.Serial));
 
 	        /* 
                 Calculate the size of first 16 Inodes in the MFT. The Microsoft defragmentation
@@ -2474,7 +2428,7 @@ namespace MSDefragLib
 	        {
                 //if (Data.Running != true) break;
 
-                tempOffset = (Int64)(InodeNumber >> 3);
+                Int64 tempOffset = (Int64)(InodeNumber >> 3);
 
 		        /*  Ignore the Inode if the bitmap says it's not in use. */
 		        if ((MftBitmap.ToByte(ref tempOffset) & BitmapMasks[InodeNumber % 8]) == 0)
