@@ -5,7 +5,7 @@ using System.Text;
 
 using System.Threading;
 
-namespace MSDefragLib
+namespace MSDefragLib.IO
 {
     /// <summary>
     /// Factory for the overlapped objects we need most often.
@@ -18,11 +18,7 @@ namespace MSDefragLib
         /// <returns></returns>
         public static Overlapped Get()
         {
-            Overlapped _overlapped = new Overlapped();
-            _overlapped.OffsetLow = 0;
-            _overlapped.OffsetHigh = 0;
-            _overlapped.EventHandleIntPtr = IntPtr.Zero;
-            return _overlapped;
+            return Get(0);
         }
 
         /// <summary>

@@ -248,7 +248,7 @@ namespace MSDefragLib
         /* Return a string with the error message for GetLastError(). */
         public String SystemErrorStr(Int32 ErrorCode)
         {
-            String message = IOWrapper.GetMessage(ErrorCode);
+            String message = IO.IOWrapper.GetMessage(ErrorCode);
             return message;
         }
 
@@ -1527,12 +1527,12 @@ namespace MSDefragLib
             //UInt16 w;
             int i;
 
-            IOWrapper.BitmapData bitmapData = null;
+            IO.IOWrapper.BitmapData bitmapData = null;
 
             m_data.RedrawScreen = 2;                       /* Set the flag to "busy". */
 
             /* Exit if the library is not processing a disk yet. */
-            if (m_data.Disk.VolumeHandle == IntPtr.Zero)
+            if (!m_data.Disk.IsOpen)
             {
                 m_data.RedrawScreen = 0;                       /* Set the flag to "no". */
                 return;
@@ -1561,12 +1561,12 @@ namespace MSDefragLib
             {
                 if (m_data.Running != RunningState.RUNNING) break;
                 if (m_data.RedrawScreen != 2) break;
-                if (m_data.Disk.VolumeHandle == null) break;
+                if (!m_data.Disk.IsOpen) break;
 
                 /* Fetch a block of cluster data. */
 //                BitmapParam.StartingLcn.QuadPart = Lcn;
 
-                bitmapData = IOWrapper.GetVolumeMap(m_data.Disk.VolumeHandle);
+                bitmapData = m_data.Disk.VolumeBitmap;
 
 /*
                 ErrorCode = DeviceIoControl(Data.Disk.VolumeHandle,FSCTL_GET_VOLUME_BITMAP,
@@ -2823,14 +2823,14 @@ namespace MSDefragLib
 	        ClusterStart = 0;
 	        PrevInUse = true;
 
-            IOWrapper.BitmapData bitmapData = null;
+            IO.IOWrapper.BitmapData bitmapData = null;
 
 	        do
 	        {
 		        /* Fetch a block of cluster data. */
 		        BitmapParam.StartingLcn.QuadPart = Lcn;
 
-                bitmapData = IOWrapper.GetVolumeMap(m_data.Disk.VolumeHandle);
+                bitmapData = m_data.Disk.VolumeBitmap;
 
                 if (bitmapData.Buffer == null)
                 {
@@ -5142,9 +5142,8 @@ namespace MSDefragLib
              * such as "C:\System Volume Information". If this does not succeed then quietly
              * continue, we'll just have to do with whatever permissions we have.
              * SE_BACKUP_NAME = Backup and Restore Privileges.*/
-            IOWrapper.ElevatePermissions();
+            IO.IOWrapper.ElevatePermissions();
 
-            m_data.Disk.VolumeHandle = IOWrapper.OpenVolume("C:");
             m_data.Disk.MountPoint = Path;
 
             #region Old Code
@@ -5262,7 +5261,7 @@ namespace MSDefragLib
             //            }
             #endregion
 
-            BitArray bitmap = IOWrapper.GetVolumeMap(m_data.Disk.VolumeHandle).Buffer;
+            BitArray bitmap = m_data.Disk.VolumeBitmap.Buffer;
 
             #region Old Code
 
@@ -5334,9 +5333,9 @@ namespace MSDefragLib
 
             m_data.TotalClusters = (UInt64)bitmap.Count/*bitmap.StartingLcn + bitmap.BitmapSize*/;
 
-            IOWrapper.NTFS_VOLUME_DATA_BUFFER ntfsData = null;
+            IO.IOWrapper.NTFS_VOLUME_DATA_BUFFER ntfsData = null;
 
-            ntfsData = IOWrapper.GetNtfsInfo(m_data.Disk.VolumeHandle);
+            ntfsData = IO.IOWrapper.GetNtfsInfo(m_data.Disk.VolumeHandle);
 
             if (ntfsData == null)
             {
@@ -5523,7 +5522,7 @@ namespace MSDefragLib
 
             #endregion
 
-            IOWrapper.CloseHandle(m_data.Disk.VolumeHandle);
+            m_data.Disk.Close();
         }
 /*
         / * Subfunction for DefragAllDisks(). It will ignore removable disks, and

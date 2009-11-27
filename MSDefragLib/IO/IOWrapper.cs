@@ -7,7 +7,7 @@ using System.Collections;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
 
-namespace MSDefragLib
+namespace MSDefragLib.IO
 {
     public class IOWrapper
     {

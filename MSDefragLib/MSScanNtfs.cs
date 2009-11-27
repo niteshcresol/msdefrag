@@ -977,8 +977,6 @@ namespace MSDefragLib
 	        UInt64 ExtentLcn;
 	        UInt64 ExtentLength;
 
-            Int32 BytesRead = 0;
-
             //Boolean Result;
 
             //String s1;
@@ -1033,6 +1031,7 @@ namespace MSDefragLib
 
 		        if (Index >= RunDataLength)
 		        {
+                    throw new Exception("implementation error");
                     ShowDebug(2, "Error: datarun is longer than buffer, the MFT may be corrupt.");
 		
 			        return null;
@@ -1048,6 +1047,7 @@ namespace MSDefragLib
 
 			        if (Index >= RunDataLength)
 			        {
+                        throw new Exception("implementation error");
                         ShowDebug(2, "Error: datarun is longer than buffer, the MFT may be corrupt.");
 			
 					    return null;
@@ -1064,6 +1064,7 @@ namespace MSDefragLib
 
 			        if (Index >= RunDataLength)
 			        {
+                        throw new Exception("implementation error");
                         ShowDebug(2, "Error: datarun is longer than buffer, the MFT may be corrupt.");
 			
 				        return null;
@@ -1118,21 +1119,8 @@ namespace MSDefragLib
                     ExtentLength, ExtentLcn / (DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster),
                 	ExtentVcn - Offset));
 
-                Overlapped gOverlapped = OverlappedBuilder.Get(ExtentLcn);
-                Byte[] Buffer2 = new Byte[ExtentLength];
-
-                BytesRead = IOWrapper.Read(m_msDefragLib.m_data.Disk.VolumeHandle, Buffer.m_bytes, (Int32)(ExtentVcn - Offset), (Int32)ExtentLength, gOverlapped);
-                //Result = IOWrapper.ReadFile(Data.Disk.VolumeHandle, Buffer2, ExtentLength, BytesRead, gOverlapped);
-                //Result = IOWrapper.ReadFile(Data.Disk.VolumeHandle, Buffer[ExtentVcn - Offset], ExtentLength, BytesRead, gOverlapped);
-
-                if (BytesRead <= 0)
-                {
-                    String errorMessage = m_msDefragLib.SystemErrorStr(Marshal.GetLastWin32Error());
-
-                    ShowDebug(2, "Error while reading disk: " + errorMessage);
-
-                    return null;
-                }
+                m_msDefragLib.m_data.Disk.ReadFromCluster(ExtentLcn, Buffer.m_bytes,
+                    (Int32)(ExtentVcn - Offset), (Int32)ExtentLength);
 	        }
 
 	        /* Return the buffer. */
@@ -1276,7 +1264,7 @@ namespace MSDefragLib
                     if (Index >= RunDataLength)
                     {
                         // Exception just here to show ther is an issue
-                        //throw new InvalidOperationException();
+                        throw new Exception("implementation error");
                         ShowDebug(2, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. Inode {0:G}.",
                             InodeData.Inode));
 
@@ -1300,6 +1288,7 @@ namespace MSDefragLib
 
                         if (Index >= RunDataLength)
                         {
+                            throw new Exception("implementation error");
                             ShowDebug(2, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. Inode {0:G}.",
                                   InodeData.Inode));
 
@@ -1324,6 +1313,7 @@ namespace MSDefragLib
 
                         if (Index >= RunDataLength)
                         {
+                            throw new Exception("implementation error");
                             ShowDebug(2, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. Inode {0:G}.",
                                 InodeData.Inode));
 
@@ -1559,6 +1549,7 @@ namespace MSDefragLib
 
 	        if (Depth > 1000)
 	        {
+                throw new Exception("implementation error");
                 ShowDebug(2, "Error: infinite attribute loop, the MFT may be corrupt.");
 	
 		        return;
@@ -1654,22 +1645,10 @@ namespace MSDefragLib
 		        tempVcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerSector *
 				        DiskInfo.SectorsPerCluster + RefInode * DiskInfo.BytesPerMftRecord;
 
-                Overlapped gOverlapped = OverlappedBuilder.Get(tempVcn);
                 Byte[] tempBuffer = new Byte[DiskInfo.BytesPerMftRecord];
 
-                BytesRead = IOWrapper.Read(m_msDefragLib.m_data.Disk.VolumeHandle, Buffer2.m_bytes, 0, (Int32)DiskInfo.BytesPerMftRecord, gOverlapped);
-                //iResult = IOWrapper.ReadFile(Data.Disk.VolumeHandle, tempBuffer, DiskInfo.BytesPerMftRecord, BytesRead, gOverlapped);
-                //Result = IOWrapper.ReadFile(Data.Disk.VolumeHandle, Buffer2, DiskInfo.BytesPerMftRecord, BytesRead, gOverlapped);
-
-                if (BytesRead != (Int32)DiskInfo.BytesPerMftRecord)
-                //if ((Result == false) || (BytesRead != DiskInfo.BytesPerMftRecord))
-		        {
-                    String errorMessage = m_msDefragLib.SystemErrorStr(Marshal.GetLastWin32Error());
-
-                    ShowDebug(2, String.Format("      Error while reading Inode {0:G}: " + errorMessage, RefInode));
-
-			        return;
-		        }
+                m_msDefragLib.m_data.Disk.ReadFromCluster(tempVcn, Buffer2.m_bytes, 0,
+                    (Int32)DiskInfo.BytesPerMftRecord);
 
 		        /* Fixup the raw data. */
                 if (FixupRawMftdata(DiskInfo, Buffer2, DiskInfo.BytesPerMftRecord) == false)
@@ -1764,6 +1743,7 @@ namespace MSDefragLib
 			        (Attribute.Length < 3) ||
 			        (AttributeOffset + Attribute.Length > BufLength))
 		        {
+                    throw new Exception("implementation error");
                     ShowDebug(2, String.Format("Error: attribute in Inode {0:G} is bigger than the data, the MFT may be corrupt.", InodeData.Inode));
                     ShowDebug(2, String.Format("  BufLength={0:G}, AttributeOffset={1:G}, AttributeLength={2:G}({3:X})",
                      		BufLength, AttributeOffset, Attribute.Length, Attribute.Length));
@@ -2016,6 +1996,7 @@ namespace MSDefragLib
 	        /* Sanity check. */
 	        if (FileRecordHeader.AttributeOffset >= BufLength)
 	        {
+                throw new Exception("implementation error");
                 ShowDebug(2, String.Format("Error: attributes in Inode {0:G} are outside the FILE record, the MFT may be corrupt.",
                       InodeNumber));
 
@@ -2024,6 +2005,7 @@ namespace MSDefragLib
 
 	        if (FileRecordHeader.BytesInUse > BufLength)
 	        {
+                throw new Exception("implementation error");
                 ShowDebug(2, String.Format("Error: in Inode {0:G} the record is bigger than the size of the buffer, the MFT may be corrupt.",
                       InodeNumber));
 	
@@ -2197,21 +2179,7 @@ namespace MSDefragLib
 
             Buffer.Initialize(NTFS_BOOT_SECTOR_SIZE);
 
-            Overlapped gOverlapped = OverlappedBuilder.Get();
-//            m_msDefragLib.m_data.Disk.VolumeHandle = IOWrapper.OpenVolume("C:");
-
-            BytesRead = IOWrapper.Read(m_msDefragLib.m_data.Disk.VolumeHandle, Buffer.m_bytes, 0, NTFS_BOOT_SECTOR_SIZE, gOverlapped);
-
-            if (BytesRead != NTFS_BOOT_SECTOR_SIZE)
-            {
-                String errorMessage = m_msDefragLib.SystemErrorStr(Marshal.GetLastWin32Error());
-
-                ShowDebug(2, String.Format("Error while reading bootblock: {0:G}", errorMessage));
-
-                return false;
-            }
-
-//            IOWrapper.CloseHandle(Data.Disk.VolumeHandle);
+            m_msDefragLib.m_data.Disk.ReadFromCluster(0, Buffer.m_bytes, 0, NTFS_BOOT_SECTOR_SIZE);
 
             Int64 tempOffset = 11;
 
@@ -2276,22 +2244,9 @@ namespace MSDefragLib
 	        // Read the boot block from the disk.
             //
             //////////////////////////////////////////////////////////////////////////
-
-            Overlapped gOverlapped = OverlappedBuilder.Get();
-            // Data.Disk.VolumeHandle = IOWrapper.OpenVolume("C:");
-
             Buffer.Initialize((Int64)MFTBUFFERSIZE);
 
-            BytesRead = IOWrapper.Read(m_msDefragLib.m_data.Disk.VolumeHandle, Buffer.m_bytes, 0, 512, gOverlapped);
-
-            if (BytesRead != 512)
-	        {
-                String errorMessage = m_msDefragLib.SystemErrorStr(Marshal.GetLastWin32Error());
-
-                ShowDebug(2, String.Format("Error while reading bootblock: {0:G}", errorMessage));
-
-		        return false;
-	        }
+            m_msDefragLib.m_data.Disk.ReadFromCluster(0, Buffer.m_bytes, 0, 512);
 
             //////////////////////////////////////////////////////////////////////////
             //
@@ -2376,17 +2331,8 @@ namespace MSDefragLib
             UInt64 tempLcn = DiskInfo.MftStartLcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
             //Trans.QuadPart         = DiskInfo.MftStartLcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
 
-            Overlapped gOverlapped2 = OverlappedBuilder.Get(tempLcn);
-            BytesRead = IOWrapper.Read(m_msDefragLib.m_data.Disk.VolumeHandle, Buffer.m_bytes, 0, (Int32)DiskInfo.BytesPerMftRecord, gOverlapped2);
-
-            if (BytesRead != (Int32)DiskInfo.BytesPerMftRecord)
-	        {
-                String errorMessage = m_msDefragLib.SystemErrorStr(Marshal.GetLastWin32Error());
-
-                ShowDebug(2, "Error while reading first MFT record: " + errorMessage);
-
-		        return false;
-	        }
+            m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn, Buffer.m_bytes, 0,
+                (Int32)DiskInfo.BytesPerMftRecord);
 
 	        /* Fixup the raw data from disk. This will also test if it's a valid $MFT record. */
 	        if (FixupRawMftdata(DiskInfo, Buffer, DiskInfo.BytesPerMftRecord) == false)
@@ -2417,8 +2363,7 @@ namespace MSDefragLib
 
                 m_msDefragLib.m_data.ItemTree = null;
 
-                IOWrapper.CloseHandle(m_msDefragLib.m_data.Disk.VolumeHandle);
-                
+                m_msDefragLib.m_data.Disk.Close();
                 return false;
 	        }
 
@@ -2451,19 +2396,6 @@ namespace MSDefragLib
 
             MftBitmap.Initialize((Int64)MaxMftBitmapBytes);
 
-            if (MftBitmap == null)
-	        {
-                ShowDebug(2, "Error: Could not allocate memory.");
-
-                m_msDefragLib.DeleteItemTree(m_msDefragLib.m_data.ItemTree);
-
-                m_msDefragLib.m_data.ItemTree = null;
-
-                IOWrapper.CloseHandle(m_msDefragLib.m_data.Disk.VolumeHandle);
-                
-                return false;
-	        }
-
 	        Vcn = 0;
 	        RealVcn = 0;
 
@@ -2479,33 +2411,14 @@ namespace MSDefragLib
                     tempLcn = Fragment.Lcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
 //			        Trans.QuadPart = Fragment.Lcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
 
-                    Overlapped gOverlapped3 = OverlappedBuilder.Get(tempLcn);
                     UInt64 numClusters = Fragment.NextVcn - Vcn;
                     Int32 numBytes = (Int32)(numClusters * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster);
                     Int32 startIndex = (Int32)(RealVcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster);
 
                     ShowDebug(6, String.Format("    Reading {0:G} clusters ({1:G} bytes) from LCN={2:G}", numClusters, numBytes, Fragment.Lcn));
 
-                    BytesRead = IOWrapper.Read(
-                        m_msDefragLib.m_data.Disk.VolumeHandle, 
-                        MftBitmap.m_bytes, 
-                        startIndex, 
-                        numBytes,gOverlapped3);
-
-                    if (BytesRead != numBytes)
-			        {
-                        String errorMessage = m_msDefragLib.SystemErrorStr(Marshal.GetLastWin32Error());
-
-                        ShowDebug(2, errorMessage);
-
-                        m_msDefragLib.DeleteItemTree(m_msDefragLib.m_data.ItemTree);
-
-                        m_msDefragLib.m_data.ItemTree = null;
-
-                        IOWrapper.CloseHandle(m_msDefragLib.m_data.Disk.VolumeHandle);
-                        
-                        return false;
-			        }
+                    m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn, MftBitmap.m_bytes, 
+                        startIndex, numBytes);
 
 			        RealVcn += Fragment.NextVcn - Vcn;
 		        }
@@ -2641,33 +2554,12 @@ namespace MSDefragLib
                     //Trans.QuadPart = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerSector *
                     //        DiskInfo.SectorsPerCluster + BlockStart * DiskInfo.BytesPerMftRecord;
 
-                    Overlapped gOverlapped4 = OverlappedBuilder.Get(tempLcn);
                     ShowDebug(6, String.Format("Reading block of {0:G} Inodes from MFT into memory, {1:G} bytes from LCN={2:G}",
                           BlockEnd - BlockStart,((BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord),
                           tempLcn / (DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster)));
 
-                    BytesRead = IOWrapper.Read(m_msDefragLib.m_data.Disk.VolumeHandle, Buffer.m_bytes, 0,
-                            (Int32)((BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord),gOverlapped4);
-
-                    //Result = IOWrapper.ReadFile(Data.Disk.VolumeHandle, Buffer.m_bytes,
-                    //        (BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord, BytesRead,
-                    //        gOverlapped);
-
-			        if (BytesRead != (Int32)((BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord))
-                    //if ((Result == false) || (BytesRead != (BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord))
-			        {
-                        String errorMessage = m_msDefragLib.SystemErrorStr(Marshal.GetLastWin32Error());
-
-                        ShowDebug(2, String.Format("Error while reading Inodes {0:G} to {1:G}: {2:G}", InodeNumber, BlockEnd - 1, errorMessage));
-
-                        m_msDefragLib.DeleteItemTree(m_msDefragLib.m_data.ItemTree);
-
-                        m_msDefragLib.m_data.ItemTree = null;
-
-                        IOWrapper.CloseHandle(m_msDefragLib.m_data.Disk.VolumeHandle);
-                        
-                        return false;
-			        }
+                    m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn,
+                        Buffer.m_bytes, 0, (Int32)((BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord));
 		        }
 
 		        /* Fixup the raw data of this Inode. */
@@ -2714,8 +2606,7 @@ namespace MSDefragLib
 
                 m_msDefragLib.m_data.ItemTree = null;
 
-                IOWrapper.CloseHandle(m_msDefragLib.m_data.Disk.VolumeHandle);
-
+                m_msDefragLib.m_data.Disk.Close();
                 return false;
 	        }
 
@@ -2727,8 +2618,7 @@ namespace MSDefragLib
                 if (Item.ParentInode == 5) Item.ParentDirectory = null;
             }
 
-            IOWrapper.CloseHandle(m_msDefragLib.m_data.Disk.VolumeHandle);
-
+            m_msDefragLib.m_data.Disk.Close();
 	        return true;
         }
     }
