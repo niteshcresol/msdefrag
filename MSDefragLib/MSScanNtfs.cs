@@ -1432,8 +1432,6 @@ namespace MSDefragLib
 
 	        Int32 Length;
 
-	        String p1;
-
 	        FileName = FileName1;
 
 	        if ((FileName == null) || (FileName.Length == 0)) FileName = FileName2;
@@ -1497,18 +1495,17 @@ namespace MSDefragLib
 
             if (Length == 3) return (null);
 
-	        p1 = "";
+            StringBuilder p1 = new StringBuilder();
+            if (!String.IsNullOrEmpty(FileName))
+                p1.Append(FileName);
+	        p1.Append(":");
 
-            if (FileName != null) p1 += FileName;
+            if (!String.IsNullOrEmpty(StreamName))
+                p1 .Append(StreamName);
+            p1.Append(":");
+            p1.Append(StreamTypeNames(StreamType));
 
-	        p1 += ":";
-
-            if (StreamName != null) p1 += StreamName;
-
-	        p1 += ":";
-	        p1 += StreamTypeNames(StreamType);
-
-	        return p1;
+	        return p1.ToString();
         }
 
         /*
