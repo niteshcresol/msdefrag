@@ -66,7 +66,7 @@ namespace MSDefrag
             {
                 DrawClusterEventArgs2 dcea = (DrawClusterEventArgs2)e;
 
-                DrawSquares(dcea.m_squareBegin, dcea.m_squareEnd);
+                DrawSquares();
             }
         }
 
@@ -78,14 +78,12 @@ namespace MSDefrag
 
 //                DrawDirtySquare(ngea.m_clusterSquare);
 
-                BeginInvoke(new MethodInvoker(delegate { DrawSquares(0,0); }));
+                BeginInvoke(new MethodInvoker(delegate { DrawSquares(); }));
             }
         }
 
         public Form1()
         {
-            m_form = this;
-
             m_msDefragLib = new MSDefragLib.MSDefragLib();
 
             m_msDefragLib.ShowDebugEvent += new MSDefragLib.MSDefragLib.ShowDebugHandler(ShowChanges);
@@ -128,10 +126,10 @@ namespace MSDefrag
 
             pictureBox1.Image = bmp;
             pictureBox2.Image = statusBmp;
-            DrawSquares(0, m_numSquares);
+            DrawSquares();
         }
 
-        private void DrawSquares(Int32 squareBegin, Int32 squareEnd)
+        private void DrawSquares()
         {
             IList<MSDefragLib.ClusterSquare> squaresList = m_msDefragLib.DirtySquares;
 
@@ -252,9 +250,6 @@ namespace MSDefrag
             pictureBox1.Refresh();
         }
 
-        private static System.Timers.Timer aTimer;
-        private static Form1 m_form;
-
         Thread defragThread = null;
 
         MSDefragLib.MSDefragLib m_msDefragLib = null;
@@ -266,7 +261,6 @@ namespace MSDefrag
         Bitmap bmp = new Bitmap(1000, 900);
         Bitmap statusBmp = new Bitmap(1000, 800);
 
-        Rectangle m_rec = new Rectangle(0, 300, 1000, 900);
         Rectangle m_rec2 = new Rectangle(0, 0, 1000, 800);
 
         Font m_font = new Font("Tahoma", 10);
@@ -274,7 +268,7 @@ namespace MSDefrag
         SolidBrush backBrush = new SolidBrush(Color.Blue);
         SolidBrush fontBrush = new SolidBrush(Color.Yellow);
 
-        public Int32 maxSquare = 5000;
+        public const Int32 maxSquare = 5000;
 
         private const Int32 m_squareSize = 7;
 
