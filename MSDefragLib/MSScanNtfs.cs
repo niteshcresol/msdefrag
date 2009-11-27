@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -687,7 +688,7 @@ namespace MSDefragLib
             ba.Initialize(length << 1 + 1);
 
             if (m_words.Length < index || m_words.Length < index + length)
-                return ba;
+                throw new Exception("Bad index or length!");
 
             int jj = 0;
 
@@ -709,22 +710,12 @@ namespace MSDefragLib
 
         public UInt16 GetValue(Int64 index)
         {
-            UInt16 val = 0;
-
-            if (index < m_words.Length)
-            {
-                val = m_words[index];
-            }
-
-            return val;
+            return m_words[index];
         }
 
         public void SetValue(Int64 index, UInt16 value)
         {
-            if (index < m_words.Length)
-            {
-                m_words[index] = value;
-            }
+            m_words[index] = value;
         }
 
         public void Initialize(Int64 length)
@@ -862,7 +853,7 @@ namespace MSDefragLib
 	        UInt16 i;
 
 	        /* Sanity check. */
-	        if (Buffer == null) return false;
+            Debug.Assert(Buffer != null);
 
             String recordType = "";
 
@@ -971,7 +962,8 @@ namespace MSDefragLib
             ShowDebug(6, String.Format("    Reading {0:G} bytes from offset {0:G}", WantedLength, Offset));
 
 	        /* Sanity check. */
-            if ((RunData == null) || (RunDataLength == 0)) return null;
+            if ((RunData == null) || (RunDataLength == 0)) 
+                throw new Exception("Sanity check failed");
 
 	        if (WantedLength >= UInt32.MaxValue)
 	        {
@@ -1141,8 +1133,9 @@ namespace MSDefragLib
             //	JKDefragGui *jkGui = JKDefragGui::getInstance();
 
 	        /* Sanity check. */
-            if ((m_msDefragLib.m_data == null) || (InodeData == null)) return false;
-
+            if ((m_msDefragLib.m_data == null) || (InodeData == null))
+                throw new Exception("Sanity check failed");
+            
 	        /* Find the stream in the list of streams. If not found then create a new stream. */
 	        for (Stream = InodeData.Streams; Stream != null; Stream = Stream.Next)
 	        {
@@ -1525,8 +1518,9 @@ namespace MSDefragLib
             //String s1;
 
 	        /* Sanity checks. */
-            if ((Buffer == null) || (BufLength == 0)) return;
-
+            if ((Buffer == null) || (BufLength == 0))
+                throw new Exception("Sanity check failed");
+            
 	        if (Depth > 1000)
 	        {
                 throw new Exception("implementation error");

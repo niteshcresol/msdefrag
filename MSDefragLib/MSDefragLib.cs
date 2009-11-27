@@ -21,6 +21,7 @@ http://www.kessels.com/
 */
 
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -386,7 +387,7 @@ namespace MSDefragLib
 	        String Path = "";
 
 	        /* Sanity check. */
-	        if (Item == null) return null;
+            Debug.Assert(Item != null);
 
             Path = Data.Disk.MountPoint;
 
@@ -424,7 +425,7 @@ namespace MSDefragLib
 	        String Path = "";
 
 	        /* Sanity check. */
-	        if (Item == null) return(null);
+	        Debug.Assert(Item != null);
 
             Path = Data.Disk.MountPoint;
 
@@ -444,7 +445,7 @@ namespace MSDefragLib
 	        Int64 Delay;
 
 	        /* Sanity check. */
-            if ((m_data.Speed <= 0) || (m_data.Speed >= 100)) return;
+	        Debug.Assert((m_data.Speed > 0) && (m_data.Speed <= 100));
 
 	        /*
                 Calculate the time we have to sleep so that the wall time is 100% and the
@@ -486,9 +487,7 @@ namespace MSDefragLib
         {
 	        FragmentListStruct Fragment;
 
-	        /* Sanity check. */
-	        if (Item == null) return(0);
-
+	        Debug.Assert(Item != null);
 	        Fragment = Item.Fragments;
 
 	        while ((Fragment != null) && (Fragment.Lcn == VIRTUALFRAGMENT))
@@ -1588,7 +1587,9 @@ namespace MSDefragLib
 
 */
                 /* Sanity check. */
-                if (Lcn >= bitmapData.StartingLcn + bitmapData.BitmapSize) break;
+                if (Lcn >= bitmapData.StartingLcn + bitmapData.BitmapSize)
+                    throw new Exception("Sanity check failed!");
+                //break;
 
                 /* Analyze the clusterdata. We resume where the previous block left off. */
                 Lcn = bitmapData.StartingLcn;
@@ -5924,10 +5925,9 @@ namespace MSDefragLib
         /// </summary>
         public void StopJkDefrag(int TimeOut)
         {
-	        int TimeWaited;
-
 	        /* Sanity check. */
-	        if (m_data.Running != RunningState.RUNNING) return;
+	        if (m_data.Running != RunningState.RUNNING) 
+                return;
 
 	        /* All loops in the library check if the Running variable is set to
 	        RUNNING. If not then the loop will exit. In effect this will stop
@@ -5937,7 +5937,7 @@ namespace MSDefragLib
 	        /* Wait for a maximum of TimeOut milliseconds for the defragger to stop.
 	        If TimeOut is zero then wait indefinitely. If TimeOut is negative then
 	        immediately return without waiting. */
-	        TimeWaited = 0;
+	        int TimeWaited = 0;
 
 	        while (TimeWaited <= TimeOut)
 	        {
