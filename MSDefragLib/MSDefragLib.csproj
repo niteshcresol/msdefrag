@@ -76,7 +76,6 @@
     <Compile Include="IO\OverlappedBuilder.cs" />
     <Compile Include="MSDefragDataStruct.cs" />
     <Compile Include="MSDefragLib.cs" />
-    <None Include="MSScanNtfs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

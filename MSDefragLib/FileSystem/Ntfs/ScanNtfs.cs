@@ -893,7 +893,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 If the StreamName is empty and the StreamType is Data then return only the
                 FileName. The Data stream is the default stream of regular files.
             */
-            if (((StreamName == null) || (StreamName.Length == 0)) && (StreamType.m_attributeType == AttributeTypeEnum.AttributeData))
+            if (((StreamName == null) || (StreamName.Length == 0)) && (StreamType == AttributeTypeEnum.AttributeData))
             {
                 if ((FileName == null) || (FileName.Length == 0)) return (null);
 
@@ -907,7 +907,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             */
             if ((StreamName != null) &&
                 (StreamName.CompareTo("$I30") == 0) &&
-                (StreamType.m_attributeType == AttributeTypeEnum.AttributeIndexAllocation))
+                (StreamType == AttributeTypeEnum.AttributeIndexAllocation))
             {
                 if ((FileName == null) || (FileName.Length == 0)) return null;
 
@@ -993,12 +993,13 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return;
             }
 
-            ShowDebug(6, String.Format("    Processing AttributeList for m_iNode {0:G}, {1:G} bytes", InodeData.m_iNode, BufLength));
+            ShowDebug(6, String.Format("Processing AttributeList for m_iNode {0:G}, {1:G} bytes", InodeData.m_iNode, BufLength));
 
             /* Walk through all the attributes and gather information. */
             for (AttributeOffset = 0; AttributeOffset < BufLength; AttributeOffset = AttributeOffset + attributeList.m_length)
             {
                 Int64 tempOffset = (Int64)AttributeOffset;
+
                 attributeList = new AttributeList(Buffer, ref tempOffset);
 
                 /* Exit if no more attributes. AttributeLists are usually not closed by the
@@ -1006,15 +1007,13 @@ namespace MSDefragLib.FileSystem.Ntfs
                  * not an error.*/
                 if (AttributeOffset + 3 > BufLength) break;
                 //if (Attribute.AttributeType == ATTRIBUTE_TYPE.AttributeAll) break;
-                if (attributeList.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeEndOfList) break;
+                if (attributeList.m_attributeType == AttributeTypeEnum.AttributeEndOfList) break;
                 if (attributeList.m_length < 3) break;
                 if (AttributeOffset + attributeList.m_length > BufLength) break;
 
-                /*
-                    Extract the referenced m_iNode. If it's the same as the calling m_iNode then ignore
-                    (if we don't ignore then the program will loop forever, because for some
-                    reason the info in the calling m_iNode is duplicated here...).
-                */
+                /* Extract the referenced m_iNode. If it's the same as the calling m_iNode then 
+                 * ignore (if we don't ignore then the program will loop forever, because for 
+                 * some reason the info in the calling m_iNode is duplicated here...). */
                 RefInode = (UInt64)attributeList.m_fileReferenceNumber.m_iNodeNumberLowPart +
                         ((UInt64)attributeList.m_fileReferenceNumber.m_iNodeNumberHighPart << 32);
 
@@ -1025,23 +1024,17 @@ namespace MSDefragLib.FileSystem.Ntfs
                 ShowDebug(6, String.Format("      m_lowestVcn = {0:G}, RefInode = {1:G}, InodeSequence = {2:G}, m_instance = {3:G}",
                       attributeList.m_lowestVcn, RefInode, attributeList.m_fileReferenceNumber.m_sequenceNumber, attributeList.m_instance));
 
-                /*
-                    Extract the streamname. I don't know why AttributeLists can have names, and
-                    the name is not used further down. It is only extracted for debugging purposes.
-                */
+                /* Extract the streamname. I don't know why AttributeLists can have names, and
+                 * the name is not used further down. It is only extracted for debugging 
+                 * purposes. */
                 if (attributeList.m_nameLength > 0)
                 {
                     p1 = String.Empty;
-
-                    //p1 = Buffer[AttributeOffset + Attribute.m_nameOffset];
 
                     for (Int64 ii = 0; ii < attributeList.m_nameLength; ii++)
                     {
                         p1 += (Char)Buffer.GetValue((Int64)((Int64)AttributeOffset + attributeList.m_nameOffset + ii));
                     }
-
-                    //wcsncpy_s(p1,Attribute->m_nameLength + 1,
-                    //        (WCHAR *)&Buffer[AttributeOffset + Attribute->m_nameOffset],Attribute->m_nameLength);
 
                     ShowDebug(6, "      AttributeList name = '" + p1 + "'");
                 }
@@ -1076,7 +1069,6 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 UInt64 tempVcn;
 
-
                 /* Fetch the record of the referenced m_iNode from disk. */
                 tempVcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerSector *
                         DiskInfo.SectorsPerCluster + RefInode * DiskInfo.BytesPerMftRecord;
@@ -1095,7 +1087,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 /* If the m_iNode is not in use then skip. */
-                //FileRecordHeader = (FILE_RECORD_HEADER)Buffer2;
                 tempOffset = 0;
 
                 FileRecordHeader = new NtfsFileRecordHeader(Buffer2, ref tempOffset);
@@ -1167,14 +1158,14 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 attribute = new Attribute(Buffer, ref tempOffset);
 
-                if (attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeEndOfList)
+                if (attribute.m_attributeType == AttributeTypeEnum.AttributeEndOfList)
                 {
                     break;
                 }
 
                 /* Exit the loop if end-marker. */
                 if ((AttributeOffset + 4 <= BufLength) &&
-                    (attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeInvalid))
+                    (attribute.m_attributeType == AttributeTypeEnum.AttributeInvalid))
                 {
                     break;
                 }
@@ -1195,7 +1186,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 /* Skip AttributeList's for now. */
-                if (attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeAttributeList)
+                if (attribute.m_attributeType == AttributeTypeEnum.AttributeAttributeList)
                 {
                     continue;
                 }
@@ -1218,7 +1209,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     residentAttribute = new ResidentAttribute(Buffer, ref tempOffset);
 
                     /* The AttributeFileName (0x30) contains the filename and the link to the parent directory. */
-                    if (attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeFileName)
+                    if (attribute.m_attributeType == AttributeTypeEnum.AttributeFileName)
                     {
                         tempOffset = (Int64)(AttributeOffset + residentAttribute.ValueOffset);
 
@@ -1262,7 +1253,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                         The AttributeStandardInformation (0x10) contains the m_creationTime, m_lastAccessTime,
                         the m_mftChangeTime, and the file attributes.
                     */
-                    if (attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeStandardInformation)
+                    if (attribute.m_attributeType == AttributeTypeEnum.AttributeStandardInformation)
                     {
                         tempOffset = (Int64)(AttributeOffset + residentAttribute.ValueOffset);
 
@@ -1274,7 +1265,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     }
 
                     /* The value of the AttributeData (0x80) is the actual data of the file. */
-                    if (attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeData)
+                    if (attribute.m_attributeType == AttributeTypeEnum.AttributeData)
                     {
                         InodeData.m_totalBytes = residentAttribute.ValueLength;
                     }
@@ -1286,7 +1277,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     nonResidentAttribute = new NonResidentAttribute(Buffer, ref tempOffset);
 
                     /* Save the length (number of bytes) of the data. */
-                    if ((attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeData) &&
+                    if ((attribute.m_attributeType == AttributeTypeEnum.AttributeData) &&
                         (InodeData.m_totalBytes == 0))
                     {
                         InodeData.m_totalBytes = nonResidentAttribute.m_dataSize;
@@ -1313,14 +1304,14 @@ namespace MSDefragLib.FileSystem.Ntfs
                     /* Special case: If this is the $MFT then save data. */
                     if (InodeData.m_iNode == 0)
                     {
-                        if ((attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeData) &&
+                        if ((attribute.m_attributeType == AttributeTypeEnum.AttributeData) &&
                             (InodeData.m_mftDataFragments == null))
                         {
                             InodeData.m_mftDataFragments = InodeData.m_streams.Fragments;
                             InodeData.m_mftDataLength = nonResidentAttribute.m_dataSize;
                         }
 
-                        if ((attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeBitmap) &&
+                        if ((attribute.m_attributeType== AttributeTypeEnum.AttributeBitmap) &&
                             (InodeData.m_mftBitmapFragments == null))
                         {
                             InodeData.m_mftBitmapFragments = InodeData.m_streams.Fragments;
@@ -1341,17 +1332,17 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 attribute = new Attribute(Buffer, ref tempOffset);
 
-                if (attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeEndOfList)
+                if (attribute.m_attributeType == AttributeTypeEnum.AttributeEndOfList)
                 {
                     break;
                 }
 
-                if (attribute.m_attributeType.m_attributeType == AttributeTypeEnum.AttributeInvalid)
+                if (attribute.m_attributeType == AttributeTypeEnum.AttributeInvalid)
                 {
                     break;
                 }
 
-                if (attribute.m_attributeType.m_attributeType != AttributeTypeEnum.AttributeAttributeList)
+                if (attribute.m_attributeType != AttributeTypeEnum.AttributeAttributeList)
                 {
                     continue;
                 }
@@ -1568,7 +1559,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 m_msDefragLib.m_data.CountAllFiles++;
 
-                if ((Stream != null) && (Stream.StreamType.m_attributeType == AttributeTypeEnum.AttributeData))
+                if ((Stream != null) && (Stream.StreamType == AttributeTypeEnum.AttributeData))
                 {
                     m_msDefragLib.m_data.CountAllBytes += InodeData.m_totalBytes;
                 }

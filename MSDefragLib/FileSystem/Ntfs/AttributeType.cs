@@ -121,5 +121,25 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             m_attributeType = retValue;
         }
+
+        public static Boolean operator ==(AttributeType at, AttributeTypeEnum ate)
+        {
+            return at.m_attributeType == ate;
+        }
+
+        public static Boolean operator !=(AttributeType at, AttributeTypeEnum ate)
+        {
+            return at.m_attributeType != ate;
+        }
+
+        public static Boolean operator ==(AttributeType at, AttributeType at2)
+        {
+            return at.m_attributeType == at2.m_attributeType;
+        }
+
+        public static Boolean operator !=(AttributeType at, AttributeType at2)
+        {
+            return at.m_attributeType != at2.m_attributeType;
+        }
     }
 }
