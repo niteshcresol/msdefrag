@@ -122,6 +122,49 @@ namespace MSDefragLib.FileSystem.Ntfs
             m_attributeType = retValue;
         }
 
+        public String GetStreamTypeName()
+        {
+            switch (m_attributeType)
+            {
+                case AttributeTypeEnum.AttributeStandardInformation:
+                    return ("$STANDARD_INFORMATION");
+                case AttributeTypeEnum.AttributeAttributeList:
+                    return ("$ATTRIBUTE_LIST");
+                case AttributeTypeEnum.AttributeFileName:
+                    return ("$FILE_NAME");
+                case AttributeTypeEnum.AttributeObjectId:
+                    return ("$OBJECT_ID");
+                case AttributeTypeEnum.AttributeSecurityDescriptor:
+                    return ("$SECURITY_DESCRIPTOR");
+                case AttributeTypeEnum.AttributeVolumeName:
+                    return ("$VOLUME_NAME");
+                case AttributeTypeEnum.AttributeVolumeInformation:
+                    return ("$VOLUME_INFORMATION");
+                case AttributeTypeEnum.AttributeData:
+                    return ("$DATA");
+                case AttributeTypeEnum.AttributeIndexRoot:
+                    return ("$INDEX_ROOT");
+                case AttributeTypeEnum.AttributeIndexAllocation:
+                    return ("$INDEX_ALLOCATION");
+                case AttributeTypeEnum.AttributeBitmap:
+                    return ("$BITMAP");
+                case AttributeTypeEnum.AttributeReparsePoint:
+                    return ("$REPARSE_POINT");
+                case AttributeTypeEnum.AttributeEAInformation:
+                    return ("$EA_INFORMATION");
+                case AttributeTypeEnum.AttributeEA:
+                    return ("$EA");
+                case AttributeTypeEnum.AttributePropertySet:
+                    return ("$PROPERTY_SET");               /* guess, not documented */
+                case AttributeTypeEnum.AttributeLoggedUtilityStream:
+                    return ("$LOGGED_UTILITY_STREAM");
+                case AttributeTypeEnum.AttributeInvalid:
+                    return "";
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
         public static Boolean operator ==(AttributeType at, AttributeTypeEnum ate)
         {
             return at.m_attributeType == ate;

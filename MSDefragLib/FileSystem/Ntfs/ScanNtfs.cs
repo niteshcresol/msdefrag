@@ -27,36 +27,16 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public UInt64 Value
         {
-
             set
             {
-                for (int ii = 0; ii < 8; ii++)
-                {
-                    Bytes[ii] = 0;
-                }
+                Bytes = BitConverter.GetBytes(value);
             }
 
             get
             {
-
-                UInt64 val = 0;
-
-                for (int i = 7; i >= 0; i--)
-                {
-                    val = (val << 8) | Bytes[i];
-                }
-
-                return val;
+                return BitConverter.ToUInt64(Bytes, 0); ;
             }
         }
-        /*
-                struct
-                {
-                    BYTE Bytes[8];
-                };
-			
-                LONG64 Value;
-        */
     };
 
     class ByteArray
@@ -90,6 +70,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             ByteArray ba = new ByteArray();
             ba.m_bytes = new Byte[length];
             Array.Copy(m_bytes, index, ba.m_bytes, 0, length);
+
             return ba;
         }
 
@@ -183,7 +164,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public void SetValue(Int64 index, UInt16 value)
         {
-                m_words[index] = value;
+            m_words[index] = value;
         }
 
         public void Initialize(Int64 length)
@@ -208,13 +189,6 @@ namespace MSDefragLib.FileSystem.Ntfs
     {
         const UInt64 MFTBUFFERSIZE = 256 * 1024;
         const UInt64 VIRTUALFRAGMENT = UInt64.MaxValue;
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct ULARGE_INTEGER
-        {
-            public UInt32 LowPart;
-            public UInt32 HighPart;
-        };
 
         private MSDefragLib m_msDefragLib;
 
@@ -241,49 +215,6 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             if (level < 6)
                 OnShowDebug(e);
-        }
-
-        String StreamTypeNames(AttributeType StreamType)
-        {
-            switch (StreamType.m_attributeType)
-            {
-                case AttributeTypeEnum.AttributeStandardInformation:
-                    return ("$STANDARD_INFORMATION");
-                case AttributeTypeEnum.AttributeAttributeList:
-                    return ("$ATTRIBUTE_LIST");
-                case AttributeTypeEnum.AttributeFileName:
-                    return ("$FILE_NAME");
-                case AttributeTypeEnum.AttributeObjectId:
-                    return ("$OBJECT_ID");
-                case AttributeTypeEnum.AttributeSecurityDescriptor:
-                    return ("$SECURITY_DESCRIPTOR");
-                case AttributeTypeEnum.AttributeVolumeName:
-                    return ("$VOLUME_NAME");
-                case AttributeTypeEnum.AttributeVolumeInformation:
-                    return ("$VOLUME_INFORMATION");
-                case AttributeTypeEnum.AttributeData:
-                    return ("$DATA");
-                case AttributeTypeEnum.AttributeIndexRoot:
-                    return ("$INDEX_ROOT");
-                case AttributeTypeEnum.AttributeIndexAllocation:
-                    return ("$INDEX_ALLOCATION");
-                case AttributeTypeEnum.AttributeBitmap:
-                    return ("$BITMAP");
-                case AttributeTypeEnum.AttributeReparsePoint:
-                    return ("$REPARSE_POINT");
-                case AttributeTypeEnum.AttributeEAInformation:
-                    return ("$EA_INFORMATION");
-                case AttributeTypeEnum.AttributeEA:
-                    return ("$EA");
-                case AttributeTypeEnum.AttributePropertySet:
-                    return ("$PROPERTY_SET");               /* guess, not documented */
-                case AttributeTypeEnum.AttributeLoggedUtilityStream:
-                    return ("$LOGGED_UTILITY_STREAM");
-                case AttributeTypeEnum.AttributeInvalid:
-                    return "";
-                default:
-                    throw new NotSupportedException();
-            }
         }
 
         /// <summary>
@@ -363,10 +294,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                     return false;
                 }
 
-                /*
-                    Check if the last 2 bytes of the sector contain the Update Sequence Number.
-                    If not then return FALSE.
-                */
+                /* Check if the last 2 bytes of the sector contain the Update Sequence Number.
+                 * If not then return FALSE. */
                 if (BufferW.GetValue(Index) - UpdateSequenceArray.GetValue(0) != 0)
                 {
                     ShowDebug(2, "Error: USA fixup word is not equal to the Update Sequence Number, the MFT may be corrupt.");
@@ -385,13 +314,17 @@ namespace MSDefragLib.FileSystem.Ntfs
             return true;
         }
 
-        /*
-            Read the data that is specified in a RunData list from disk into memory,
-            skipping the first Offset bytes. Return a malloc'ed buffer with the data,
-            or null if error.
-
-            Note: The caller must free() the buffer.
-        */
+        /// <summary>
+        /// Read the data that is specified in a RunData list from disk into memory,
+        /// skipping the first Offset bytes. Return a malloc'ed buffer with the data,
+        /// or null if error.
+        /// </summary>
+        /// <param name="DiskInfo"></param>
+        /// <param name="RunData"></param>
+        /// <param name="RunDataLength"></param>
+        /// <param name="Offset"></param>
+        /// <param name="WantedLength"></param>
+        /// <returns></returns>
         ByteArray ReadNonResidentData(
             NtfsDiskInfoStructure DiskInfo,
             ByteArray RunData,
@@ -436,22 +369,20 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return null;
             }
 
-            /* 
-                We have to round up the WantedLength to the nearest sector. For some
-                reason or other Microsoft has decided that raw reading from disk can
-                only be done by whole sector, even though ReadFile() accepts it's
-                parameters in bytes.
-            */
+            //////////////////////////////////////////////////////////////////////////
+            // We have to round up the WantedLength to the nearest sector. For some
+            // reason or other Microsoft has decided that raw reading from disk can
+            // only be done by whole sector, even though ReadFile() accepts it's
+            // parameters in bytes.
+            //////////////////////////////////////////////////////////////////////////
             if (WantedLength % DiskInfo.BytesPerSector > 0)
             {
                 WantedLength = WantedLength + DiskInfo.BytesPerSector - WantedLength % DiskInfo.BytesPerSector;
             }
 
-            /*
-                Allocate the data buffer. Clear the buffer with zero's in case of sparse
-                content.
-            */
-            //            Buffer.Initialize();
+            /* Allocate the data buffer. Clear the buffer with zero's in case of sparse
+             * content.*/
+            //Buffer.Initialize();
 
             /* Walk through the RunData and read the requested data from disk. */
             Index = 0;
@@ -524,11 +455,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                 /* I don't think the RunLength can ever be zero, but just in case. */
                 if (RunLength.Bytes == null) continue;
 
-                /*  
-                    Determine how many and which bytes we want to read. If we don't need
-                    any bytes from this extent then loop. 
-                */
-
+                /* Determine how many and which bytes we want to read. If we don't need
+                 * any bytes from this extent then loop. */
                 ExtentVcn = (Vcn - RunLength.Value) * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
                 ExtentLcn = Lcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
 
@@ -624,11 +552,11 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 if (StreamName != null)
                 {
-                    ShowDebug(6, "    Creating new stream: '" + StreamName + ":" + StreamTypeNames(StreamType) + "'");
+                    ShowDebug(6, "    Creating new stream: '" + StreamName + ":" + StreamType.GetStreamTypeName() + "'");
                 }
                 else
                 {
-                    ShowDebug(6, "    Creating new stream: ':" + StreamTypeNames(StreamType) + "'");
+                    ShowDebug(6, "    Creating new stream: ':" + StreamType.GetStreamTypeName() + "'");
                 }
 
                 Stream = new StreamStructure();
@@ -653,11 +581,11 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 if (StreamName != null)
                 {
-                    ShowDebug(6, "    Appending rundata to existing stream: '" + StreamName + ":" + StreamTypeNames(StreamType));
+                    ShowDebug(6, "    Appending rundata to existing stream: '" + StreamName + ":" + StreamType.GetStreamTypeName());
                 }
                 else
                 {
-                    ShowDebug(6, "    Appending rundata to existing stream: ':" + StreamTypeNames(StreamType));
+                    ShowDebug(6, "    Appending rundata to existing stream: ':" + StreamType.GetStreamTypeName());
                 }
 
                 if (Stream.Bytes == 0) Stream.Bytes = Bytes;
@@ -919,7 +847,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 FileName. The Data stream is the default stream of regular files. 
             */
             if (((StreamName == null) || (StreamName.Length == 0)) &&
-                (StreamTypeNames(StreamType).Length == 0))
+                (StreamType.GetStreamTypeName().Length == 0))
             {
                 if ((FileName == null) || (FileName.Length == 0)) return (null);
 
@@ -931,7 +859,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (FileName != null) Length += FileName.Length;
             if (StreamName != null) Length += StreamName.Length;
 
-            Length = Length + StreamTypeNames(StreamType).Length;
+            Length = Length + StreamType.GetStreamTypeName().Length;
 
             if (Length == 3) return (null);
 
@@ -943,7 +871,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (!String.IsNullOrEmpty(StreamName))
                 p1.Append(StreamName);
             p1.Append(":");
-            p1.Append(StreamTypeNames(StreamType));
+            p1.Append(StreamType.GetStreamTypeName());
 
             return p1.ToString();
         }
@@ -1020,7 +948,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (RefInode == InodeData.m_iNode) continue;
 
                 /* Show debug message. */
-                ShowDebug(6, "    List attribute: " + StreamTypeNames(attributeList.m_attributeType));
+                ShowDebug(6, "    List attribute: " + attributeList.m_attributeType.GetStreamTypeName());
                 ShowDebug(6, String.Format("      m_lowestVcn = {0:G}, RefInode = {1:G}, InodeSequence = {2:G}, m_instance = {3:G}",
                       attributeList.m_lowestVcn, RefInode, attributeList.m_fileReferenceNumber.m_sequenceNumber, attributeList.m_instance));
 
@@ -1200,7 +1128,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 /* Show debug message. */
-                ShowDebug(6, String.Format("  Attribute {0:G}: {1:G}", attribute.m_attributeNumber, StreamTypeNames(attribute.m_attributeType)));
+                ShowDebug(6, String.Format("  Attribute {0:G}: {1:G}", attribute.m_attributeNumber, attribute.m_attributeType.GetStreamTypeName()));
 
                 if (attribute.m_nonResident == false)
                 {
@@ -1347,7 +1275,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     continue;
                 }
 
-                ShowDebug(6, String.Format("  Attribute {0:G}: {1:G}", attribute.m_attributeNumber, StreamTypeNames(attribute.m_attributeType)));
+                ShowDebug(6, String.Format("  Attribute {0:G}: {1:G}", attribute.m_attributeNumber, attribute.m_attributeType.GetStreamTypeName()));
 
                 if (attribute.m_nonResident == false)
                 {
