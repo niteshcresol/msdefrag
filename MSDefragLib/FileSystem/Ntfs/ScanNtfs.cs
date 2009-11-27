@@ -289,7 +289,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 /* Check if we are inside the buffer. */
                 if (Index * sizeof(UInt16) >= (Int64)BufLength)
                 {
-                    ShowDebug(2, "Warning: USA data indicates that data is missing, the MFT may be corrupt.");
+                    ShowDebug(0, "Warning: USA data indicates that data is missing, the MFT may be corrupt.");
 
                     return false;
                 }
@@ -298,7 +298,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                  * If not then return FALSE. */
                 if (BufferW.GetValue(Index) - UpdateSequenceArray.GetValue(0) != 0)
                 {
-                    ShowDebug(2, "Error: USA fixup word is not equal to the Update Sequence Number, the MFT may be corrupt.");
+                    ShowDebug(0, "Error: USA fixup word is not equal to the Update Sequence Number, the MFT may be corrupt.");
 
                     return false;
                 }
@@ -335,7 +335,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             UInt64 Index;
 
             ByteArray Buffer = new ByteArray();
-            //ByteArray Buffer = new Byte[WantedLength];
+            Buffer.Initialize((Int64)WantedLength);
 
             UInt64 Lcn;
             UInt64 Vcn;
@@ -402,7 +402,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (Index >= RunDataLength)
                 {
                     throw new Exception("implementation error");
-                    ShowDebug(2, "Error: datarun is longer than buffer, the MFT may be corrupt.");
+                    ShowDebug(0, "Error: datarun is longer than buffer, the MFT may be corrupt.");
 
                     return null;
                 }
@@ -418,7 +418,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     if (Index >= RunDataLength)
                     {
                         throw new Exception("implementation error");
-                        ShowDebug(2, "Error: datarun is longer than buffer, the MFT may be corrupt.");
+                        ShowDebug(0, "Error: datarun is longer than buffer, the MFT may be corrupt.");
 
                         return null;
                     }
@@ -435,7 +435,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     if (Index >= RunDataLength)
                     {
                         throw new Exception("implementation error");
-                        ShowDebug(2, "Error: datarun is longer than buffer, the MFT may be corrupt.");
+                        ShowDebug(0, "Error: datarun is longer than buffer, the MFT may be corrupt.");
 
                         return null;
                     }
@@ -521,8 +521,6 @@ namespace MSDefragLib.FileSystem.Ntfs
             FragmentListStruct LastFragment;
 
             int i;
-
-            //	JKDefragGui *jkGui = JKDefragGui::getInstance();
 
             /* Sanity check. */
             if ((m_msDefragLib.m_data == null) || (InodeData == null))
@@ -633,7 +631,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     {
                         // Exception just here to show ther is an issue
                         throw new Exception("implementation error");
-                        ShowDebug(2, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. m_iNode {0:G}.",
+                        ShowDebug(0, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. m_iNode {0:G}.",
                             InodeData.m_iNode));
 
                         return false;
@@ -657,7 +655,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                         if (Index >= RunDataLength)
                         {
                             throw new Exception("implementation error");
-                            ShowDebug(2, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. m_iNode {0:G}.",
+                            ShowDebug(0, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. m_iNode {0:G}.",
                                   InodeData.m_iNode));
 
                             return false;
@@ -682,7 +680,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                         if (Index >= RunDataLength)
                         {
                             throw new Exception("implementation error");
-                            ShowDebug(2, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. m_iNode {0:G}.",
+                            ShowDebug(0, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. m_iNode {0:G}.",
                                 InodeData.m_iNode));
 
                             return false;
@@ -888,6 +886,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 int Depth)
         {
             ByteArray Buffer2 = new ByteArray();
+            Buffer2.Initialize((Int64)DiskInfo.BytesPerMftRecord);
 
             AttributeList attributeList;
 
@@ -916,7 +915,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (Depth > 1000)
             {
                 throw new Exception("implementation error");
-                ShowDebug(2, "Error: infinite attribute loop, the MFT may be corrupt.");
+                ShowDebug(0, "Error: infinite attribute loop, the MFT may be corrupt.");
 
                 return;
             }
@@ -1104,7 +1103,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     (AttributeOffset + attribute.m_length > BufLength))
                 {
                     throw new Exception("implementation error");
-                    ShowDebug(2, String.Format("Error: attribute in m_iNode {0:G} is bigger than the data, the MFT may be corrupt.", InodeData.m_iNode));
+                    ShowDebug(0, String.Format("Error: attribute in m_iNode {0:G} is bigger than the data, the MFT may be corrupt.", InodeData.m_iNode));
                     ShowDebug(2, String.Format("  BufLength={0:G}, AttributeOffset={1:G}, AttributeLength={2:G}({3:X})",
                             BufLength, AttributeOffset, attribute.m_length, attribute.m_length));
 
@@ -1279,9 +1278,10 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 if (attribute.m_nonResident == false)
                 {
-                    residentAttribute = new ResidentAttribute();
+                    Int64 tempOffset2 = (Int64)AttributeOffset;
+                    residentAttribute = new ResidentAttribute(Buffer, ref tempOffset2);
 
-                    residentAttribute.m_attribute = attribute;
+                    //residentAttribute.m_attribute = attribute;
 
                     ProcessAttributeList(DiskInfo, InodeData,
                             Buffer.ToByteArray((Int64)(AttributeOffset + residentAttribute.ValueOffset), Buffer.GetLength() - (Int64)(AttributeOffset + residentAttribute.ValueOffset)),
@@ -1289,9 +1289,11 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
                 else
                 {
-                    nonResidentAttribute = new NonResidentAttribute();
+                    Int64 tempOffset3 = (Int64)AttributeOffset;
+                    nonResidentAttribute = new NonResidentAttribute(Buffer, ref tempOffset3);
+                    //nonResidentAttribute = new NonResidentAttribute();
 
-                    nonResidentAttribute.m_attribute = attribute;
+                    //nonResidentAttribute.m_attribute = attribute;
 
                     Buffer2Length = nonResidentAttribute.m_dataSize;
                     // Buffer2Length = 512;
@@ -1379,7 +1381,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (FileRecordHeader.AttributeOffset >= BufLength)
             {
                 throw new Exception("implementation error");
-                ShowDebug(2, String.Format("Error: attributes in m_iNode {0:G} are outside the FILE record, the MFT may be corrupt.",
+                ShowDebug(0, String.Format("Error: attributes in m_iNode {0:G} are outside the FILE record, the MFT may be corrupt.",
                       InodeNumber));
 
                 return false;
@@ -1388,7 +1390,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (FileRecordHeader.BytesInUse > BufLength)
             {
                 throw new Exception("implementation error");
-                ShowDebug(2, String.Format("Error: in m_iNode {0:G} the record is bigger than the size of the buffer, the MFT may be corrupt.",
+                ShowDebug(0, String.Format("Error: in m_iNode {0:G} the record is bigger than the size of the buffer, the MFT may be corrupt.",
                       InodeNumber));
 
                 return false;
