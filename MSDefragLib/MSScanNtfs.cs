@@ -385,17 +385,8 @@ namespace MSDefragLib
         public ByteArray ToByteArray(Int64 index, Int64 length)
         {
             ByteArray ba = new ByteArray();
-
             ba.m_bytes = new Byte[length];
-
-            if (m_bytes.Length < index || m_bytes.Length < index + length)
-                return ba;
-
-            for (int ii = 0; ii < length; ii++)
-            {
-                ba.SetValue(ii, m_bytes[index + ii]);
-            }
-
+            Array.Copy(m_bytes, index, ba.m_bytes, 0, length);
             return ba;
         }
 
@@ -403,20 +394,12 @@ namespace MSDefragLib
         public UInt16Array ToUInt16Array(Int64 index, Int64 length)
         {
             UInt16Array ba = new UInt16Array();
-
-            //ba.m_words = new UInt16[length / 2];
             ba.Initialize(length / 2);
-
-            if (m_bytes.Length < index || m_bytes.Length < index + length)
-                return ba;
-
             int jj = 0;
-
             for (int ii = 0; ii < length; ii+=2)
             {
                 ba.SetValue(jj++, BitConverter.ToUInt16(m_bytes, (int)index+ii));
             }
-
             return ba;
         }
 
