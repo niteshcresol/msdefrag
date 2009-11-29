@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -58,18 +59,13 @@ namespace MSDefragLib.FileSystem.Ntfs
             return m_attributeType.ToString();
         }
 
-        public AttributeType(ByteArray buffer, ref Int64 offset)
-        {
-            Parse(buffer, ref offset);
-        }
-
-        public void Parse(ByteArray buffer, ref Int64 offset)
+        public static AttributeType Parse(BinaryReader reader)
         {
             AttributeTypeEnum retValue = AttributeTypeEnum.AttributeInvalid;
 
             // http://msdn.microsoft.com/en-us/library/bb470038%28VS.85%29.aspx
             // It is a DWORD containing enumerated values
-            UInt32 val = buffer.ToUInt32(ref offset);
+            UInt32 val = reader.ReadUInt32();
 
             // the attribute type code may contain a special value -1 (or 0xFFFFFFFF) which 
             // may be present as a filler to mark the end of an attribute list. In that case,
@@ -138,7 +134,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     throw new NotSupportedException();
             }
 
-            m_attributeType = retValue;
+            return new AttributeType(retValue);
         }
 
         public String GetStreamTypeName()
