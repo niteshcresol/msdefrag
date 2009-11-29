@@ -33,10 +33,29 @@ namespace MSDefragLib.FileSystem.Ntfs
 
     class AttributeType
     {
-        public AttributeTypeEnum m_attributeType;
+        private AttributeTypeEnum m_attributeType;
 
         public AttributeType()
+            : this(AttributeTypeEnum.AttributeInvalid)
         {
+        }
+
+        public AttributeType(AttributeTypeEnum type)
+        {
+            m_attributeType = type;
+        }
+
+        public AttributeTypeEnum Type
+        {
+            get
+            {
+                return m_attributeType;
+            }
+        }
+
+        public override string ToString()
+        {
+            return m_attributeType.ToString();
         }
 
         public AttributeType(ByteArray buffer, ref Int64 offset)

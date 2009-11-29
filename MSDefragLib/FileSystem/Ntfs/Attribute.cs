@@ -24,7 +24,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             m_attributeType = new AttributeType(buffer, ref offset);
 
-            if (m_attributeType.m_attributeType == AttributeTypeEnum.AttributeEndOfList)
+            if (m_attributeType.Type == AttributeTypeEnum.AttributeEndOfList)
             {
                 return;
             }

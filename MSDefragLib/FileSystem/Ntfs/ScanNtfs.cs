@@ -529,7 +529,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             /* Find the stream in the list of streams. If not found then create a new stream. */
             for (Stream = InodeData.m_streams; Stream != null; Stream = Stream.Next)
             {
-                if (Stream.StreamType.m_attributeType != StreamType.m_attributeType)
+                if (Stream.StreamType.Type != StreamType.Type)
                 {
                     continue;
                 }
@@ -804,7 +804,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             if ((FileName != null) && (FileName.Length == 0)) FileName = null;
 
             StreamName = null;
-            StreamType.m_attributeType = AttributeTypeEnum.AttributeInvalid;
+            StreamType = new AttributeType();
 
             if (Stream != null)
             {
@@ -1418,8 +1418,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             /* Make sure that directories are always created. */
             if (InodeData.m_directory == true)
             {
-                AttributeType attributeType = new AttributeType();
-                attributeType.m_attributeType = AttributeTypeEnum.AttributeIndexAllocation;
+                AttributeType attributeType = new AttributeType(AttributeTypeEnum.AttributeIndexAllocation);
                 TranslateRundataToFragmentlist(InodeData, "$I30", attributeType, null, 0, 0, 0);
             }
 
