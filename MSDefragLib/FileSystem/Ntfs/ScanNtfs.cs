@@ -1,11 +1,12 @@
 ﻿using System;
+using System.IO;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Runtime.InteropServices;
 using MSDefragLib.IO;
-using System.Diagnostics;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
@@ -1083,7 +1084,9 @@ namespace MSDefragLib.FileSystem.Ntfs
                 //Attribute = (ATTRIBUTE)Buffer[AttributeOffset];
                 Int64 tempOffset = (Int64)AttributeOffset;
 
-                attribute = new Attribute(Buffer, ref tempOffset);
+                //HACK: temporary hack to demonstrate the usage of the binary reader
+                attribute = Attribute.Parse(Helper.BinaryReader(Buffer, tempOffset));
+                tempOffset += attribute.Size;
 
                 if (attribute.m_attributeType == AttributeTypeEnum.AttributeEndOfList)
                 {
@@ -1257,7 +1260,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 Int64 tempOffset = (Int64)AttributeOffset;
 
-                attribute = new Attribute(Buffer, ref tempOffset);
+                //HACK: temporary hack to demonstrate the usage of the binary reader
+                attribute = Attribute.Parse(Helper.BinaryReader(Buffer, tempOffset));
+                tempOffset += attribute.Size;
 
                 if (attribute.m_attributeType == AttributeTypeEnum.AttributeEndOfList)
                 {
@@ -1418,7 +1423,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             /* Make sure that directories are always created. */
             if (InodeData.m_directory == true)
             {
-                AttributeType attributeType = new AttributeType(AttributeTypeEnum.AttributeIndexAllocation);
+                AttributeType attributeType = AttributeTypeEnum.AttributeIndexAllocation;
                 TranslateRundataToFragmentlist(InodeData, "$I30", attributeType, null, 0, 0, 0);
             }
 

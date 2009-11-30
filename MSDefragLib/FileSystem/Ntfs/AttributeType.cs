@@ -32,7 +32,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         AttributeEndOfList = -1
     };
 
-    class AttributeType
+    class AttributeType : ISizeHelper
     {
         private AttributeTypeEnum m_attributeType;
 
@@ -41,9 +41,14 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
         }
 
-        public AttributeType(AttributeTypeEnum type)
+        private AttributeType(AttributeTypeEnum type)
         {
             m_attributeType = type;
+        }
+
+        public static implicit operator AttributeType(AttributeTypeEnum type)
+        {
+            return new AttributeType(type);
         }
 
         public AttributeTypeEnum Type
@@ -199,5 +204,20 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             return at.m_attributeType != at2.m_attributeType;
         }
+
+        #region ISizeHelper Members
+
+        public long Size
+        {
+            get { return 4; }
+        }
+
+        #endregion
+
+        public override int GetHashCode()
+        {
+            return m_attributeType.GetHashCode();
+        }
+
     }
 }

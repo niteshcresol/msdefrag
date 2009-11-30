@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -29,7 +31,10 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public void Parse(ByteArray buffer, ref Int64 offset)
         {
-            m_attribute = new Attribute(buffer, ref offset);
+            //HACK: temporary hack to demonstrate the usage of the binary reader
+            m_attribute = Attribute.Parse(Helper.BinaryReader(buffer, offset));
+            offset += m_attribute.Size;
+
             m_startingVcn = buffer.ToUInt64(ref offset);
             m_lastVcn = buffer.ToUInt64(ref offset);
             m_runArrayOffset = buffer.ToUInt16(ref offset);

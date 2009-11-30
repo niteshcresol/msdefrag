@@ -2,11 +2,13 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class AttributeList
+    [DebuggerDisplay("Length = {m_length}")]
+    class AttributeList 
     {
         public AttributeType m_attributeType;
         public UInt16 m_length;
@@ -25,8 +27,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         public void Parse(ByteArray buffer, ref Int64 offset)
         {
             //HACK: temporary hack to demonstrate the usage of the binary reader
-            BinaryReader reader = new BinaryReader(new MemoryStream(buffer.m_bytes, (int)offset, 4));
-            m_attributeType = AttributeType.Parse(reader);
+            m_attributeType = AttributeType.Parse(Helper.BinaryReader(buffer, offset));
             offset += 4;
             if (m_attributeType.Type == AttributeTypeEnum.AttributeEndOfList)
             {
