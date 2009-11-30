@@ -928,7 +928,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 Int64 tempOffset = (Int64)AttributeOffset;
 
-                attributeList = new AttributeList(Buffer, ref tempOffset);
+                //HACK: temporary hack to demonstrate the usage of the binary reader
+                attributeList = AttributeList.Parse(Helper.BinaryReader(Buffer, tempOffset));
+                tempOffset += attributeList.Size;
 
                 /* Exit if no more attributes. AttributeLists are usually not closed by the
                  * 0xFFFFFFFF endmarker. Reaching the end of the buffer is therefore normal and

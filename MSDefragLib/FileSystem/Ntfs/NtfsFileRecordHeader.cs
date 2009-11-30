@@ -43,7 +43,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             BytesInUse = buffer.ToUInt32(ref offset);
             BytesAllocated = buffer.ToUInt32(ref offset);
 
-            BaseFileRecord = new InodeReference(buffer, ref offset);
+            //HACK: remove later
+            BaseFileRecord = InodeReference.Parse(Helper.BinaryReader(buffer, offset));
+            offset += BaseFileRecord.Size;
 
             NextAttributeNumber = buffer.ToUInt16(ref offset);
             Padding = buffer.ToUInt16(ref offset);

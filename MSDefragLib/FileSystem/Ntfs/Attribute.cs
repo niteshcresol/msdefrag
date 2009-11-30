@@ -45,7 +45,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 if (m_attributeType.Type == AttributeTypeEnum.AttributeEndOfList)
                     return m_attributeType.Size;
-                return m_attributeType.Size + 12;
+                return m_attributeType.Size + 4 + 1 + 1 + 2 + 2 + 2;
             }
         }
 

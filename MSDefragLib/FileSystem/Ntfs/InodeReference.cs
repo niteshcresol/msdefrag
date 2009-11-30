@@ -1,27 +1,39 @@
 ﻿using System;
+using System.IO;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class InodeReference
+    class InodeReference : ISizeHelper
     {
         public UInt32 m_iNodeNumberLowPart;
         public UInt16 m_iNodeNumberHighPart;
 
         public UInt16 m_sequenceNumber;
 
-        public InodeReference(ByteArray buffer, ref Int64 offset)
+        private InodeReference()
         {
-            Parse(buffer, ref offset);
         }
 
-        public void Parse(ByteArray Buffer, ref Int64 offset)
+        public static InodeReference Parse(BinaryReader reader)
         {
-            m_iNodeNumberLowPart = Buffer.ToUInt32(ref offset);
-            m_iNodeNumberHighPart = Buffer.ToUInt16(ref offset);
-            m_sequenceNumber = Buffer.ToUInt16(ref offset);
+            InodeReference r = new InodeReference();
+            r.m_iNodeNumberLowPart = reader.ReadUInt32();
+            r.m_iNodeNumberHighPart = reader.ReadUInt16();
+            r.m_sequenceNumber = reader.ReadUInt16();
+            return r;
         }
+
+        #region ISizeHelper Members
+
+        public long Size
+        {
+            get { return 4 + 2 + 2; }
+        }
+
+        #endregion
     }
 }

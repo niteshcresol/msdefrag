@@ -8,7 +8,7 @@ using System.Text;
 namespace MSDefragLib.FileSystem.Ntfs
 {
     [DebuggerDisplay("Length = {m_length}")]
-    class AttributeList 
+    class AttributeList : ISizeHelper
     {
         public AttributeType m_attributeType;
         public UInt16 m_length;
@@ -19,28 +19,42 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt16 m_instance;
         public UInt16[] m_alignmentOrReserved; // [3];
 
-        public AttributeList(ByteArray buffer, ref Int64 offset)
+        private AttributeList()
         {
-            Parse(buffer, ref offset);
         }
 
-        public void Parse(ByteArray buffer, ref Int64 offset)
+        public static AttributeList Parse(BinaryReader reader)
         {
-            //HACK: temporary hack to demonstrate the usage of the binary reader
-            m_attributeType = AttributeType.Parse(Helper.BinaryReader(buffer, offset));
-            offset += 4;
-            if (m_attributeType.Type == AttributeTypeEnum.AttributeEndOfList)
+            AttributeList list = new AttributeList();
+            list.m_attributeType = AttributeType.Parse(reader);
+            if (list.m_attributeType.Type != AttributeTypeEnum.AttributeEndOfList)
             {
-                return;
+                list.m_length = reader.ReadUInt16();
+                list.m_nameLength = reader.ReadByte();
+                list.m_nameOffset = reader.ReadByte();
+                list.m_lowestVcn = reader.ReadUInt64();
+                list.m_fileReferenceNumber = InodeReference.Parse(reader);
+                list.m_instance = reader.ReadUInt16();
+                list.m_alignmentOrReserved = new UInt16[3];
+                list.m_alignmentOrReserved[0] = reader.ReadUInt16();
+                list.m_alignmentOrReserved[1] = reader.ReadUInt16();
+                list.m_alignmentOrReserved[2] = reader.ReadUInt16();
             }
-            
-            m_length = buffer.ToUInt16(ref offset);
-            m_nameLength = buffer.ToByte(ref offset);
-            m_nameOffset = buffer.ToByte(ref offset);
-            m_lowestVcn = buffer.ToUInt64(ref offset);
-            m_fileReferenceNumber = new InodeReference(buffer, ref offset);
-            m_instance = buffer.ToUInt16(ref offset);
-            m_alignmentOrReserved = new UInt16[3];
+            return list;
         }
+
+        #region ISizeHelper Members
+
+        public long Size
+        {
+            get
+            {
+                if (m_attributeType.Type == AttributeTypeEnum.AttributeEndOfList)
+                    return m_attributeType.Size;
+                return m_attributeType.Size + 2 + 1 + 1 + 8 + m_fileReferenceNumber.Size + 2 + 3 * 2;
+            }
+        }
+
+        #endregion
     }
 }

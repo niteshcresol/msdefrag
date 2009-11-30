@@ -27,7 +27,9 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public void Parse(ByteArray buffer, ref Int64 offset)
         {
-            m_parentDirectory = new InodeReference(buffer, ref offset);
+            //HACK: remove later
+            m_parentDirectory = InodeReference.Parse(Helper.BinaryReader(buffer, offset));
+            offset += m_parentDirectory.Size;
             m_creationTime = buffer.ToUInt64(ref offset);
             m_changeTime = buffer.ToUInt64(ref offset);
             m_lastWriteTime = buffer.ToUInt64(ref offset);
