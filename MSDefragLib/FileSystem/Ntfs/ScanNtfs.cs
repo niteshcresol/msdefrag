@@ -323,15 +323,15 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <param name="DiskInfo"></param>
         /// <param name="RunData"></param>
         /// <param name="RunDataLength"></param>
-        /// <param name="Offset"></param>
-        /// <param name="WantedLength"></param>
+        /// <param name="Offset">Bytes to skip from begin of data.</param>
+        /// <param name="WantedLength">Number of bytes to read.</param>
         /// <returns></returns>
         ByteArray ReadNonResidentData(
-            NtfsDiskInfoStructure DiskInfo,
-            ByteArray RunData,
-            UInt64 RunDataLength,
-            UInt64 Offset,                    /* Bytes to skip from begin of data. */
-            UInt64 WantedLength)              /* Number of bytes to read. */
+                    NtfsDiskInfoStructure DiskInfo,
+                    ByteArray RunData,
+                    UInt64 RunDataLength,
+                    UInt64 Offset,
+                    UInt64 WantedLength)
         {
             UInt64 Index;
 
@@ -924,7 +924,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             ShowDebug(6, String.Format("Processing AttributeList for m_iNode {0:G}, {1:G} bytes", InodeData.m_iNode, BufLength));
 
             /* Walk through all the attributes and gather information. */
-            for (AttributeOffset = 0; AttributeOffset < BufLength; AttributeOffset = AttributeOffset + attributeList.m_length)
+            for (AttributeOffset = 0; AttributeOffset < BufLength; AttributeOffset += attributeList.m_length)
             {
                 Int64 tempOffset = (Int64)AttributeOffset;
 
@@ -936,7 +936,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                  * 0xFFFFFFFF endmarker. Reaching the end of the buffer is therefore normal and
                  * not an error.*/
                 if (AttributeOffset + 3 > BufLength) break;
-                //if (Attribute.AttributeType == ATTRIBUTE_TYPE.AttributeAll) break;
                 if (attributeList.m_attributeType == AttributeTypeEnum.AttributeEndOfList) break;
                 if (attributeList.m_length < 3) break;
                 if (AttributeOffset + attributeList.m_length > BufLength) break;
@@ -1330,7 +1329,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             NtfsFileRecordHeader FileRecordHeader;
 
-            InodeDataStructure InodeData = new InodeDataStructure();
+            InodeDataStructure InodeData = new InodeDataStructure(InodeNumber);
 
             ItemStruct Item;
             StreamStructure Stream;
@@ -1338,46 +1337,42 @@ namespace MSDefragLib.FileSystem.Ntfs
             UInt64 BaseInode;
 
             /* If the record is not in use then quietly exit. */
-            //FileRecordHeader = (FILE_RECORD_HEADER)Buffer;
             Int64 tempOffset = 0;
             FileRecordHeader = new NtfsFileRecordHeader(Buffer, ref tempOffset);
 
             if ((FileRecordHeader.Flags & 1) != 1)
             {
-                ShowDebug(6, String.Format("m_iNode {0:G} is not in use.", InodeNumber));
+                ShowDebug(6, String.Format("Inode {0:G} is not in use.", InodeNumber));
 
                 return false;
             }
 
-            /*
-                If the record has a BaseFileRecord then ignore it. It is used by an
-                AttributeAttributeList as an extension of another m_iNode, it's not an
-                m_iNode by itself. 
-            */
-            BaseInode = (UInt64)FileRecordHeader.BaseFileRecord.m_iNodeNumberLowPart +
-            ((UInt64)FileRecordHeader.BaseFileRecord.m_iNodeNumberHighPart << 32);
+            /* If the record has a BaseFileRecord then ignore it. It is used by an
+             * AttributeAttributeList as an extension of another m_iNode, it's not an
+             * Inode by itself. */
+            BaseInode = 
+                (UInt64)FileRecordHeader.BaseFileRecord.m_iNodeNumberLowPart +
+                ((UInt64)FileRecordHeader.BaseFileRecord.m_iNodeNumberHighPart << 32);
 
             if (BaseInode != 0)
             {
-                ShowDebug(6, String.Format("Ignoring m_iNode {0:G}, it's an extension of m_iNode {1:G}", InodeNumber, BaseInode));
+                ShowDebug(6, String.Format("Ignoring Inode {0:G}, it's an extension of Inode {1:G}", InodeNumber, BaseInode));
 
                 return true;
             }
 
-            ShowDebug(6, String.Format("Processing m_iNode {0:G}...", InodeNumber));
+            ShowDebug(6, String.Format("Processing Inode {0:G}...", InodeNumber));
 
             /* Show a warning if the Flags have an unknown value. */
             if ((FileRecordHeader.Flags & 252) != 0)
             {
-                ShowDebug(6, String.Format("  m_iNode {0:G} has Flags = {1:G}", InodeNumber, FileRecordHeader.Flags));
+                ShowDebug(6, String.Format("  Inode {0:G} has Flags = {1:G}", InodeNumber, FileRecordHeader.Flags));
             }
 
-            /*
-                I think the MFTRecordNumber should always be the InodeNumber, but it's an XP
-                extension and I'm not sure about Win2K.
-
-                Note: why is the MFTRecordNumber only 32 bit? m_iNode numbers are 48 bit.
-            */
+            /* I think the MFTRecordNumber should always be the InodeNumber, but it's an XP
+             * extension and I'm not sure about Win2K.
+             * 
+             * Note: why is the MFTRecordNumber only 32 bit? Inode numbers are 48 bit.*/
             if (FileRecordHeader.MFTRecordNumber != InodeNumber)
             {
                 ShowDebug(6, String.Format("  Warning: m_iNode {0:G} contains a different MFTRecordNumber {1:G}",
@@ -1403,27 +1398,12 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return false;
             }
 
-            /* Initialize the InodeData struct. */
-            InodeData.m_iNode = InodeNumber;                                /* The m_iNode number. */
-            InodeData.m_parentInode = 5;            /* The m_iNode number of the parent directory. */
-            InodeData.m_directory = false;
-
-            if ((FileRecordHeader.Flags & 2) == 2) InodeData.m_directory = true;
-
-            InodeData.m_longFilename = null;                                   /* Long filename. */
-            InodeData.m_shortFilename = null;                       /* Short filename (8.3 DOS). */
-            InodeData.m_creationTime = 0;                                 /* 1 second = 10000000 */
-            InodeData.m_mftChangeTime = 0;
-            InodeData.m_lastAccessTime = 0;
-            InodeData.m_totalBytes = 0;                                  /* Size of the $DATA stream. */
-            InodeData.m_streams = null;                                 /* List of StreamStruct. */
+            InodeData.m_directory = ((FileRecordHeader.Flags & 2) == 2);
             InodeData.m_mftDataFragments = MftDataFragments;
             InodeData.m_mftDataLength = MftDataBytes;
-            InodeData.m_mftBitmapFragments = null;
-            InodeData.m_mftBitmapLength = 0;
 
             /* Make sure that directories are always created. */
-            if (InodeData.m_directory == true)
+            if (InodeData.m_directory)
             {
                 AttributeType attributeType = AttributeTypeEnum.AttributeIndexAllocation;
                 TranslateRundataToFragmentlist(InodeData, "$I30", attributeType, null, 0, 0, 0);

@@ -28,5 +28,27 @@ namespace MSDefragLib.FileSystem.Ntfs
         public FragmentListStruct m_mftBitmapFragments; /* The Fragments of the $MFT::$BITMAP stream. */
 
         public UInt64 m_mftBitmapLength;                 /* Length of the $MFT::$BITMAP. */
+
+        public InodeDataStructure(UInt64 inodeNumber)
+        {
+            /* Initialize the InodeData struct. */
+            m_iNode = inodeNumber;
+            m_parentInode = 5;
+            m_directory = false;
+
+            m_directory = true;
+
+            m_longFilename = null;
+            m_shortFilename = null;
+            m_creationTime = 0;
+            m_mftChangeTime = 0;
+            m_lastAccessTime = 0;
+            m_totalBytes = 0;
+            m_streams = null;
+            m_mftDataFragments = null;
+            m_mftDataLength = 0;
+            m_mftBitmapFragments = null;
+            m_mftBitmapLength = 0;
+        }
     }
 }
