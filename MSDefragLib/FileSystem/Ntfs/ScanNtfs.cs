@@ -1200,9 +1200,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
                 else
                 {
-                    tempOffset = (Int64)AttributeOffset;
-
-                    nonResidentAttribute = new NonResidentAttribute(Buffer, ref tempOffset);
+                    nonResidentAttribute = NonResidentAttribute.Parse(Helper.BinaryReader(Buffer, AttributeOffset));
 
                     /* Save the length (number of bytes) of the data. */
                     if ((attribute.m_attributeType == AttributeTypeEnum.AttributeData) &&
@@ -1292,8 +1290,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
                 else
                 {
-                    Int64 tempOffset3 = (Int64)AttributeOffset;
-                    nonResidentAttribute = new NonResidentAttribute(Buffer, ref tempOffset3);
+                    nonResidentAttribute = NonResidentAttribute.Parse(Helper.BinaryReader(Buffer, AttributeOffset));
                     //nonResidentAttribute = new NonResidentAttribute();
 
                     //nonResidentAttribute.m_attribute = attribute;

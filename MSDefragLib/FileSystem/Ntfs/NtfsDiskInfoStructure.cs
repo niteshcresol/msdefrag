@@ -20,6 +20,6 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt64 BytesPerMftRecord;
         public UInt64 ClustersPerIndexRecord;
 
-        Buffers buffers;
+        private Buffers buffers;
     }
 }
