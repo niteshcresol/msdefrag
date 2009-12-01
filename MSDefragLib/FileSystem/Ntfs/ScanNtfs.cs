@@ -243,7 +243,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                     ByteArray Buffer,
                     UInt64 BufLength)
         {
-            UInt16Array BufferW;
             UInt16Array UpdateSequenceArray;
             Int64 Index;
             Int64 Increment;
@@ -274,9 +273,9 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Walk through all the sectors and restore the last 2 bytes with the value
                 from the Usa array. If we encounter bad sector data then return with FALSE. 
             */
-            BufferW = Buffer.ToUInt16Array(0, Buffer.GetLength());
+            UInt16Array BufferW = Buffer.ToUInt16Array(0, Buffer.GetLength());
 
-            NtfsRecordHeader RecordHeader = NtfsRecordHeader.Parse(Helper.BinaryReader(Buffer, 0));
+            NtfsRecordHeader RecordHeader = NtfsRecordHeader.Parse(Helper.BinaryReader(Buffer));
 
             UpdateSequenceArray = Buffer.ToUInt16Array(RecordHeader.UsaOffset, Buffer.GetLength() - RecordHeader.UsaOffset);
 
@@ -888,10 +887,6 @@ namespace MSDefragLib.FileSystem.Ntfs
             ByteArray Buffer2 = new ByteArray();
             Buffer2.Initialize((Int64)DiskInfo.BytesPerMftRecord);
 
-            AttributeList attributeList;
-
-            UInt64 AttributeOffset;
-
             NtfsFileRecordHeader FileRecordHeader;
             FragmentListStruct Fragment;
 
@@ -903,10 +898,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             Int32 BytesRead = 0;
 
-            //Boolean Result;
-
             String p1;
-            //String s1;
 
             /* Sanity checks. */
             if ((Buffer == null) || (BufLength == 0))
@@ -922,14 +914,11 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ShowDebug(6, String.Format("Processing AttributeList for m_iNode {0:G}, {1:G} bytes", InodeData.m_iNode, BufLength));
 
+            AttributeList attributeList = null;
             /* Walk through all the attributes and gather information. */
-            for (AttributeOffset = 0; AttributeOffset < BufLength; AttributeOffset += attributeList.m_length)
+            for (UInt64 AttributeOffset = 0; AttributeOffset < BufLength; AttributeOffset += attributeList.m_length)
             {
-                Int64 tempOffset = (Int64)AttributeOffset;
-
-                //HACK: temporary hack to demonstrate the usage of the binary reader
-                attributeList = AttributeList.Parse(Helper.BinaryReader(Buffer, tempOffset));
-                tempOffset += attributeList.Size;
+                attributeList = AttributeList.Parse(Helper.BinaryReader(Buffer, (Int64)AttributeOffset));
 
                 /* Exit if no more attributes. AttributeLists are usually not closed by the
                  * 0xFFFFFFFF endmarker. Reaching the end of the buffer is therefore normal and
@@ -995,10 +984,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                     continue;
                 }
 
-                UInt64 tempVcn;
-
                 /* Fetch the record of the referenced m_iNode from disk. */
-                tempVcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerSector *
+                UInt64 tempVcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerSector *
                         DiskInfo.SectorsPerCluster + RefInode * DiskInfo.BytesPerMftRecord;
 
                 Byte[] tempBuffer = new Byte[DiskInfo.BytesPerMftRecord];
@@ -1015,7 +1002,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 /* If the m_iNode is not in use then skip. */
-                FileRecordHeader = NtfsFileRecordHeader.Parse(Helper.BinaryReader(Buffer2, 0));
+                FileRecordHeader = NtfsFileRecordHeader.Parse(Helper.BinaryReader(Buffer2));
 
                 if ((FileRecordHeader.Flags & 1) != 1)
                 {
@@ -1079,12 +1066,7 @@ namespace MSDefragLib.FileSystem.Ntfs
              * skipped and interpreted later.*/
             for (AttributeOffset = 0; AttributeOffset < BufLength; AttributeOffset += attribute.m_length)
             {
-                //Attribute = (ATTRIBUTE)Buffer[AttributeOffset];
-                Int64 tempOffset = (Int64)AttributeOffset;
-
-                //HACK: temporary hack to demonstrate the usage of the binary reader
-                attribute = Attribute.Parse(Helper.BinaryReader(Buffer, tempOffset));
-                tempOffset += attribute.Size;
+                attribute = Attribute.Parse(Helper.BinaryReader(Buffer, AttributeOffset));
 
                 if (attribute.m_attributeType == AttributeTypeEnum.AttributeEndOfList)
                 {
@@ -1137,7 +1119,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     /* The AttributeFileName (0x30) contains the filename and the link to the parent directory. */
                     if (attribute.m_attributeType == AttributeTypeEnum.AttributeFileName)
                     {
-                        tempOffset = (Int64)(AttributeOffset + residentAttribute.ValueOffset);
+                        Int64 tempOffset = (Int64)(AttributeOffset + residentAttribute.ValueOffset);
 
                         fileNameAttribute = FileNameAttribute.Parse(Helper.BinaryReader(Buffer, tempOffset));
 
@@ -1181,7 +1163,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     */
                     if (attribute.m_attributeType == AttributeTypeEnum.AttributeStandardInformation)
                     {
-                        tempOffset = (Int64)(AttributeOffset + residentAttribute.ValueOffset);
+                        Int64 tempOffset = (Int64)(AttributeOffset + residentAttribute.ValueOffset);
 
                         standardInformation = StandardInformation.Parse(
                             Helper.BinaryReader(Buffer, tempOffset));
@@ -1213,7 +1195,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                     Int64 ii = 0;
 
-                    tempOffset = (Int64)(AttributeOffset + attribute.m_nameOffset);
+                    Int64 tempOffset = (Int64)(AttributeOffset + attribute.m_nameOffset);
 
                     for (ii = 0; ii < attribute.m_nameLength; ii++)
                     {
@@ -1324,7 +1306,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             UInt64 BaseInode;
 
             /* If the record is not in use then quietly exit. */
-            FileRecordHeader = NtfsFileRecordHeader.Parse(Helper.BinaryReader(Buffer, 0));
+            FileRecordHeader = NtfsFileRecordHeader.Parse(Helper.BinaryReader(Buffer));
 
             if ((FileRecordHeader.Flags & 1) != 1)
             {

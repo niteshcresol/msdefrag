@@ -20,6 +20,11 @@ namespace MSDefragLib.FileSystem.Ntfs
 
     class Helper
     {
+        public static BinaryReader BinaryReader(ByteArray buffer)
+        {
+            return BinaryReader(buffer, 0);
+        }
+
         public static BinaryReader BinaryReader(ByteArray buffer, Int64 offset)
         {
             Int64 count = buffer.m_bytes.Length - offset;
