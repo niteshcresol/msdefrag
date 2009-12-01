@@ -1,11 +1,13 @@
 ﻿using System;
+using System.IO;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class NtfsRecordHeader
+    class NtfsRecordHeader : ISizeHelper
     {
         public UInt32 Type;                     /* File type, for example 'FILE' */
 
@@ -14,17 +16,27 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public UInt64 Lsn;                      /* $LogFile Sequence Number (LSN) */
 
-        public NtfsRecordHeader(ByteArray buffer, ref Int64 offset)
+        private NtfsRecordHeader()
         {
-            Parse(buffer, ref offset);
         }
 
-        public void Parse(ByteArray buffer, ref Int64 offset)
+        public static NtfsRecordHeader Parse(BinaryReader reader)
         {
-            Type = buffer.ToUInt32(ref offset);
-            UsaOffset = buffer.ToUInt16(ref offset);
-            UsaCount = buffer.ToUInt16(ref offset);
-            Lsn = buffer.ToUInt64(ref offset);
+            NtfsRecordHeader r = new NtfsRecordHeader();
+            r.Type = reader.ReadUInt32();
+            r.UsaOffset = reader.ReadUInt16();
+            r.UsaCount = reader.ReadUInt16();
+            r.Lsn = reader.ReadUInt64();
+            return r;
         }
+
+        #region ISizeHelper Members
+
+        public long Size
+        {
+            get { return 4 + 2 + 2 + 8; }
+        }
+
+        #endregion
     }
 }

@@ -34,7 +34,8 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public void Parse(ByteArray buffer, ref Int64 offset)
         {
-            RecHdr = new NtfsRecordHeader(buffer, ref offset);
+            RecHdr = NtfsRecordHeader.Parse(Helper.BinaryReader(buffer, offset));
+            offset += RecHdr.Size;
 
             SequenceNumber = buffer.ToUInt16(ref offset);
             LinkCount = buffer.ToUInt16(ref offset);

@@ -276,8 +276,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             */
             BufferW = Buffer.ToUInt16Array(0, Buffer.GetLength());
 
-            Int64 tempOffset = 0;
-            NtfsRecordHeader RecordHeader = new NtfsRecordHeader(Buffer, ref tempOffset);
+            NtfsRecordHeader RecordHeader = NtfsRecordHeader.Parse(Helper.BinaryReader(Buffer, 0));
 
             UpdateSequenceArray = Buffer.ToUInt16Array(RecordHeader.UsaOffset, Buffer.GetLength() - RecordHeader.UsaOffset);
 
