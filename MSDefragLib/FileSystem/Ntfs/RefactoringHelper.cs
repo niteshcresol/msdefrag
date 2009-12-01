@@ -28,5 +28,16 @@ namespace MSDefragLib.FileSystem.Ntfs
             BinaryReader reader = new BinaryReader(stream);
             return reader;
         }
+
+        public static String ParseString(BinaryReader reader, int length)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int ii = 0; ii < length; ii++)
+            {
+                UInt16 i = reader.ReadUInt16();
+                sb.Append((Char)i);
+            }
+            return sb.ToString();
+        }
     }
 }

@@ -1139,7 +1139,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     {
                         tempOffset = (Int64)(AttributeOffset + residentAttribute.ValueOffset);
 
-                        fileNameAttribute = new FileNameAttribute(Buffer, ref tempOffset);
+                        fileNameAttribute = FileNameAttribute.Parse(Helper.BinaryReader(Buffer, tempOffset));
 
                         InodeData.m_parentInode = fileNameAttribute.m_parentDirectory.m_iNodeNumberLowPart +
                             (((UInt32)fileNameAttribute.m_parentDirectory.m_iNodeNumberHighPart) << 32);
@@ -1183,7 +1183,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                     {
                         tempOffset = (Int64)(AttributeOffset + residentAttribute.ValueOffset);
 
-                        standardInformation = new StandardInformation(Buffer, ref tempOffset);
+                        standardInformation = StandardInformation.Parse(
+                            Helper.BinaryReader(Buffer, tempOffset));
 
                         InodeData.m_creationTime = standardInformation.CreationTime;
                         InodeData.m_mftChangeTime = standardInformation.MftChangeTime;

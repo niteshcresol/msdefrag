@@ -1,11 +1,13 @@
 ﻿using System;
+using System.IO;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class StandardInformation
+    class StandardInformation : ISizeHelper
     {
         public UInt64 CreationTime;
         public UInt64 FileChangeTime;
@@ -20,25 +22,35 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt64 QuotaCharge;                     // NTFS 3.0 only
         public UInt64 Usn;                             // NTFS 3.0 only
 
-        public StandardInformation(ByteArray buffer, ref Int64 offset)
+        private StandardInformation()
         {
-            Parse(buffer, ref offset);
         }
 
-        public void Parse(ByteArray buffer, ref Int64 offset)
+        public static StandardInformation Parse(BinaryReader reader)
         {
-            CreationTime = buffer.ToUInt64(ref offset);
-            FileChangeTime = buffer.ToUInt64(ref offset);
-            MftChangeTime = buffer.ToUInt64(ref offset);
-            LastAccessTime = buffer.ToUInt64(ref offset);
-            FileAttributes = buffer.ToUInt32(ref offset);
-            MaximumVersions = buffer.ToUInt32(ref offset);
-            VersionNumber = buffer.ToUInt32(ref offset);
-            ClassId = buffer.ToUInt32(ref offset);
-            OwnerId = buffer.ToUInt32(ref offset);
-            SecurityId = buffer.ToUInt32(ref offset);
-            QuotaCharge = buffer.ToUInt64(ref offset);
-            Usn = buffer.ToUInt64(ref offset);
+            StandardInformation s = new StandardInformation();
+            s.CreationTime = reader.ReadUInt64();
+            s.FileChangeTime = reader.ReadUInt64();
+            s.MftChangeTime = reader.ReadUInt64();
+            s.LastAccessTime = reader.ReadUInt64();
+            s.FileAttributes = reader.ReadUInt32();
+            s.MaximumVersions = reader.ReadUInt32();
+            s.VersionNumber = reader.ReadUInt32();
+            s.ClassId = reader.ReadUInt32();
+            s.OwnerId = reader.ReadUInt32();
+            s.SecurityId = reader.ReadUInt32();
+            s.QuotaCharge = reader.ReadUInt64();
+            s.Usn = reader.ReadUInt64();
+            return s;
         }
+
+        #region ISizeHelper Members
+
+        public long Size
+        {
+            get { return 8 + 8 + 8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 8; }
+        }
+
+        #endregion
     }
 }
