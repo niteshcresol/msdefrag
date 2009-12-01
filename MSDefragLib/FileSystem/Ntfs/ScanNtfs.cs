@@ -1132,9 +1132,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 if (attribute.m_nonResident == false)
                 {
-                    tempOffset = (Int64)AttributeOffset;
-
-                    residentAttribute = new ResidentAttribute(Buffer, ref tempOffset);
+                    residentAttribute = ResidentAttribute.Parse(Helper.BinaryReader(Buffer, AttributeOffset));
 
                     /* The AttributeFileName (0x30) contains the filename and the link to the parent directory. */
                     if (attribute.m_attributeType == AttributeTypeEnum.AttributeFileName)
@@ -1279,10 +1277,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 if (attribute.m_nonResident == false)
                 {
-                    Int64 tempOffset2 = (Int64)AttributeOffset;
-                    residentAttribute = new ResidentAttribute(Buffer, ref tempOffset2);
-
-                    //residentAttribute.m_attribute = attribute;
+                    residentAttribute = ResidentAttribute.Parse(Helper.BinaryReader(Buffer, AttributeOffset));
 
                     ProcessAttributeList(DiskInfo, InodeData,
                             Buffer.ToByteArray((Int64)(AttributeOffset + residentAttribute.ValueOffset), Buffer.GetLength() - (Int64)(AttributeOffset + residentAttribute.ValueOffset)),
@@ -1291,9 +1286,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                 else
                 {
                     nonResidentAttribute = NonResidentAttribute.Parse(Helper.BinaryReader(Buffer, AttributeOffset));
-                    //nonResidentAttribute = new NonResidentAttribute();
-
-                    //nonResidentAttribute.m_attribute = attribute;
 
                     Buffer2Length = nonResidentAttribute.m_dataSize;
                     // Buffer2Length = 512;

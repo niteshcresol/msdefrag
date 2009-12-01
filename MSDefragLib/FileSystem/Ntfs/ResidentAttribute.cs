@@ -7,31 +7,34 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class ResidentAttribute
+    class ResidentAttribute : ISizeHelper
     {
         public Attribute m_attribute;
         public UInt32 ValueLength;
         public UInt16 ValueOffset;
         public UInt16 Flags;                           // 0x0001 = Indexed
 
-        public ResidentAttribute()
+        private ResidentAttribute()
         {
         }
 
-        public ResidentAttribute(ByteArray buffer, ref Int64 offset)
+        public static ResidentAttribute Parse(BinaryReader reader)
         {
-            Parse(buffer, ref offset);
+            ResidentAttribute a = new ResidentAttribute();
+            a.m_attribute = Attribute.Parse(reader);
+            a.ValueLength = reader.ReadUInt32();
+            a.ValueOffset = reader.ReadUInt16();
+            a.Flags = reader.ReadUInt16();
+            return a;
         }
 
-        public void Parse(ByteArray buffer, ref Int64 offset)
+        #region ISizeHelper Members
+
+        public long Size
         {
-            //HACK: temporary hack to demonstrate the usage of the binary reader
-            BinaryReader reader = new BinaryReader(new MemoryStream(buffer.m_bytes, (int)offset, 16));
-            m_attribute = Attribute.Parse(reader);
-            offset += m_attribute.Size;
-            ValueLength = buffer.ToUInt32(ref offset);
-            ValueOffset = buffer.ToUInt16(ref offset);
-            Flags = buffer.ToUInt16(ref offset);
+            get { return m_attribute.Size + 4 + 2 + 2; }
         }
+
+        #endregion
     }
 }
