@@ -1015,9 +1015,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 /* If the m_iNode is not in use then skip. */
-                tempOffset = 0;
-
-                FileRecordHeader = new NtfsFileRecordHeader(Buffer2, ref tempOffset);
+                FileRecordHeader = NtfsFileRecordHeader.Parse(Helper.BinaryReader(Buffer2, 0));
 
                 if ((FileRecordHeader.Flags & 1) != 1)
                 {
@@ -1336,8 +1334,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             UInt64 BaseInode;
 
             /* If the record is not in use then quietly exit. */
-            Int64 tempOffset = 0;
-            FileRecordHeader = new NtfsFileRecordHeader(Buffer, ref tempOffset);
+            FileRecordHeader = NtfsFileRecordHeader.Parse(Helper.BinaryReader(Buffer, 0));
 
             if ((FileRecordHeader.Flags & 1) != 1)
             {

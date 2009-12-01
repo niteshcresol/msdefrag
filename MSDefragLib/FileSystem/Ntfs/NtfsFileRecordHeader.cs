@@ -1,11 +1,13 @@
 ﻿using System;
+using System.IO;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class NtfsFileRecordHeader
+    class NtfsFileRecordHeader : ISizeHelper
     {
         public NtfsRecordHeader RecHdr;
 
@@ -27,31 +29,35 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public UInt16 UpdateSeqNum;             /*  */
 
-        public NtfsFileRecordHeader(ByteArray buffer, ref Int64 offset)
+        private NtfsFileRecordHeader()
         {
-            Parse(buffer, ref offset);
         }
 
-        public void Parse(ByteArray buffer, ref Int64 offset)
+        public static NtfsFileRecordHeader Parse(BinaryReader reader)
         {
-            RecHdr = NtfsRecordHeader.Parse(Helper.BinaryReader(buffer, offset));
-            offset += RecHdr.Size;
-
-            SequenceNumber = buffer.ToUInt16(ref offset);
-            LinkCount = buffer.ToUInt16(ref offset);
-            AttributeOffset = buffer.ToUInt16(ref offset);
-            Flags = buffer.ToUInt16(ref offset);
-            BytesInUse = buffer.ToUInt32(ref offset);
-            BytesAllocated = buffer.ToUInt32(ref offset);
-
-            //HACK: remove later
-            BaseFileRecord = InodeReference.Parse(Helper.BinaryReader(buffer, offset));
-            offset += BaseFileRecord.Size;
-
-            NextAttributeNumber = buffer.ToUInt16(ref offset);
-            Padding = buffer.ToUInt16(ref offset);
-            MFTRecordNumber = buffer.ToUInt32(ref offset);
-            UpdateSeqNum = buffer.ToUInt16(ref offset);
+            NtfsFileRecordHeader r = new NtfsFileRecordHeader();
+            r.RecHdr = NtfsRecordHeader.Parse(reader);
+            r.SequenceNumber = reader.ReadUInt16();
+            r.LinkCount = reader.ReadUInt16();
+            r.AttributeOffset = reader.ReadUInt16();
+            r.Flags = reader.ReadUInt16();
+            r.BytesInUse = reader.ReadUInt32();
+            r.BytesAllocated = reader.ReadUInt32();
+            r.BaseFileRecord = InodeReference.Parse(reader);
+            r.NextAttributeNumber = reader.ReadUInt16();
+            r.Padding = reader.ReadUInt16();
+            r.MFTRecordNumber = reader.ReadUInt32();
+            r.UpdateSeqNum = reader.ReadUInt16();
+            return r;
         }
+
+        #region ISizeHelper Members
+
+        public long Size
+        {
+            get { return RecHdr.Size + 2 + 2 + 2 + 2 + 4 + 4 + BaseFileRecord.Size + 2 + 2 + 4 + 2; }
+        }
+
+        #endregion
     }
 }
