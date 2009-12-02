@@ -7,9 +7,27 @@ namespace MSDefragLib.FileSystem.Ntfs
 {
     class NtfsDiskInfoStructure
     {
-        public NtfsDiskInfoStructure()
+        public NtfsDiskInfoStructure(FS.IBootSector bootSector)
         {
-            buffers = new Buffers();
+            /* Extract data from the bootblock. */
+            BytesPerSector = bootSector.BytesPerSector;
+            SectorsPerCluster = bootSector.SectorsPerCluster;
+
+            TotalSectors = bootSector.TotalSectors;
+            MftStartLcn = bootSector.Mft1StartLcn;
+            Mft2StartLcn = bootSector.Mft2StartLcn;
+
+            UInt64 clustersPerMftRecord = bootSector.ClustersPerMftRecord;
+            ClustersPerIndexRecord = bootSector.ClustersPerIndexRecord;
+
+            if (clustersPerMftRecord >= 128)
+            {
+                BytesPerMftRecord = (UInt64)(1 << (256 - (Int16)clustersPerMftRecord));
+            }
+            else
+            {
+                BytesPerMftRecord = clustersPerMftRecord * BytesPerSector * SectorsPerCluster;
+            }
         }
 
         public UInt64 BytesPerSector;
@@ -19,7 +37,5 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt64 Mft2StartLcn;
         public UInt64 BytesPerMftRecord;
         public UInt64 ClustersPerIndexRecord;
-
-        private Buffers buffers;
     }
 }

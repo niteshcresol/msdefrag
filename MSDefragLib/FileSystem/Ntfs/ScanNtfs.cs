@@ -1439,8 +1439,6 @@ namespace MSDefragLib.FileSystem.Ntfs
         //////////////////////////////////////////////////////////////////////////
         public Boolean AnalyzeNtfsVolume()
         {
-            NtfsDiskInfoStructure DiskInfo = new NtfsDiskInfoStructure();
-
             UInt64 MaxMftBitmapBytes = 0;
 
             Fragment Fragment = null;
@@ -1481,25 +1479,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return false;
             }
 
-            /* Extract data from the bootblock. */
-            DiskInfo.BytesPerSector = bootSector.BytesPerSector;
-            DiskInfo.SectorsPerCluster = bootSector.SectorsPerCluster;
-
-            DiskInfo.TotalSectors = bootSector.TotalSectors;
-            DiskInfo.MftStartLcn = bootSector.Mft1StartLcn;
-            DiskInfo.Mft2StartLcn = bootSector.Mft2StartLcn;
-
-            UInt64 ClustersPerMftRecord = bootSector.ClustersPerMftRecord;
-            DiskInfo.ClustersPerIndexRecord = bootSector.ClustersPerIndexRecord;
-
-            if (ClustersPerMftRecord >= 128)
-            {
-                DiskInfo.BytesPerMftRecord = (UInt64)(1 << (256 - (Int16)ClustersPerMftRecord));
-            }
-            else
-            {
-                DiskInfo.BytesPerMftRecord = ClustersPerMftRecord * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
-            }
+            NtfsDiskInfoStructure DiskInfo = new NtfsDiskInfoStructure(bootSector);
 
             m_msDefragLib.m_data.BytesPerCluster = DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
 
