@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace MSDefragLib
 {
-    public class DiskStruct
+    public class DiskStruct : IDisposable
     {
         public DiskStruct()
         {
@@ -134,6 +134,15 @@ namespace MSDefragLib
                 IO.IOWrapper.CloseHandle(VolumeHandle);
             VolumeHandle = IntPtr.Zero;
         }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            Close();
+        }
+
+        #endregion
     };
 
 }
