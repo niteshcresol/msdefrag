@@ -813,7 +813,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                             break;
                         }
 
-                        RealVcn = RealVcn + Fragment.NextVcn - Vcn;
+                        RealVcn += Fragment.NextVcn - Vcn;
                     }
 
                     Vcn = Fragment.NextVcn;
@@ -843,7 +843,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     continue;
                 }
 
-                /* If the m_iNode is not in use then skip. */
+                /* If the Inode is not in use then skip. */
                 FileRecordHeader = NtfsFileRecordHeader.Parse(Helper.BinaryReader(Buffer2));
 
                 if ((FileRecordHeader.Flags & 1) != 1)

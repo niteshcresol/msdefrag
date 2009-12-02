@@ -34,6 +34,7 @@ using System.Threading;
 using System.IO;
 using System.Runtime.InteropServices;
 using MSDefragLib.FileSystem.Ntfs;
+using System.Timers;
 
 namespace MSDefragLib
 {
@@ -5952,6 +5953,100 @@ namespace MSDefragLib
 
         #endregion
 
+        System.Timers.Timer aTimer;
+
+        public static MSDefragLib me;
+        public static Int64 testNumber2 = 0;
+        public static Int64 firstTimestamp = 0;
+        public static Int64 secondTimeStamp2;
+
+        private static void OnTimedEvent(object source, ElapsedEventArgs e)
+        {
+            if (firstTimestamp == 0)
+            {
+                firstTimestamp = e.SignalTime.Ticks;
+            }
+
+            secondTimeStamp2 = e.SignalTime.Ticks;
+
+            Int64 diff = secondTimeStamp2 - firstTimestamp;
+
+            Double diffMilli = diff / 10000;
+
+            testNumber2 += me._dirtySquares.Count;
+            me.ShowDebug(0, "Total number of squares: " + testNumber2);
+            me.ShowDebug(1, String.Format("Current Performance: {0:F} squares / s", (me._dirtySquares.Count * 1000 / me.aTimer.Interval)));
+
+            if (diffMilli != 0)
+            {
+                me.ShowDebug(2, String.Format("Average Performance: {0:F} squares / s", (testNumber2 * 1000 / diffMilli)));
+            }
+
+            ClusterSquare ca = new ClusterSquare(0, 0, 0);
+            me.NotifyGui(ca);
+        }
+
+        public void Simulate()
+        {
+            m_data = new MSDefragDataStruct();
+
+            m_data.Running = RunningState.RUNNING;
+
+            me = this;
+
+            Random rnd = new Random();
+
+            aTimer = new System.Timers.Timer(500);
+
+            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+
+            aTimer.Interval = 300;
+            aTimer.Enabled = true;
+
+            int numNotify = 0;
+
+            for (int testNumber = 0; testNumber < 1000000; testNumber++)
+            {
+                Int32 squareBegin = rnd.Next(NumSquares);
+                Int32 squareEnd = rnd.Next(squareBegin, squareBegin + 200);
+
+                if (squareEnd > NumSquares)
+                {
+                    squareEnd = NumSquares;
+                }
+
+                if (m_data.Running != RunningState.RUNNING)
+                {
+                    break;
+                }
+
+                CLUSTER_COLORS col = (CLUSTER_COLORS)rnd.Next((Int32)CLUSTER_COLORS.COLORMAX);
+
+                for (Int32 squareNum = squareBegin; (m_data.Running == RunningState.RUNNING) && (squareNum < squareEnd); squareNum++)
+                {
+                    ClusterSquare clusterSquare = new ClusterSquare(squareNum, 0, 20000);
+                    clusterSquare.m_color = col;
+
+                    lock (_dirtySquares)
+                    {
+                        _dirtySquares.Add(clusterSquare);
+
+                        //if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
+                        //{
+                        //    ShowDebug(4, "Notify: " + numNotify);
+                        //    numNotify++;
+
+                        //    NotifyGui(clusterSquare);
+                        //}
+                    }
+                }
+
+                Thread.Sleep(1);
+            }
+
+            m_data.Running = RunningState.STOPPED;
+        }
+
         #region EventHandling
 
         public void ScanNtfsEventHandler(object sender, EventArgs e)
@@ -6012,13 +6107,15 @@ namespace MSDefragLib
 
         private const Int32 MAX_DIRTY_SQUARES = 100;
 
+        private const Int32 MAX_DIRTY_SQUARES_2 = 50000;
+
         private IList<ClusterSquare> _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
 
         public IList<ClusterSquare> DirtySquares
         {
             get
             {
-                lock (this)
+                lock (_dirtySquares)
                 {
                     IList<ClusterSquare> oldlist = _dirtySquares;
                     _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
