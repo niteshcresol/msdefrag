@@ -29,7 +29,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             Int64 count = buffer.m_bytes.Length - offset;
             Debug.Assert(count > 0);
-            Stream stream = new MemoryStream(buffer.m_bytes, (int)offset, (int)count);
+            System.IO.Stream stream = new MemoryStream(buffer.m_bytes, (int)offset, (int)count);
             BinaryReader reader = new BinaryReader(stream);
             return reader;
         }

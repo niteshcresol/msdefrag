@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace MSDefragLib
+namespace MSDefragLib.FileSystem.Ntfs
 {
-    public class FragmentList
+    public class StreamList
     {
-        public FragmentList()
+        public StreamList()
         {
         }
 
         //HACK: for refactoring only
-        public Fragment _LIST
+        public Stream _LIST
         { get; set; }
 
-        public IList<Fragment> Fragments
-        { get; private set; }
+        public IList<Stream> Streams
+        { get; set; }
     }
 }

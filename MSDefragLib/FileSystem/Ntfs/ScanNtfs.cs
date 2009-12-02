@@ -523,8 +523,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                 throw new Exception("Sanity check failed");
 
             /* Find the stream in the list of streams. If not found then create a new stream. */
-            StreamStructure Stream;
-            for (Stream = InodeData.m_streams; Stream != null; Stream = Stream.Next)
+            Stream Stream;
+            for (Stream = InodeData.m_streams._LIST; Stream != null; Stream = Stream.Next)
             {
                 if (Stream.StreamType.Type != StreamType.Type)
                 {
@@ -554,11 +554,11 @@ namespace MSDefragLib.FileSystem.Ntfs
                     ShowDebug(6, "    Creating new stream: ':" + StreamType.GetStreamTypeName() + "'");
                 }
 
-                Stream = new StreamStructure();
+                Stream = new Stream();
 
-                Stream.Next = InodeData.m_streams;
+                Stream.Next = InodeData.m_streams._LIST;
 
-                InodeData.m_streams = Stream;
+                InodeData.m_streams._LIST = Stream;
 
                 Stream.StreamName = null;
 
@@ -753,13 +753,12 @@ namespace MSDefragLib.FileSystem.Ntfs
         */
         void CleanupStreams(InodeDataStructure InodeData, Boolean CleanupFragments)
         {
-            StreamStructure Stream;
-            StreamStructure TempStream;
+            Stream TempStream;
 
             Fragment Fragment;
             Fragment TempFragment;
 
-            Stream = InodeData.m_streams;
+            Stream Stream = InodeData.m_streams._LIST;
 
             while (Stream != null)
             {
@@ -781,12 +780,10 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 TempStream = null;
             }
-
-            InodeData.m_streams = null;
         }
 
         /* Construct the full stream name from the filename, the stream name, and the stream type. */
-        String ConstructStreamName(String FileName1, String FileName2, StreamStructure Stream)
+        String ConstructStreamName(String FileName1, String FileName2, Stream Stream)
         {
             String FileName;
             String StreamName;
@@ -1171,14 +1168,14 @@ namespace MSDefragLib.FileSystem.Ntfs
                         if ((attribute.Type == AttributeTypeEnum.AttributeData) &&
                             (InodeData.MftDataFragments == null))
                         {
-                            InodeData.MftDataFragments = InodeData.m_streams.Fragments;
+                            InodeData.MftDataFragments = InodeData.m_streams._LIST.Fragments;
                             InodeData.m_mftDataLength = nonResidentAttribute.m_dataSize;
                         }
 
                         if ((attribute.Type== AttributeTypeEnum.AttributeBitmap) &&
                             (InodeData.MftBitmapFragments == null))
                         {
-                            InodeData.MftBitmapFragments = InodeData.m_streams.Fragments;
+                            InodeData.MftBitmapFragments = InodeData.m_streams._LIST.Fragments;
                             InodeData.m_mftBitmapLength = nonResidentAttribute.m_dataSize;
                         }
                     }
@@ -1339,7 +1336,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             /* Create an item in the Data->ItemTree for every stream. */
-            StreamStructure Stream = InodeData.m_streams;
+            Stream Stream = InodeData.m_streams._LIST;
 
             do
             {

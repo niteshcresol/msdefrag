@@ -18,6 +18,7 @@ namespace MSDefragLib
         /// </summary>
         public UInt64 NextVcn;
 
+        // HACK: remove
         public Fragment Next;
     };
 }

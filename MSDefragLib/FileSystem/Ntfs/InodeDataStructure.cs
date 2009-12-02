@@ -20,7 +20,8 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt64 m_mftChangeTime;
         public UInt64 m_lastAccessTime;
 
-        public StreamStructure m_streams;               /* List of StreamStruct. */
+        /* List of StreamStruct. */
+        public StreamList m_streams { get; private set; }
 
         /// <summary>
         /// The Fragments of the $MFT::$DATA stream.
@@ -51,7 +52,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             m_mftChangeTime = 0;
             m_lastAccessTime = 0;
             m_totalBytes = 0;
-            m_streams = null;
+            m_streams = new StreamList();
             MftDataFragments = null;
             m_mftDataLength = 0;
             MftBitmapFragments = null;

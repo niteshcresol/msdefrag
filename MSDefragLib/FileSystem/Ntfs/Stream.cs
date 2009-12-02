@@ -43,9 +43,9 @@ namespace MSDefragLib.FileSystem.Ntfs
     ///    0xF0  NT  $PROPERTY_SET
     ///   0x100  2K  $LOGGED_UTILITY_STREAM
     /// </summary>
-    class StreamStructure
+    public class Stream
     {
-        public StreamStructure Next;
+        public Stream Next;
 
         public String StreamName;               /* "stream name" */
 
@@ -57,7 +57,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt64 Clusters;                 /* Total number of clusters. */
         public UInt64 Bytes;                    /* Total number of bytes. */
 
-        public StreamStructure()
+        public Stream()
         {
             Fragments = new FragmentList();
         }

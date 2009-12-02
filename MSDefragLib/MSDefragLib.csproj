@@ -64,6 +64,8 @@
     <Compile Include="Common\FragmentList.cs" />
     <Compile Include="FileSystem\Ntfs\IAttribute.cs" />
     <Compile Include="FileSystem\Ntfs\RefactoringHelper.cs" />
+    <Compile Include="FileSystem\Ntfs\Stream.cs" />
+    <Compile Include="FileSystem\Ntfs\StreamList.cs" />
     <Compile Include="FS\KnownBootSector\BaseBootSector.cs" />
     <Compile Include="FS\KnownBootSector\FatBootSector.cs" />
     <Compile Include="FS\KnownBootSector\MasterBootSector.cs" />
@@ -85,7 +87,6 @@
     <Compile Include="FileSystem\Ntfs\ResidentAttribute.cs" />
     <Compile Include="FileSystem\Ntfs\ScanNtfs.cs" />
     <Compile Include="FileSystem\Ntfs\StandardInformation.cs" />
-    <Compile Include="FileSystem\Ntfs\StreamStructure.cs" />
     <Compile Include="IO\DiskStruct.cs" />
     <Compile Include="IO\IOWrapper.cs" />
     <Compile Include="IO\OverlappedBuilder.cs" />
