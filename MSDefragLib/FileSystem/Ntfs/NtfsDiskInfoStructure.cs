@@ -26,7 +26,15 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
             else
             {
-                BytesPerMftRecord = clustersPerMftRecord * BytesPerSector * SectorsPerCluster;
+                BytesPerMftRecord = clustersPerMftRecord * BytesPerCluster;
+            }
+        }
+
+        public UInt64 BytesPerCluster
+        {
+            get
+            {
+                return BytesPerSector * SectorsPerCluster;
             }
         }
 

@@ -455,10 +455,10 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 /* Determine how many and which bytes we want to read. If we don't need
                  * any bytes from this extent then loop. */
-                ExtentVcn = (Vcn - RunLength.Value) * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
-                ExtentLcn = Lcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
+                ExtentVcn = (Vcn - RunLength.Value) * DiskInfo.BytesPerCluster;
+                ExtentLcn = Lcn * DiskInfo.BytesPerCluster;
 
-                ExtentLength = RunLength.Value * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
+                ExtentLength = RunLength.Value * DiskInfo.BytesPerCluster;
 
                 if (Offset >= ExtentVcn + ExtentLength) continue;
 
@@ -481,7 +481,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 /* Read the data from the disk. If error then return FALSE. */
 
                 ShowDebug(6, String.Format("    Reading {0:G} bytes from Lcn={1:G} into offset={2:G}",
-                    ExtentLength, ExtentLcn / (DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster),
+                    ExtentLength, ExtentLcn / DiskInfo.BytesPerCluster,
                     ExtentVcn - Offset));
 
                 m_msDefragLib.m_data.Disk.ReadFromCluster(ExtentLcn, Buffer.m_bytes,
@@ -906,8 +906,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 /* Fetch the record of the referenced m_iNode from disk. */
-                UInt64 tempVcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerSector *
-                        DiskInfo.SectorsPerCluster + RefInode * DiskInfo.BytesPerMftRecord;
+                UInt64 tempVcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerCluster +
+                    RefInode * DiskInfo.BytesPerMftRecord;
 
                 Byte[] tempBuffer = new Byte[DiskInfo.BytesPerMftRecord];
 
@@ -1400,15 +1400,10 @@ namespace MSDefragLib.FileSystem.Ntfs
             Byte[] BitmapMasks = { 1, 2, 4, 8, 16, 32, 64, 128 };
 
             Boolean Result = false;
-
-            DateTime Time;
-
             Int64 StartTime = 0;
             Int64 EndTime = 0;
 
             UInt64 u1 = 0;
-
-            ByteArray Buffer = new ByteArray((Int64)MFTBUFFERSIZE);
 
             // Read the boot block from the disk.
             FS.IBootSector bootSector = m_msDefragLib.m_data.Disk.BootSector;
@@ -1423,7 +1418,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             NtfsDiskInfoStructure DiskInfo = new NtfsDiskInfoStructure(bootSector);
 
-            m_msDefragLib.m_data.BytesPerCluster = DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
+            m_msDefragLib.m_data.BytesPerCluster = DiskInfo.BytesPerCluster;
 
             if (DiskInfo.SectorsPerCluster > 0)
             {
@@ -1452,14 +1447,15 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Calculate the size of first 16 Inodes in the MFT. The Microsoft defragmentation
                 API cannot move these inodes.
             */
-            m_msDefragLib.m_data.Disk.MftLockedClusters = DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster / DiskInfo.BytesPerMftRecord;
+            m_msDefragLib.m_data.Disk.MftLockedClusters = DiskInfo.BytesPerCluster / DiskInfo.BytesPerMftRecord;
 
             /*
                 Read the $MFT record from disk into memory, which is always the first record in
                 the MFT.
             */
-            UInt64 tempLcn = DiskInfo.MftStartLcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
-            //Trans.QuadPart         = DiskInfo.MftStartLcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
+            UInt64 tempLcn = DiskInfo.MftStartLcn * DiskInfo.BytesPerCluster;
+
+            ByteArray Buffer = new ByteArray((Int64)MFTBUFFERSIZE);
 
             m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn, Buffer.m_bytes, 0,
                 (Int32)DiskInfo.BytesPerMftRecord);
@@ -1524,7 +1520,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             // transform clusters into bytes
-            MaxMftBitmapBytes *= DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
+            MaxMftBitmapBytes *= DiskInfo.BytesPerCluster;
 
             MaxMftBitmapBytes = Math.Max(MaxMftBitmapBytes, MftBitmapBytes);
 
@@ -1542,12 +1538,11 @@ namespace MSDefragLib.FileSystem.Ntfs
                     ShowDebug(6, String.Format("  Extent Lcn={0:G}, RealVcn={1:G}, Size={2:G}",
                           Fragment.Lcn, RealVcn, Fragment.NextVcn - Vcn));
 
-                    tempLcn = Fragment.Lcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
-                    //			        Trans.QuadPart = Fragment.Lcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster;
+                    tempLcn = Fragment.Lcn * DiskInfo.BytesPerCluster;
 
                     UInt64 numClusters = Fragment.NextVcn - Vcn;
-                    Int32 numBytes = (Int32)(numClusters * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster);
-                    Int32 startIndex = (Int32)(RealVcn * DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster);
+                    Int32 numBytes = (Int32)(numClusters * DiskInfo.BytesPerCluster);
+                    Int32 startIndex = (Int32)(RealVcn * DiskInfo.BytesPerCluster);
 
                     ShowDebug(6, String.Format("    Reading {0:G} clusters ({1:G} bytes) from LCN={2:G}", numClusters, numBytes, Fragment.Lcn));
 
@@ -1610,7 +1605,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             m_msDefragLib.m_data.PhaseDone = 0;
             m_msDefragLib.m_data.PhaseTodo = 0;
 
-            Time = DateTime.Now;
+            DateTime Time = DateTime.Now;
 
             StartTime = Time.ToFileTime();
 
@@ -1655,8 +1650,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                     while (Fragment != null)
                     {
                         /* Calculate m_iNode at the end of the fragment. */
-                        u1 = (RealVcn + Fragment.NextVcn - Vcn) * DiskInfo.BytesPerSector *
-                                DiskInfo.SectorsPerCluster / DiskInfo.BytesPerMftRecord;
+                        u1 = (RealVcn + Fragment.NextVcn - Vcn) * 
+                            DiskInfo.BytesPerCluster / DiskInfo.BytesPerMftRecord;
 
                         if (u1 > InodeNumber) break;
 
@@ -1682,15 +1677,12 @@ namespace MSDefragLib.FileSystem.Ntfs
                     if (Fragment == null) break;
                     if (BlockEnd >= u1) BlockEnd = u1;
 
-                    tempLcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerSector *
-                            DiskInfo.SectorsPerCluster + BlockStart * DiskInfo.BytesPerMftRecord;
-
-                    //Trans.QuadPart = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerSector *
-                    //        DiskInfo.SectorsPerCluster + BlockStart * DiskInfo.BytesPerMftRecord;
+                    tempLcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerCluster +
+                        BlockStart * DiskInfo.BytesPerMftRecord;
 
                     ShowDebug(6, String.Format("Reading block of {0:G} Inodes from MFT into memory, {1:G} bytes from LCN={2:G}",
                           BlockEnd - BlockStart, ((BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord),
-                          tempLcn / (DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster)));
+                          tempLcn / (DiskInfo.BytesPerCluster)));
 
                     m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn,
                         Buffer.m_bytes, 0, (Int32)((BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord));
