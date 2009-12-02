@@ -87,11 +87,6 @@ namespace MSDefragLib.FileSystem.Ntfs
             return retValue;
         }
 
-        public Boolean ToBoolean(ref Int64 offset)
-        {
-            return (ToByte(ref offset) != 0);
-        }
-
         //TODO: check if this matters: offset is truncated to 32 bits
         public UInt16 ToUInt16(ref Int64 offset)
         {
@@ -220,7 +215,6 @@ namespace MSDefragLib.FileSystem.Ntfs
         ///   array.
         ///
         /// - The number of bytes per sector is defined in the $Boot record.
-        ///
         /// </summary>
         /// <param name="DiskInfo"></param>
         /// <param name="Buffer"></param>
@@ -228,32 +222,19 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <returns></returns>
         Boolean FixupRawMftdata(
                     NtfsDiskInfoStructure DiskInfo,
-                    ByteArray Buffer,
+                    ByteArray buffer,
                     UInt64 BufLength)
         {
-            UInt16Array UpdateSequenceArray;
-            Int64 Index;
-            Int64 Increment;
-
-            UInt16 i;
-
             /* Sanity check. */
-            Debug.Assert(Buffer != null);
+            Debug.Assert(buffer != null);
 
-            String recordType = "";
-
-            for (Index = 0; Index < 4; Index++)
-            {
-                recordType += Convert.ToChar(Buffer.GetValue(Index));
-            }
-
+            Int64 ind = 0;
+            UInt32 record = buffer.ToUInt32(ref ind);
             /* If this is not a FILE record then return FALSE. */
-            if (recordType.CompareTo("FILE") != 0)
+            if (record != 0x454c4946)
             {
                 ShowDebug(2, "This is not a valid MFT record, it does not begin with FILE (maybe trying to read past the end?).");
-
                 //m_msDefragLib.ShowHex(Data, Buffer.m_bytes, BufLength);
-
                 return false;
             }
 
@@ -261,43 +242,38 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Walk through all the sectors and restore the last 2 bytes with the value
                 from the Usa array. If we encounter bad sector data then return with FALSE. 
             */
-            UInt16Array BufferW = Buffer.ToUInt16Array(0, Buffer.GetLength());
+            UInt16Array BufferW = buffer.ToUInt16Array(0, buffer.GetLength());
 
-            NtfsRecordHeader RecordHeader = NtfsRecordHeader.Parse(Helper.BinaryReader(Buffer));
+            NtfsRecordHeader RecordHeader = NtfsRecordHeader.Parse(Helper.BinaryReader(buffer));
+            UInt16Array UpdateSequenceArray = buffer.ToUInt16Array(RecordHeader.UsaOffset, buffer.GetLength() - RecordHeader.UsaOffset);
+            Int64 Increment = (Int64)(DiskInfo.BytesPerSector / sizeof(UInt16));
 
-            UpdateSequenceArray = Buffer.ToUInt16Array(RecordHeader.UsaOffset, Buffer.GetLength() - RecordHeader.UsaOffset);
+            Int64 index = Increment - 1;
 
-            Increment = (Int64)(DiskInfo.BytesPerSector / sizeof(UInt16));
-
-            Index = Increment - 1;
-
-            for (i = 1; i < RecordHeader.UsaCount; i++)
+            for (UInt16 i = 1; i < RecordHeader.UsaCount; i++)
             {
                 /* Check if we are inside the buffer. */
-                if (Index * sizeof(UInt16) >= (Int64)BufLength)
+                if (index * sizeof(UInt16) >= (Int64)BufLength)
                 {
                     ShowDebug(0, "Warning: USA data indicates that data is missing, the MFT may be corrupt.");
-
                     return false;
                 }
 
                 /* Check if the last 2 bytes of the sector contain the Update Sequence Number.
                  * If not then return FALSE. */
-                if (BufferW.GetValue(Index) - UpdateSequenceArray.GetValue(0) != 0)
+                if (BufferW.GetValue(index) != UpdateSequenceArray.GetValue(0))
                 {
                     ShowDebug(0, "Error: USA fixup word is not equal to the Update Sequence Number, the MFT may be corrupt.");
-
                     return false;
                 }
 
                 /* Replace the last 2 bytes in the sector with the value from the Usa array. */
-                BufferW.SetValue(Index, UpdateSequenceArray.GetValue(i));
+                BufferW.SetValue(index, UpdateSequenceArray.GetValue(i));
 
-                Index += Increment;
+                index += Increment;
             }
 
-            Buffer = BufferW.ToByteArray(0, BufferW.GetLength());
-
+            buffer = BufferW.ToByteArray(0, BufferW.GetLength());
             return true;
         }
 
@@ -314,20 +290,15 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <returns></returns>
         ByteArray ReadNonResidentData(
                     NtfsDiskInfoStructure DiskInfo,
-                    ByteArray RunData,
-                    UInt64 RunDataLength,
+                    BinaryReader runData,
+                    UInt64 runDataLength,
                     UInt64 Offset,
                     UInt64 WantedLength)
         {
-            UInt64 Index;
-
             ByteArray Buffer = new ByteArray((Int64)WantedLength);
 
             UInt64 Lcn;
             UInt64 Vcn;
-
-            int RunOffsetSize;
-            int RunLengthSize;
 
             UlongBytes RunOffset = new UlongBytes();
             UlongBytes RunLength = new UlongBytes();
@@ -336,16 +307,12 @@ namespace MSDefragLib.FileSystem.Ntfs
             UInt64 ExtentLcn;
             UInt64 ExtentLength;
 
-            //Boolean Result;
-
-            //String s1;
-
             Int16 i;
 
             ShowDebug(6, String.Format("    Reading {0:G} bytes from offset {0:G}", WantedLength, Offset));
 
             /* Sanity check. */
-            if ((RunData == null) || (RunDataLength == 0)) 
+            if ((runData == null) || (runDataLength == 0)) 
                 throw new Exception("Sanity check failed");
 
             if (WantedLength >= UInt32.MaxValue)
@@ -371,66 +338,40 @@ namespace MSDefragLib.FileSystem.Ntfs
             //Buffer.Initialize();
 
             /* Walk through the RunData and read the requested data from disk. */
-            Index = 0;
+            _index = 0;
             Lcn = 0;
             Vcn = 0;
 
-            Byte runDataValue = 0;
-
-            while ((runDataValue = (Byte)RunData.GetValue((Int64)Index)) != 0)
+            while (runData.PeekChar() != 0)
             {
+                Byte runDataValue = runData.ReadByte();
+
                 /* Decode the RunData and calculate the next Lcn. */
-                RunLengthSize = (runDataValue & 0x0F);
-                RunOffsetSize = ((runDataValue & 0xF0) >> 4);
+                int runLengthSize = (runDataValue & 0x0F);
+                Debug.Assert(runLengthSize <= 8);
+                int runOffsetSize = ((runDataValue & 0xF0) >> 4);
+                Debug.Assert(runOffsetSize <= 8);
 
-                Index++;
+                CheckIndex(runDataLength);
 
-                if (Index >= RunDataLength)
+                RunLength.Value = 0;
+                for (int j = 0; j < runLengthSize; j++)
                 {
-                    throw new Exception("implementation error");
-                    ShowDebug(0, "Error: datarun is longer than buffer, the MFT may be corrupt.");
-
-                    return null;
+                    RunLength.Bytes[j] = runData.ReadByte();
+                    CheckIndex(runDataLength);
                 }
 
-                RunLength.Bytes = new Byte[8];
-
-                for (i = 0; i < RunLengthSize; i++)
+                RunOffset.Value = 0;
+                for (int j = 0; j < runOffsetSize; j++)
                 {
-                    RunLength.Bytes[i] = runDataValue;
-
-                    Index++;
-
-                    if (Index >= RunDataLength)
-                    {
-                        throw new Exception("implementation error");
-                        ShowDebug(0, "Error: datarun is longer than buffer, the MFT may be corrupt.");
-
-                        return null;
-                    }
+                    RunOffset.Bytes[j] = runData.ReadByte();
+                    CheckIndex(runDataLength);
                 }
 
-                RunOffset.Bytes = new Byte[8];
-
-                for (i = 0; i < RunOffsetSize; i++)
-                {
-                    RunOffset.Bytes[i] = runDataValue;
-
-                    Index++;
-
-                    if (Index >= RunDataLength)
-                    {
-                        throw new Exception("implementation error");
-                        ShowDebug(0, "Error: datarun is longer than buffer, the MFT may be corrupt.");
-
-                        return null;
-                    }
-                }
-
-                if (RunOffset.Bytes[i - 1] >= 0x80)
-                {
-                    while (i < 8) RunOffset.Bytes[i++] = 0xFF;
-                }
+                //if (RunOffset.Bytes[i - 1] >= 0x80)
+                //{
+                //    while (i < 8) RunOffset.Bytes[i++] = 0xFF;
+                //}
 
                 Lcn += RunOffset.Value;
                 Vcn += RunLength.Value;
@@ -708,19 +649,15 @@ namespace MSDefragLib.FileSystem.Ntfs
         /* Construct the full stream name from the filename, the stream name, and the stream type. */
         String ConstructStreamName(String FileName1, String FileName2, Stream Stream)
         {
-            String FileName;
-            String StreamName;
-
             AttributeType StreamType = new AttributeType();
 
-            Int32 Length;
+            String FileName = FileName1;
+            if (String.IsNullOrEmpty(FileName))
+                FileName = FileName2;
+            if (String.IsNullOrEmpty(FileName))
+                FileName = null;
 
-            FileName = FileName1;
-
-            if ((FileName == null) || (FileName.Length == 0)) FileName = FileName2;
-            if ((FileName != null) && (FileName.Length == 0)) FileName = null;
-
-            StreamName = null;
+            String StreamName = null;
             StreamType = new AttributeType();
 
             if (Stream != null)
@@ -769,10 +706,12 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return FileName;
             }
 
-            Length = 3;
+            Int32 Length = 3;
 
-            if (FileName != null) Length += FileName.Length;
-            if (StreamName != null) Length += StreamName.Length;
+            if (FileName != null) 
+                Length += FileName.Length;
+            if (StreamName != null)
+                Length += StreamName.Length;
 
             Length = Length + StreamType.GetStreamTypeName().Length;
 
@@ -1148,7 +1087,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     // Buffer2Length = 512;
 
                     ByteArray Buffer2 = ReadNonResidentData(DiskInfo,
-                            Buffer.ToByteArray((Int64)(AttributeOffset + nonResidentAttribute.m_runArrayOffset), Buffer.GetLength() - (Int64)(AttributeOffset + nonResidentAttribute.m_runArrayOffset)),
+                        Helper.BinaryReader(Buffer, (Int64)(AttributeOffset + nonResidentAttribute.m_runArrayOffset)),
                             attribute.Length - nonResidentAttribute.m_runArrayOffset, 0, Buffer2Length);
 
                     ProcessAttributeList(DiskInfo, InodeData, Buffer2, Buffer2Length, Depth);
