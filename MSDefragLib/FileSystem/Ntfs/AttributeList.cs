@@ -8,12 +8,26 @@ using System.Text;
 namespace MSDefragLib.FileSystem.Ntfs
 {
     [DebuggerDisplay("Length = {m_length}")]
-    class AttributeList : ISizeHelper
+    class AttributeList : IAttribute, ISizeHelper
     {
-        public AttributeType m_attributeType;
-        public UInt16 m_length;
-        public Byte m_nameLength;
-        public Byte m_nameOffset;
+        public AttributeType Type
+        { get; private set; }
+
+        /// <summary>
+        /// Only the lower word is used (Uint16)
+        /// </summary>
+        public UInt32 Length
+        { get; private set; }
+
+        public Byte NameLength
+        { get; private set; }
+
+        /// <summary>
+        /// Only the lower byte is used (Byte)
+        /// </summary>
+        public UInt16 NameOffset
+        { get; private set; }
+
         public UInt64 m_lowestVcn;
         public InodeReference m_fileReferenceNumber;
         public UInt16 m_instance;
@@ -26,12 +40,12 @@ namespace MSDefragLib.FileSystem.Ntfs
         public static AttributeList Parse(BinaryReader reader)
         {
             AttributeList list = new AttributeList();
-            list.m_attributeType = AttributeType.Parse(reader);
-            if (list.m_attributeType.Type != AttributeTypeEnum.AttributeEndOfList)
+            list.Type = AttributeType.Parse(reader);
+            if (list.Type.Type != AttributeTypeEnum.AttributeEndOfList)
             {
-                list.m_length = reader.ReadUInt16();
-                list.m_nameLength = reader.ReadByte();
-                list.m_nameOffset = reader.ReadByte();
+                list.Length = reader.ReadUInt16();
+                list.NameLength = reader.ReadByte();
+                list.NameOffset = reader.ReadByte();
                 list.m_lowestVcn = reader.ReadUInt64();
                 list.m_fileReferenceNumber = InodeReference.Parse(reader);
                 list.m_instance = reader.ReadUInt16();
@@ -49,9 +63,9 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             get
             {
-                if (m_attributeType.Type == AttributeTypeEnum.AttributeEndOfList)
-                    return m_attributeType.Size;
-                return m_attributeType.Size + 2 + 1 + 1 + 8 + m_fileReferenceNumber.Size + 2 + 3 * 2;
+                if (Type.Type == AttributeTypeEnum.AttributeEndOfList)
+                    return Type.Size;
+                return Type.Size + 2 + 1 + 1 + 8 + m_fileReferenceNumber.Size + 2 + 3 * 2;
             }
         }
 

@@ -15,15 +15,28 @@ namespace MSDefragLib.FileSystem.Ntfs
         Sparse = 0x8000
     }
 
-    public class Attribute : ISizeHelper
+    public class Attribute : IAttribute, ISizeHelper
     {
-        public AttributeType m_attributeType;
-        public UInt32 m_length;
-        public Boolean m_nonResident;
-        public Byte m_nameLength;
-        public UInt16 m_nameOffset;
-        public AttributeFlags m_flags;
-        public UInt16 m_attributeNumber;
+        public AttributeType Type
+        { get; private set; }
+
+        public UInt32 Length
+        { get; private set; }
+
+        public Boolean IsNonResident
+        { get; private set; }
+
+        public Byte NameLength
+        { get; private set; }
+
+        public UInt16 NameOffset
+        { get; private set; }
+
+        public AttributeFlags Flags
+        { get; private set; }
+
+        public UInt16 Number
+        { get; private set; }
 
         protected Attribute()
         {
@@ -31,15 +44,15 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         protected void InternalParse(BinaryReader reader)
         {
-            m_attributeType = AttributeType.Parse(reader);
-            if (m_attributeType.Type != AttributeTypeEnum.AttributeEndOfList)
+            Type = AttributeType.Parse(reader);
+            if (Type.Type != AttributeTypeEnum.AttributeEndOfList)
             {
-                m_length = reader.ReadUInt32();
-                m_nonResident = reader.ReadBoolean();
-                m_nameLength = reader.ReadByte();
-                m_nameOffset = reader.ReadUInt16();
-                m_flags = (AttributeFlags)reader.ReadUInt16();
-                m_attributeNumber = reader.ReadUInt16();
+                Length = reader.ReadUInt32();
+                IsNonResident = reader.ReadBoolean();
+                NameLength = reader.ReadByte();
+                NameOffset = reader.ReadUInt16();
+                Flags = (AttributeFlags)reader.ReadUInt16();
+                Number = reader.ReadUInt16();
             }
         }
 
@@ -56,9 +69,9 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             get 
             {
-                if (m_attributeType.Type == AttributeTypeEnum.AttributeEndOfList)
-                    return m_attributeType.Size;
-                return m_attributeType.Size + 4 + 1 + 1 + 2 + 2 + 2;
+                if (Type.Type == AttributeTypeEnum.AttributeEndOfList)
+                    return Type.Size;
+                return Type.Size + 4 + 1 + 1 + 2 + 2 + 2;
             }
         }
 

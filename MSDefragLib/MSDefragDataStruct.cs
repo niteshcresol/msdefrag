@@ -5,15 +5,6 @@ using System.Text;
 
 namespace MSDefragLib
 {
-    /* List in memory of the fragments of a file. */
-
-    public class FragmentListStruct
-    {
-	    public UInt64 Lcn;                            /* Logical cluster number, location on disk. */
-	    public UInt64 NextVcn;                        /* Virtual cluster number of next fragment. */
-	    public FragmentListStruct Next;
-    };
-
     /* List in memory of all the files on disk, sorted by LCN (Logical Cluster Number). */
 
     public class ItemStruct
@@ -33,7 +24,7 @@ namespace MSDefragLib
 	    public UInt64   MftChangeTime;
 	    public UInt64   LastAccessTime;
 
-	    public FragmentListStruct Fragments;   /* List of fragments. */
+	    public Fragment Fragments;   /* List of fragments. */
 
 	    public UInt64   ParentInode;                  /* The Inode number of the parent directory. */
 

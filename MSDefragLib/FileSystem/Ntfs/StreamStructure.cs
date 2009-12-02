@@ -51,7 +51,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public AttributeType StreamType;       /* "stream type" */
 
-        public FragmentListStruct Fragments;    /* The fragments of the stream. */
+        public Fragment Fragments;    /* The fragments of the stream. */
 
         public UInt64 Clusters;                 /* Total number of clusters. */
         public UInt64 Bytes;                    /* Total number of bytes. */

@@ -5,7 +5,13 @@ using System.Text;
 
 namespace MSDefragLib.Common
 {
-    class FragmentList
+    public class FragmentList
     {
+        public FragmentList()
+        {
+        }
+
+        public IList<Fragment> Fragments
+        { get; private set; }
     }
 }

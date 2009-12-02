@@ -486,7 +486,7 @@ namespace MSDefragLib
         /* Return the location on disk (LCN, Logical Cluster Number) of an item. */
         UInt64 GetItemLcn(ItemStruct Item)
         {
-	        FragmentListStruct Fragment;
+	        Fragment Fragment;
 
 	        Debug.Assert(Item != null);
 	        Fragment = Item.Fragments;
@@ -902,7 +902,7 @@ namespace MSDefragLib
         /* Delete the entire ItemTree. */
         public void DeleteItemTree(ItemStruct Top)
         {
-	        FragmentListStruct Fragment;
+	        Fragment Fragment;
 
 	        if (Top == null) return;
             if (Top.Smaller != null) DeleteItemTree(Top.Smaller);
@@ -1253,7 +1253,7 @@ namespace MSDefragLib
         /* Return the number of fragments in the item. */
         public int FragmentCount(ItemStruct Item)
         {
-	        FragmentListStruct Fragment;
+	        Fragment Fragment;
 
 	        int Fragments;
 
@@ -1294,7 +1294,7 @@ namespace MSDefragLib
         /// <returns></returns>
         Boolean IsFragmented(ItemStruct Item, UInt64 Offset, UInt64 Size)
         {
-	        FragmentListStruct Fragment;
+	        Fragment Fragment;
 
             UInt64 FragmentBegin;
             UInt64 FragmentEnd;
@@ -1382,7 +1382,7 @@ namespace MSDefragLib
 	        UInt64 BusySize,
 	        Boolean UnDraw)
         {
-	        FragmentListStruct Fragment;
+	        Fragment Fragment;
 
 	        UInt64 Vcn;
 	        UInt64 RealVcn;
@@ -1949,7 +1949,7 @@ namespace MSDefragLib
         {
 	        ItemStruct Item;
 
-	        FragmentListStruct Fragment;
+	        Fragment Fragment;
 
             UInt64[] SizeOfMovableFiles/*[3]*/ = new UInt64[3];
 	        UInt64[] SizeOfUnmovableFragments/*[3]*/ = new UInt64[3];
