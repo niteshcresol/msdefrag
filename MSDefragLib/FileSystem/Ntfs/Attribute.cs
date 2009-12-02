@@ -7,39 +7,52 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class Attribute : ISizeHelper
+    [Flags]
+    public enum AttributeFlags : ushort
+    {
+        Compressed = 0x0001,
+        Encrypted = 0x4000,
+        Sparse = 0x8000
+    }
+
+    public class Attribute : ISizeHelper
     {
         public AttributeType m_attributeType;
         public UInt32 m_length;
         public Boolean m_nonResident;
         public Byte m_nameLength;
         public UInt16 m_nameOffset;
-        public UInt16 m_flags;                    /* 0x0001 = Compressed, 0x4000 = Encrypted, 0x8000 = Sparse */
+        public AttributeFlags m_flags;
         public UInt16 m_attributeNumber;
 
-        private Attribute()
+        protected Attribute()
         {
+        }
+
+        protected void InternalParse(BinaryReader reader)
+        {
+            m_attributeType = AttributeType.Parse(reader);
+            if (m_attributeType.Type != AttributeTypeEnum.AttributeEndOfList)
+            {
+                m_length = reader.ReadUInt32();
+                m_nonResident = reader.ReadBoolean();
+                m_nameLength = reader.ReadByte();
+                m_nameOffset = reader.ReadUInt16();
+                m_flags = (AttributeFlags)reader.ReadUInt16();
+                m_attributeNumber = reader.ReadUInt16();
+            }
         }
 
         public static Attribute Parse(BinaryReader reader)
         {
             Attribute attribute = new Attribute();
-            attribute.m_attributeType = AttributeType.Parse(reader);
-            if (attribute.m_attributeType.Type != AttributeTypeEnum.AttributeEndOfList)
-            {
-                attribute.m_length = reader.ReadUInt32();
-                attribute.m_nonResident = reader.ReadBoolean();
-                attribute.m_nameLength = reader.ReadByte();
-                attribute.m_nameOffset = reader.ReadUInt16();
-                attribute.m_flags = reader.ReadUInt16();
-                attribute.m_attributeNumber = reader.ReadUInt16();
-            }
+            attribute.InternalParse(reader);
             return attribute;
         }
 
         #region ISizeHelper Members
 
-        public long Size
+        public virtual long Size
         {
             get 
             {

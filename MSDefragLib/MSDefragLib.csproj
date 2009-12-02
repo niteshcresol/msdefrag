@@ -60,6 +60,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\Fragment.cs" />
+    <Compile Include="Common\FragmentList.cs" />
     <Compile Include="FileSystem\Ntfs\RefactoringHelper.cs" />
     <Compile Include="FS\KnownBootSector\BaseBootSector.cs" />
     <Compile Include="FS\KnownBootSector\FatBootSector.cs" />

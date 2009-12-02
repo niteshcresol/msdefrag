@@ -7,9 +7,8 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class NonResidentAttribute : ISizeHelper
+    public class NonResidentAttribute : Attribute, ISizeHelper
     {
-        public Attribute m_attribute;
         public UInt64 m_startingVcn;
         public UInt64 m_lastVcn;
         public UInt16 m_runArrayOffset;
@@ -24,10 +23,10 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
         }
 
-        public static NonResidentAttribute Parse(BinaryReader reader)
+        public static new NonResidentAttribute Parse(BinaryReader reader)
         {
             NonResidentAttribute a = new NonResidentAttribute();
-            a.m_attribute = Attribute.Parse(reader);
+            a.InternalParse(reader);
             a.m_startingVcn = reader.ReadUInt64();
             a.m_lastVcn = reader.ReadUInt64();
             a.m_runArrayOffset = reader.ReadUInt16();
@@ -42,9 +41,9 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         #region ISizeHelper Members
 
-        public long Size
+        public override long Size
         {
-            get { return m_attribute.Size + 8 + 8 + 2 + 1 + 5 + 8 + 8 + 8 + 8; }
+            get { return base.Size + 8 + 8 + 2 + 1 + 5 + 8 + 8 + 8 + 8; }
         }
 
         #endregion

@@ -7,6 +7,13 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
+    [Flags]
+    public enum NameType : byte
+    {
+        NTFS = 0x01,    // long name
+        DOS = 0x02      // 8.3 name
+    }
+
     class FileNameAttribute : ISizeHelper
     {
         public InodeReference m_parentDirectory;
@@ -18,37 +25,49 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt64 m_dataSize;
         public UInt32 m_fileAttributes;
         public UInt32 m_alignmentOrReserved;
-        public Byte m_nameLength;
-        public Byte m_nameType;                   /* NTFS=0x01, DOS=0x02 */
-        public String m_name/*[1]*/;
+        public String Name
+        { get; private set; }
 
         private FileNameAttribute()
         {
         }
 
+        [Conditional("DEBUG")]
+        public void AssertValid()
+        {
+            Debug.Assert((m_nameType == 0x01) || (m_nameType == 0x02) || (m_nameType == 0x03));
+        }
+
+        // NTFS=0x01, DOS=0x02
+        private Byte m_nameType;
+
+        public NameType NameType
+        { get { return (NameType)m_nameType; } }
+
         public static FileNameAttribute Parse(BinaryReader reader)
         {
-            FileNameAttribute f = new FileNameAttribute();
-            f.m_parentDirectory = InodeReference.Parse(reader);
-            f.m_creationTime = reader.ReadUInt64();
-            f.m_changeTime = reader.ReadUInt64();
-            f.m_lastWriteTime = reader.ReadUInt64();
-            f.m_lastAccessTime = reader.ReadUInt64();
-            f.m_allocatedSize = reader.ReadUInt64();
-            f.m_dataSize = reader.ReadUInt64();
-            f.m_fileAttributes = reader.ReadUInt32();
-            f.m_alignmentOrReserved = reader.ReadUInt32();
-            f.m_nameLength = reader.ReadByte();
-            f.m_nameType = reader.ReadByte();
-            f.m_name = Helper.ParseString(reader, f.m_nameLength);
-            return f;
+            FileNameAttribute filename = new FileNameAttribute();
+            filename.m_parentDirectory = InodeReference.Parse(reader);
+            filename.m_creationTime = reader.ReadUInt64();
+            filename.m_changeTime = reader.ReadUInt64();
+            filename.m_lastWriteTime = reader.ReadUInt64();
+            filename.m_lastAccessTime = reader.ReadUInt64();
+            filename.m_allocatedSize = reader.ReadUInt64();
+            filename.m_dataSize = reader.ReadUInt64();
+            filename.m_fileAttributes = reader.ReadUInt32();
+            filename.m_alignmentOrReserved = reader.ReadUInt32();
+            int nameLength = reader.ReadByte();
+            filename.m_nameType = reader.ReadByte();
+            filename.Name = Helper.ParseString(reader, nameLength);
+            filename.AssertValid();
+            return filename;
         }
 
         #region ISizeHelper Members
 
         public long Size
         {
-            get { return m_parentDirectory.Size + 8 + 8 + 8 + 8 + 8 + 8 + 4 + 4 + 1 + 1 + m_nameLength; }
+            get { return m_parentDirectory.Size + 8 + 8 + 8 + 8 + 8 + 8 + 4 + 4 + 1 + 1 + Name.Length*2; }
         }
 
         #endregion

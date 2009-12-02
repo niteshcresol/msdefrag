@@ -9,7 +9,7 @@ namespace MSDefragLib.FileSystem.Ntfs
     /// <summary>
     /// Enumerator containing all atribute types
     /// </summary>
-    enum AttributeTypeEnum
+    public enum AttributeTypeEnum
     {
         AttributeInvalid = 0x00,                /* Not defined by Windows */
         AttributeStandardInformation = 0x10,
@@ -32,7 +32,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         AttributeEndOfList = -1
     };
 
-    class AttributeType : ISizeHelper
+    public class AttributeType : ISizeHelper
     {
         private AttributeTypeEnum m_attributeType;
 

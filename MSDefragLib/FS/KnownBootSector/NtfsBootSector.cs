@@ -18,8 +18,7 @@ namespace MSDefragLib.FS.KnownBootSector
             AssertValid();
         }
 
-        [Conditional("DEBUG")]
-        protected void AssertValid()
+        protected override void AssertValid()
         {
             base.AssertValid();
 

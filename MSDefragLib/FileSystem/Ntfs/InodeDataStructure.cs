@@ -50,5 +50,40 @@ namespace MSDefragLib.FileSystem.Ntfs
             m_mftBitmapFragments = null;
             m_mftBitmapLength = 0;
         }
+
+        public void AddName(FileNameAttribute fileNameAttribute)
+        {
+            if (!String.IsNullOrEmpty(fileNameAttribute.Name))
+            {
+                /* Extract the filename. */
+                String p1 = fileNameAttribute.Name;
+
+                /* Save the filename in either the Long or the Short filename. We only
+                 * save the first filename, any additional filenames are hard links. They
+                 * might be useful for an optimization algorithm that sorts by filename,
+                 * but which of the hardlinked names should it sort? So we only store the
+                 * first filename.*/
+                switch (fileNameAttribute.NameType)
+                {
+                    case NameType.DOS:
+                        if (m_shortFilename == null)
+                        {
+                            m_shortFilename = p1;
+                            //ShowDebug(6, String.Format("    Short filename = '{0:G}'", p1));
+                        }
+                        break;
+                    case NameType.NTFS | NameType.DOS:
+                    case NameType.NTFS:
+                        if (m_longFilename == null)
+                        {
+                            m_longFilename = p1;
+                            //ShowDebug(6, String.Format("    Long filename = '{0:G}'", p1));
+                        }
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+        }
     }
 }

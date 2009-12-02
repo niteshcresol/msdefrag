@@ -20,7 +20,7 @@ namespace MSDefragLib.FS.KnownBootSector
         }
 
         [Conditional("DEBUG")]
-        protected void AssertValid()
+        protected virtual void AssertValid()
         {
             Debug.Assert(EndOfSector == BOOT_SECTOR_SIGNATURE);
         }
