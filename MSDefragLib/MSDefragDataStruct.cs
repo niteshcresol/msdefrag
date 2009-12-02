@@ -24,7 +24,19 @@ namespace MSDefragLib
 	    public UInt64   MftChangeTime;
 	    public UInt64   LastAccessTime;
 
-	    public Fragment Fragments;   /* List of fragments. */
+        /* List of fragments. */
+        public FragmentList FragmentList { get; set; }
+
+        //HACK: for refactoring
+        public Fragment FirstFragmentInList
+        {
+            get 
+            {
+                if (FragmentList == null)
+                    return null;
+                return FragmentList._LIST;
+            }
+        }
 
 	    public UInt64   ParentInode;                  /* The Inode number of the parent directory. */
 

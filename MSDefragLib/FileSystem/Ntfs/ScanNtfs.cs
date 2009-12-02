@@ -568,7 +568,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 Stream.StreamType = StreamType;
-                Stream.Fragments = null;
                 Stream.Clusters = 0;
                 Stream.Bytes = Bytes;
             }
@@ -587,7 +586,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             /* If the stream already has a list of fragments then find the last fragment. */
-            LastFragment = Stream.Fragments;
+            LastFragment = Stream.Fragments._LIST;
 
             if (LastFragment != null)
             {
@@ -731,13 +730,14 @@ namespace MSDefragLib.FileSystem.Ntfs
                     NewFragment.NextVcn = Vcn;
                     NewFragment.Next = null;
 
-                    if (Stream.Fragments == null)
+                    if (Stream.Fragments._LIST == null)
                     {
-                        Stream.Fragments = NewFragment;
+                        Stream.Fragments._LIST = NewFragment;
                     }
                     else
                     {
-                        if (LastFragment != null) LastFragment.Next = NewFragment;
+                        if (LastFragment != null)
+                            LastFragment.Next = NewFragment;
                     }
 
                     LastFragment = NewFragment;
@@ -765,7 +765,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 if (CleanupFragments == true)
                 {
-                    Fragment = Stream.Fragments;
+                    Fragment = Stream.Fragments._LIST;
 
                     while (Fragment != null)
                     {
@@ -951,7 +951,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 RealVcn = 0;
                 RefInodeVcn = RefInode * DiskInfo.BytesPerMftRecord / (DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster);
 
-                for (Fragment = InodeData.m_mftDataFragments; Fragment != null; Fragment = Fragment.Next)
+                for (Fragment = InodeData.MftDataFragments._LIST; Fragment != null; Fragment = Fragment.Next)
                 {
                     if (Fragment.Lcn != VIRTUALFRAGMENT)
                     {
@@ -1169,16 +1169,16 @@ namespace MSDefragLib.FileSystem.Ntfs
                     if (InodeData.m_iNode == 0)
                     {
                         if ((attribute.Type == AttributeTypeEnum.AttributeData) &&
-                            (InodeData.m_mftDataFragments == null))
+                            (InodeData.MftDataFragments == null))
                         {
-                            InodeData.m_mftDataFragments = InodeData.m_streams.Fragments;
+                            InodeData.MftDataFragments = InodeData.m_streams.Fragments;
                             InodeData.m_mftDataLength = nonResidentAttribute.m_dataSize;
                         }
 
                         if ((attribute.Type== AttributeTypeEnum.AttributeBitmap) &&
-                            (InodeData.m_mftBitmapFragments == null))
+                            (InodeData.MftBitmapFragments == null))
                         {
-                            InodeData.m_mftBitmapFragments = InodeData.m_streams.Fragments;
+                            InodeData.MftBitmapFragments = InodeData.m_streams.Fragments;
                             InodeData.m_mftBitmapLength = nonResidentAttribute.m_dataSize;
                         }
                     }
@@ -1243,9 +1243,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             Array InodeArray,
             UInt64 InodeNumber,
             UInt64 MaxInode,
-            ref Fragment MftDataFragments,
+            ref FragmentList MftDataFragments,
             ref UInt64 MftDataBytes,
-            ref Fragment MftBitmapFragments,
+            ref FragmentList MftBitmapFragments,
             ref UInt64 MftBitmapBytes,
             ByteArray Buffer,
             UInt64 BufLength)
@@ -1314,7 +1314,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             InodeDataStructure InodeData = new InodeDataStructure(InodeNumber);
             InodeData.m_directory = ((FileRecordHeader.Flags & 2) == 2);
-            InodeData.m_mftDataFragments = MftDataFragments;
+            InodeData.MftDataFragments = MftDataFragments;
             InodeData.m_mftDataLength = MftDataBytes;
 
             /* Make sure that directories are always created. */
@@ -1332,9 +1332,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             /* Save the MftDataFragments, MftDataBytes, MftBitmapFragments, and MftBitmapBytes. */
             if (InodeNumber == 0)
             {
-                MftDataFragments = InodeData.m_mftDataFragments;
+                MftDataFragments = InodeData.MftDataFragments;
                 MftDataBytes = InodeData.m_mftDataLength;
-                MftBitmapFragments = InodeData.m_mftBitmapFragments;
+                MftBitmapFragments = InodeData.MftBitmapFragments;
                 MftBitmapBytes = InodeData.m_mftBitmapLength;
             }
 
@@ -1372,9 +1372,10 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Item.CreationTime = InodeData.m_creationTime;
                 Item.MftChangeTime = InodeData.m_mftChangeTime;
                 Item.LastAccessTime = InodeData.m_lastAccessTime;
-                Item.Fragments = null;
+                Item.FragmentList = null;
 
-                if (Stream != null) Item.Fragments = Stream.Fragments;
+                if (Stream != null) 
+                    Item.FragmentList = Stream.Fragments;
 
                 Item.ParentInode = InodeData.m_parentInode;
                 Item.Directory = InodeData.m_directory;
@@ -1467,11 +1468,6 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             NtfsDiskInfoStructure DiskInfo = new NtfsDiskInfoStructure();
 
-            Fragment MftDataFragments;
-            Fragment MftBitmapFragments;
-
-            UInt64 MftDataBytes = 0;
-            UInt64 MftBitmapBytes = 0;
             UInt64 MaxMftBitmapBytes = 0;
 
             Fragment Fragment = null;
@@ -1583,10 +1579,11 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Extract data from the MFT record and put into an Item struct in memory. If
                 there was an error then exit. 
             */
-            MftDataBytes = 0;
-            MftDataFragments = null;
-            MftBitmapBytes = 0;
-            MftBitmapFragments = null;
+            FragmentList MftDataFragments = null;
+            FragmentList MftBitmapFragments = null;
+
+            UInt64 MftDataBytes = 0;
+            UInt64 MftBitmapBytes = 0;
 
             Result = InterpretMftRecord(DiskInfo, null, 0, 0,
                 ref MftDataFragments, ref MftDataBytes, ref MftBitmapFragments, ref MftBitmapBytes,
@@ -1621,7 +1618,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             Vcn = 0;
             MaxMftBitmapBytes = 0;
 
-            for (Fragment = MftBitmapFragments; Fragment != null; Fragment = Fragment.Next)
+            for (Fragment = MftBitmapFragments._LIST; Fragment != null; Fragment = Fragment.Next)
             {
                 if (Fragment.Lcn != VIRTUALFRAGMENT)
                 {
@@ -1643,7 +1640,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ShowDebug(6, "Reading $MFT::$BITMAP into memory");
 
-            for (Fragment = MftBitmapFragments; Fragment != null; Fragment = Fragment.Next)
+            for (Fragment = MftBitmapFragments._LIST; Fragment != null; Fragment = Fragment.Next)
             {
                 if (Fragment.Lcn != VIRTUALFRAGMENT)
                 {
@@ -1710,7 +1707,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Read and process all the records in the MFT. The records are read into a
                 buffer and then given one by one to the InterpretMftRecord() subroutine.
             */
-            Fragment = MftDataFragments;
+            Fragment = MftDataFragments._LIST;
             BlockEnd = 0;
             Vcn = 0;
             RealVcn = 0;

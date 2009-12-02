@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace MSDefragLib.Common
+namespace MSDefragLib
 {
     public class FragmentList
     {
@@ -11,7 +11,11 @@ namespace MSDefragLib.Common
         {
         }
 
-        public IList<Fragment> Fragments
-        { get; private set; }
+        //HACK: for refactoring only
+        public Fragment _LIST
+        { get; set; }
+
+        //public IList<Fragment> Fragments
+        //{ get; private set; }
     }
 }

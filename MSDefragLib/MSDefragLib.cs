@@ -489,7 +489,7 @@ namespace MSDefragLib
 	        Fragment Fragment;
 
 	        Debug.Assert(Item != null);
-	        Fragment = Item.Fragments;
+            Fragment = Item.FirstFragmentInList;
 
 	        while ((Fragment != null) && (Fragment.Lcn == VIRTUALFRAGMENT))
 	        {
@@ -925,11 +925,12 @@ namespace MSDefragLib
             Top.LongPath = null;
 	        Top.LongFilename = null;
 
-            while (Top.Fragments != null)
+            while (Top.FirstFragmentInList != null)
 	        {
-		        Fragment = Top.Fragments.Next;
+		        Fragment = Top.FragmentList._LIST.Next;
 
-		        Top.Fragments = Fragment;
+                //TODO: ???? What is this for???
+		        Top.FragmentList._LIST = Fragment;
 	        }
 
             Top = null;
@@ -1264,7 +1265,8 @@ namespace MSDefragLib
 	        Vcn = 0;
 	        NextLcn = 0;
 
-	        for (Fragment = Item.Fragments; Fragment != null; Fragment = Fragment.Next)
+            Fragment = Item.FirstFragmentInList;
+	        for (; Fragment != null; Fragment = Fragment.Next)
 	        {
 		        if (Fragment.Lcn != VIRTUALFRAGMENT)
 		        {
@@ -1308,7 +1310,7 @@ namespace MSDefragLib
 	        FragmentEnd = 0;
 	        Vcn = 0;
 	        NextLcn = 0;
-	        Fragment = Item.Fragments;
+	        Fragment = Item.FirstFragmentInList;
 
 	        while (Fragment != null)
 	        {
@@ -1401,7 +1403,7 @@ namespace MSDefragLib
 	        Vcn = 0;
 	        RealVcn = 0;
 
-	        Fragment = Item.Fragments;
+	        Fragment = Item.FirstFragmentInList;
 
 	        while (Fragment != null)
 	        {
@@ -2042,7 +2044,7 @@ namespace MSDefragLib
 			        Vcn = 0;
 			        RealVcn = 0;
 
-			        for (Fragment = Item.Fragments; Fragment != null; Fragment = Fragment.Next)
+			        for (Fragment = Item.FirstFragmentInList; Fragment != null; Fragment = Fragment.Next)
 			        {
 				        if (Fragment.Lcn != VIRTUALFRAGMENT)
 				        {
