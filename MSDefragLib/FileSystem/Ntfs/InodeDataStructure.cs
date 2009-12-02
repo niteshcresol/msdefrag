@@ -10,7 +10,9 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt64 m_iNode;                          /* The m_iNode number. */
         public UInt64 m_parentInode;                    /* The m_iNode number of the parent directory. */
 
-        public Boolean m_directory;                     /* true: it's a directory. */
+        /* true: it's a directory. */
+        public Boolean IsDirectory
+        { get; set; }
 
         public String m_longFilename;                   /* Long filename. */
         public String m_shortFilename;                  /* Short filename (8.3 DOS). */
@@ -21,19 +23,22 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt64 m_lastAccessTime;
 
         /* List of StreamStruct. */
-        public StreamList m_streams { get; private set; }
+        public StreamList Streams
+        { get; private set; }
 
         /// <summary>
         /// The Fragments of the $MFT::$DATA stream.
         /// </summary>
-        public FragmentList MftDataFragments { get; set; }
+        public FragmentList MftDataFragments 
+        { get; set; }
 
         public UInt64 m_mftDataLength;                   /* Length of the $MFT::$DATA. */
 
         /// <summary>
         /// The Fragments of the $MFT::$BITMAP stream.
         /// </summary>
-        public FragmentList MftBitmapFragments { get; set; }
+        public FragmentList MftBitmapFragments
+        { get; set; }
 
         public UInt64 m_mftBitmapLength;                 /* Length of the $MFT::$BITMAP. */
 
@@ -42,9 +47,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             /* Initialize the InodeData struct. */
             m_iNode = inodeNumber;
             m_parentInode = 5;
-            m_directory = false;
+            IsDirectory = false;
 
-            m_directory = true;
+            IsDirectory = true;
 
             m_longFilename = null;
             m_shortFilename = null;
@@ -52,7 +57,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             m_mftChangeTime = 0;
             m_lastAccessTime = 0;
             m_totalBytes = 0;
-            m_streams = new StreamList();
+            Streams = new StreamList();
             MftDataFragments = null;
             m_mftDataLength = 0;
             MftBitmapFragments = null;

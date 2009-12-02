@@ -45,18 +45,30 @@ namespace MSDefragLib.FileSystem.Ntfs
     /// </summary>
     public class Stream
     {
-        public String StreamName;               /* "stream name" */
+        /* "stream name" */
+        public String Name
+        { get; private set; }
 
-        public AttributeType StreamType;       /* "stream type" */
+        /* "stream type" */
+        public AttributeType Type
+        { get; private set; }
 
         /* The fragments of the stream. */
-        public FragmentList Fragments { get; private set; }
+        public FragmentList Fragments
+        { get; private set; }
 
-        public UInt64 Clusters;                 /* Total number of clusters. */
-        public UInt64 Bytes;                    /* Total number of bytes. */
+        /* Total number of clusters. */
+        public UInt64 Clusters
+        { get; set; }
 
-        public Stream()
+        /* Total number of bytes. */
+        public UInt64 Bytes
+        { get; set; }
+
+        public Stream(String name, AttributeType type)
         {
+            Name = name;
+            Type = type;
             Fragments = new FragmentList();
         }
     }

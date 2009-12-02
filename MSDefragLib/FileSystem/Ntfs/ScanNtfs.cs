@@ -198,7 +198,10 @@ namespace MSDefragLib.FileSystem.Ntfs
             MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
 
             if (level < 6)
+            {
+                Console.Out.WriteLine(output);
                 OnShowDebug(e);
+            }
         }
 
         /// <summary>
@@ -449,9 +452,9 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             /* Find the stream in the list of streams. If not found then create a new stream. */
             Stream foundStream = null;
-            foreach (Stream Stream in InodeData.m_streams.Streams)
+            foreach (Stream Stream in InodeData.Streams.Streams)
             {
-                if ((Stream.StreamName == StreamName) && (Stream.StreamType.Type == StreamType.Type))
+                if ((Stream.Name == StreamName) && (Stream.Type.Type == StreamType.Type))
                 {
                     foundStream = Stream;
                     break;
@@ -469,20 +472,11 @@ namespace MSDefragLib.FileSystem.Ntfs
                     ShowDebug(6, "    Creating new stream: ':" + StreamType.GetStreamTypeName() + "'");
                 }
 
-                Stream newStream = new Stream();
-
-                newStream.StreamName = null;
-
-                if ((StreamName != null) && (StreamName.Length > 0))
-                {
-                    newStream.StreamName = StreamName;
-                }
-
-                newStream.StreamType = StreamType;
+                Stream newStream = new Stream(StreamName, StreamType);
                 newStream.Clusters = 0;
                 newStream.Bytes = Bytes;
 
-                InodeData.m_streams.Streams.Insert(0, newStream);
+                InodeData.Streams.Streams.Insert(0, newStream);
                 foundStream = newStream;
             }
             else
@@ -662,11 +656,11 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             if (Stream != null)
             {
-                StreamName = Stream.StreamName;
+                StreamName = Stream.Name;
 
                 if ((StreamName != null) && (StreamName.Length == 0)) StreamName = null;
 
-                StreamType = Stream.StreamType;
+                StreamType = Stream.Type;
             }
 
             /*  
@@ -1030,14 +1024,14 @@ namespace MSDefragLib.FileSystem.Ntfs
                         if ((attribute.Type == AttributeTypeEnum.AttributeData) &&
                             (InodeData.MftDataFragments == null))
                         {
-                            InodeData.MftDataFragments = InodeData.m_streams.Streams[0].Fragments;
+                            InodeData.MftDataFragments = InodeData.Streams.Streams[0].Fragments;
                             InodeData.m_mftDataLength = nonResidentAttribute.m_dataSize;
                         }
 
                         if ((attribute.Type== AttributeTypeEnum.AttributeBitmap) &&
                             (InodeData.MftBitmapFragments == null))
                         {
-                            InodeData.MftBitmapFragments = InodeData.m_streams.Streams[0].Fragments;
+                            InodeData.MftBitmapFragments = InodeData.Streams.Streams[0].Fragments;
                             InodeData.m_mftBitmapLength = nonResidentAttribute.m_dataSize;
                         }
                     }
@@ -1172,12 +1166,12 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             InodeDataStructure InodeData = new InodeDataStructure(InodeNumber);
-            InodeData.m_directory = ((FileRecordHeader.Flags & 2) == 2);
+            InodeData.IsDirectory = ((FileRecordHeader.Flags & 2) == 2);
             InodeData.MftDataFragments = MftDataFragments;
             InodeData.m_mftDataLength = MftDataBytes;
 
             /* Make sure that directories are always created. */
-            if (InodeData.m_directory)
+            if (InodeData.IsDirectory)
             {
                 AttributeType attributeType = AttributeTypeEnum.AttributeIndexAllocation;
                 TranslateRundataToFragmentlist(InodeData, "$I30", attributeType, null, 0, 0, 0);
@@ -1198,7 +1192,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             /* Create an item in the Data->ItemTree for every stream. */
-            foreach (Stream stream in InodeData.m_streams.Streams)
+            foreach (Stream stream in InodeData.Streams.Streams)
             {
                 /* Create and fill a new item record in memory. */
                 ItemStruct Item = new ItemStruct();
@@ -1224,7 +1218,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Item.FragmentList = stream.Fragments;
 
                 Item.ParentInode = InodeData.m_parentInode;
-                Item.Directory = InodeData.m_directory;
+                Item.Directory = InodeData.IsDirectory;
                 Item.Unmovable = false;
                 Item.Exclude = false;
                 Item.SpaceHog = false;
@@ -1237,7 +1231,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 m_msDefragLib.m_data.CountAllFiles++;
 
-                if (stream.StreamType == AttributeTypeEnum.AttributeData)
+                if (stream.Type == AttributeTypeEnum.AttributeData)
                 {
                     m_msDefragLib.m_data.CountAllBytes += InodeData.m_totalBytes;
                 }
