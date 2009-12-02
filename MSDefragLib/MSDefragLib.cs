@@ -140,40 +140,6 @@ namespace MSDefragLib
 
         public const UInt64 VIRTUALFRAGMENT = UInt64.MaxValue - 1;          /* _UI64_MAX - 1 */
 
-        public class Wildcard : Regex
-        {
-            /// <summary>
-            /// Initializes a wildcard with the given search pattern.
-            /// </summary>
-            /// <param name="pattern">The wildcard pattern to match.</param>
-            public Wildcard(string pattern)
-                : base(WildcardToRegex(pattern))
-            {
-            }
-
-            /// <summary>
-            /// Initializes a wildcard with the given search pattern and options.
-            /// </summary>
-            /// <param name="pattern">The wildcard pattern to match.</param>
-            /// <param name="options">A combination of one or more
-            /// <see cref="System.Text.RegexOptions"/>.</param>
-            public Wildcard(string pattern, RegexOptions options)
-                : base(WildcardToRegex(pattern), options)
-            {
-            }
-
-            /// <summary>
-            /// Converts a wildcard to a regex.
-            /// </summary>
-            /// <param name="pattern">The wildcard pattern to convert.</param>
-            /// <returns>A regex equivalent of the given wildcard.</returns>
-            public static string WildcardToRegex(string pattern)
-            {
-                return "^" + Regex.Escape(pattern).
-                 Replace("\\*", ".*").
-                 Replace("\\?", ".") + "$";
-            }
-        }
 
         /// <summary>
         /// Compare a string with a mask, case-insensitive. If it matches then return
@@ -475,24 +441,6 @@ namespace MSDefragLib
             //Data.LastCheckpoint = Time.time * 1000 + Time.millitm;
         }
 
-        /* Return the location on disk (LCN, Logical Cluster Number) of an item. */
-        UInt64 GetItemLcn(ItemStruct Item)
-        {
-	        Fragment Fragment;
-
-	        Debug.Assert(Item != null);
-            Fragment = Item.FirstFragmentInList;
-
-	        while ((Fragment != null) && (Fragment.Lcn == VIRTUALFRAGMENT))
-	        {
-		        Fragment = Fragment.Next;
-	        }
-
-	        if (Fragment == null) return(0);
-
-	        return(Fragment.Lcn);
-        }
-
         /* Return pointer to the first item in the tree (the first file on the volume). */
         public ItemStruct TreeSmallest(ItemStruct Top)
         {
@@ -590,40 +538,26 @@ namespace MSDefragLib
         }
 */
         /* Insert a record into the tree. The tree is sorted by LCN (Logical Cluster Number). */
-        public void TreeInsert(ItemStruct New)
+        public void TreeInsert(ItemStruct newItem)
         {
-	        ItemStruct Here;
-	        ItemStruct Ins;
+	        if (newItem == null) return;
 
-	        UInt64 HereLcn;
-	        UInt64 NewLcn;
-
-	        int Found;
-
-	        ItemStruct A;
-	        ItemStruct B;
-	        ItemStruct C;
-
-	        long Count;
-	        long Skip;
-
-	        if (New == null) return;
-
-	        NewLcn = GetItemLcn(New);
+            UInt64 NewLcn = newItem.Lcn;
 
 	        /* Locate the place where the record should be inserted. */
-	        Here = m_data.ItemTree;
+            ItemStruct Here = m_data.ItemTree;
+            ItemStruct Ins = null;
 
-            Ins = null;
+            int Found = 1;
 
-            Found = 1;
+            UInt64 HereLcn;
 
-	        while (Here != null)
+            while (Here != null)
 	        {
 		        Ins = Here;
 		        Found = 0;
 
-		        HereLcn = GetItemLcn(Here);
+		        HereLcn = Here.Lcn;
 
 		        if (HereLcn > NewLcn)
 		        {
@@ -639,23 +573,23 @@ namespace MSDefragLib
 	        }
 
 	        /* Insert the record. */
-	        New.Parent = Ins;
-	        New.Smaller = null;
-	        New.Bigger = null;
+	        newItem.Parent = Ins;
+	        newItem.Smaller = null;
+	        newItem.Bigger = null;
 
 	        if (Ins == null)
 	        {
-		        m_data.ItemTree = New;
+		        m_data.ItemTree = newItem;
 	        }
 	        else
 	        {
 		        if (Found > 0)
 		        {
-			        Ins.Smaller = New;
+			        Ins.Smaller = newItem;
 		        }
 		        else
 		        {
-			        Ins.Bigger = New;
+			        Ins.Bigger = newItem;
 		        }
 	        }
 
@@ -671,11 +605,15 @@ namespace MSDefragLib
 
 	        m_data.BalanceCount = 0;
 
-	        /* Convert the tree into a vine. */
+            ItemStruct A;
+            ItemStruct B;
+            ItemStruct C;
+
+            /* Convert the tree into a vine. */
 	        A = m_data.ItemTree;
 	        C = A;
 
-            Count = 0;
+            long Count = 0;
 
 	        while (A != null)
 	        {
@@ -720,7 +658,7 @@ namespace MSDefragLib
 	        }
 
 	        /* Calculate the number of skips. */
-	        Skip = 1;
+            long Skip = 1;
 
 	        while (Skip < Count + 2) Skip = (Skip << 1);
 
@@ -2980,16 +2918,15 @@ namespace MSDefragLib
 
                 for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
 		        {
-                    if ((Item.LongFilename != null) &&
-                        (Item.LongFilename.Equals("$BadClus") ||
-                         Item.LongFilename.Equals("$BadClus:$Bad:$DATA")))
+                    if ((Item.LongFilename == "$BadClus") ||
+                        (Item.LongFilename == "$BadClus:$Bad:$DATA"))
                     {
                         continue;
                     }
 
 			        if (Item.Clusters == 0) continue;
 
-			        Sum = Sum + Factor * (Int64)((GetItemLcn(Item) * 2 + Item.Clusters));
+			        Sum += Factor * (Int64)((Item.Lcn * 2 + Item.Clusters));
 
 			        Factor = Factor + 2;
 		        }

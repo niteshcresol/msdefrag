@@ -64,6 +64,7 @@
     <Compile Include="Colors.cs" />
     <Compile Include="Common\Fragment.cs" />
     <Compile Include="Common\FragmentList.cs" />
+    <Compile Include="Common\ItemStruct.cs" />
     <Compile Include="FileSystem\Ntfs\IAttribute.cs" />
     <Compile Include="FileSystem\Ntfs\RefactoringHelper.cs" />
     <Compile Include="FileSystem\Ntfs\Stream.cs" />
@@ -95,6 +96,7 @@
     <Compile Include="MSDefragDataStruct.cs" />
     <Compile Include="MSDefragLib.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Wildcard.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
