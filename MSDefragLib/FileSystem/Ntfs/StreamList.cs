@@ -9,13 +9,10 @@ namespace MSDefragLib.FileSystem.Ntfs
     {
         public StreamList()
         {
+            Streams = new List<Stream>();
         }
 
-        //HACK: for refactoring only
-        public Stream _LIST
-        { get; set; }
-
         public IList<Stream> Streams
-        { get; set; }
+        { get; private set; }
     }
 }

@@ -523,27 +523,17 @@ namespace MSDefragLib.FileSystem.Ntfs
                 throw new Exception("Sanity check failed");
 
             /* Find the stream in the list of streams. If not found then create a new stream. */
-            Stream Stream;
-            for (Stream = InodeData.m_streams._LIST; Stream != null; Stream = Stream.Next)
+            Stream foundStream = null;
+            foreach (Stream Stream in InodeData.m_streams.Streams)
             {
-                if (Stream.StreamType.Type != StreamType.Type)
+                if ((Stream.StreamName == StreamName) && (Stream.StreamType.Type == StreamType.Type))
                 {
-                    continue;
-                }
-
-                if ((StreamName == null) && (Stream.StreamName == null))
-                {
-                    break;
-                }
-
-                if ((StreamName != null) && (Stream.StreamName != null) &&
-                    (Stream.StreamName.CompareTo(StreamName) == 0))
-                {
+                    foundStream = Stream;
                     break;
                 }
             }
 
-            if (Stream == null)
+            if (foundStream == null)
             {
                 if (StreamName != null)
                 {
@@ -554,22 +544,21 @@ namespace MSDefragLib.FileSystem.Ntfs
                     ShowDebug(6, "    Creating new stream: ':" + StreamType.GetStreamTypeName() + "'");
                 }
 
-                Stream = new Stream();
+                Stream newStream = new Stream();
 
-                Stream.Next = InodeData.m_streams._LIST;
-
-                InodeData.m_streams._LIST = Stream;
-
-                Stream.StreamName = null;
+                newStream.StreamName = null;
 
                 if ((StreamName != null) && (StreamName.Length > 0))
                 {
-                    Stream.StreamName = StreamName;
+                    newStream.StreamName = StreamName;
                 }
 
-                Stream.StreamType = StreamType;
-                Stream.Clusters = 0;
-                Stream.Bytes = Bytes;
+                newStream.StreamType = StreamType;
+                newStream.Clusters = 0;
+                newStream.Bytes = Bytes;
+
+                InodeData.m_streams.Streams.Insert(0, newStream);
+                foundStream = newStream;
             }
             else
             {
@@ -582,11 +571,12 @@ namespace MSDefragLib.FileSystem.Ntfs
                     ShowDebug(6, "    Appending rundata to existing stream: ':" + StreamType.GetStreamTypeName());
                 }
 
-                if (Stream.Bytes == 0) Stream.Bytes = Bytes;
+                if (foundStream.Bytes == 0)
+                    foundStream.Bytes = Bytes;
             }
 
             /* If the stream already has a list of fragments then find the last fragment. */
-            LastFragment = Stream.Fragments._LIST;
+            LastFragment = foundStream.Fragments._LIST;
 
             if (LastFragment != null)
             {
@@ -710,7 +700,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                     if (RunOffset.Value != 0)
                     {
-                        Stream.Clusters += RunLength.Value;
+                        foundStream.Clusters += RunLength.Value;
                     }
 
                     /* Add the extent to the Fragments. */
@@ -730,9 +720,9 @@ namespace MSDefragLib.FileSystem.Ntfs
                     NewFragment.NextVcn = Vcn;
                     NewFragment.Next = null;
 
-                    if (Stream.Fragments._LIST == null)
+                    if (foundStream.Fragments._LIST == null)
                     {
-                        Stream.Fragments._LIST = NewFragment;
+                        foundStream.Fragments._LIST = NewFragment;
                     }
                     else
                     {
@@ -753,33 +743,35 @@ namespace MSDefragLib.FileSystem.Ntfs
         */
         void CleanupStreams(InodeDataStructure InodeData, Boolean CleanupFragments)
         {
-            Stream TempStream;
+            //throw new NotImplementedException();
+            //TODO: let the GC do this for now...
+        //    Stream TempStream;
 
-            Fragment Fragment;
-            Fragment TempFragment;
+        //    Fragment Fragment;
+        //    Fragment TempFragment;
 
-            Stream Stream = InodeData.m_streams._LIST;
+        //    Stream Stream = InodeData.m_streams._LIST;
 
-            while (Stream != null)
-            {
-                if (CleanupFragments == true)
-                {
-                    Fragment = Stream.Fragments._LIST;
+        //    while (Stream != null)
+        //    {
+        //        if (CleanupFragments == true)
+        //        {
+        //            Fragment = Stream.Fragments._LIST;
 
-                    while (Fragment != null)
-                    {
-                        TempFragment = Fragment;
-                        Fragment = Fragment.Next;
+        //            while (Fragment != null)
+        //            {
+        //                TempFragment = Fragment;
+        //                Fragment = Fragment.Next;
 
-                        TempFragment = null;
-                    }
-                }
+        //                TempFragment = null;
+        //            }
+        //        }
 
-                TempStream = Stream;
-                Stream = Stream.Next;
+        //        TempStream = Stream;
+        //        Stream = Stream.Next;
 
-                TempStream = null;
-            }
+        //        TempStream = null;
+        //    }
         }
 
         /* Construct the full stream name from the filename, the stream name, and the stream type. */
@@ -1168,14 +1160,14 @@ namespace MSDefragLib.FileSystem.Ntfs
                         if ((attribute.Type == AttributeTypeEnum.AttributeData) &&
                             (InodeData.MftDataFragments == null))
                         {
-                            InodeData.MftDataFragments = InodeData.m_streams._LIST.Fragments;
+                            InodeData.MftDataFragments = InodeData.m_streams.Streams[0].Fragments;
                             InodeData.m_mftDataLength = nonResidentAttribute.m_dataSize;
                         }
 
                         if ((attribute.Type== AttributeTypeEnum.AttributeBitmap) &&
                             (InodeData.MftBitmapFragments == null))
                         {
-                            InodeData.MftBitmapFragments = InodeData.m_streams._LIST.Fragments;
+                            InodeData.MftBitmapFragments = InodeData.m_streams.Streams[0].Fragments;
                             InodeData.m_mftBitmapLength = nonResidentAttribute.m_dataSize;
                         }
                     }
@@ -1336,43 +1328,30 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             /* Create an item in the Data->ItemTree for every stream. */
-            Stream Stream = InodeData.m_streams._LIST;
-
-            do
+            foreach (Stream stream in InodeData.m_streams.Streams)
             {
                 /* Create and fill a new item record in memory. */
                 ItemStruct Item = new ItemStruct();
-
-                if (Item == null)
-                {
-                    ShowDebug(2, "Error: Could not allocate memory.");
-
-                    CleanupStreams(InodeData, true);
-
-                    return false;
-                }
-
-                Item.LongFilename = ConstructStreamName(InodeData.m_longFilename, InodeData.m_shortFilename, Stream);
+                Item.LongFilename = ConstructStreamName(InodeData.m_longFilename, InodeData.m_shortFilename, stream);
                 Item.LongPath = null;
 
-                Item.ShortFilename = ConstructStreamName(InodeData.m_shortFilename, InodeData.m_longFilename, Stream);
+                Item.ShortFilename = ConstructStreamName(InodeData.m_shortFilename, InodeData.m_longFilename, stream);
                 Item.ShortPath = null;
 
                 Item.Bytes = InodeData.m_totalBytes;
 
-                if (Stream != null) Item.Bytes = Stream.Bytes;
+                Item.Bytes = stream.Bytes;
 
                 Item.Clusters = 0;
 
-                if (Stream != null) Item.Clusters = Stream.Clusters;
+                Item.Clusters = stream.Clusters;
 
                 Item.CreationTime = InodeData.m_creationTime;
                 Item.MftChangeTime = InodeData.m_mftChangeTime;
                 Item.LastAccessTime = InodeData.m_lastAccessTime;
                 Item.FragmentList = null;
 
-                if (Stream != null) 
-                    Item.FragmentList = Stream.Fragments;
+                Item.FragmentList = stream.Fragments;
 
                 Item.ParentInode = InodeData.m_parentInode;
                 Item.Directory = InodeData.m_directory;
@@ -1388,19 +1367,19 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 m_msDefragLib.m_data.CountAllFiles++;
 
-                if ((Stream != null) && (Stream.StreamType == AttributeTypeEnum.AttributeData))
+                if (stream.StreamType == AttributeTypeEnum.AttributeData)
                 {
                     m_msDefragLib.m_data.CountAllBytes += InodeData.m_totalBytes;
                 }
 
-                if (Stream != null) m_msDefragLib.m_data.CountAllClusters += Stream.Clusters;
+                m_msDefragLib.m_data.CountAllClusters += stream.Clusters;
 
                 if (m_msDefragLib.FragmentCount(Item) > 1)
                 {
                     m_msDefragLib.m_data.CountFragmentedItems++;
                     m_msDefragLib.m_data.CountFragmentedBytes += InodeData.m_totalBytes;
 
-                    if (Stream != null) m_msDefragLib.m_data.CountFragmentedClusters += Stream.Clusters;
+                    if (stream != null) m_msDefragLib.m_data.CountFragmentedClusters += stream.Clusters;
                 }
 
                 /* Add the item record to the sorted item tree in memory. */
@@ -1445,10 +1424,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 {
                     m_msDefragLib.ShowDiskmap();
                 }
-
-                if (Stream != null) Stream = Stream.Next;
-
-            } while (Stream != null);
+            }
 
             /* Cleanup and return true. */
             CleanupStreams(InodeData, false);

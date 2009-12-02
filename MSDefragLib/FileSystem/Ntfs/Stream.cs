@@ -45,8 +45,6 @@ namespace MSDefragLib.FileSystem.Ntfs
     /// </summary>
     public class Stream
     {
-        public Stream Next;
-
         public String StreamName;               /* "stream name" */
 
         public AttributeType StreamType;       /* "stream type" */
