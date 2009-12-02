@@ -492,32 +492,28 @@ namespace MSDefragLib.FileSystem.Ntfs
             return (Buffer);
         }
 
+        private UInt64 _index = 0;
+
+        [Conditional("DEBUG")]
+        private void CheckIndex(UInt64 max)
+        {
+            if (++_index >= max)
+            {
+                throw new Exception(
+                    "Error: datarun is longer than buffer, the MFT may be corrupt.");
+            }
+        }
+
         /* Read the RunData list and translate into a list of fragments. */
         Boolean TranslateRundataToFragmentlist(
                     InodeDataStructure InodeData,
                     String StreamName,
                     AttributeType StreamType,
-                    ByteArray RunData,
-                    UInt64 RunDataLength,
+                    BinaryReader runData,
+                    UInt64 runDataLength,
                     UInt64 StartingVcn,
                     UInt64 Bytes)
         {
-            UInt32 Index;
-
-            UInt64 Lcn;
-            UInt64 Vcn;
-
-            int RunOffsetSize;
-            int RunLengthSize;
-
-            UlongBytes RunOffset = new UlongBytes();
-            UlongBytes RunLength = new UlongBytes();
-
-            Fragment NewFragment;
-            Fragment LastFragment;
-
-            int i;
-
             /* Sanity check. */
             if ((m_msDefragLib.m_data == null) || (InodeData == null))
                 throw new Exception("Sanity check failed");
@@ -576,11 +572,12 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             /* If the stream already has a list of fragments then find the last fragment. */
-            LastFragment = foundStream.Fragments._LIST;
+            Fragment LastFragment = foundStream.Fragments._LIST;
 
             if (LastFragment != null)
             {
-                while (LastFragment.Next != null) LastFragment = LastFragment.Next;
+                while (LastFragment.Next != null)
+                    LastFragment = LastFragment.Next;
 
                 if (StartingVcn != LastFragment.NextVcn)
                 {
@@ -591,149 +588,94 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
             }
 
+            if (runData == null)
+                return true;
+
             /* Walk through the RunData and add the extents. */
-            Index = 0;
+            _index = 0;
+            UInt64 Lcn = 0;
+            UInt64 Vcn = StartingVcn;
 
-            Lcn = 0;
+            UlongBytes RunOffset = new UlongBytes();
+            UlongBytes RunLength = new UlongBytes();
 
-            Vcn = StartingVcn;
-
-            if (RunData != null)
+            while (runData.PeekChar() != 0)
             {
-                Int64 tempOffset = Index;
+                Byte runDataValue = runData.ReadByte();
 
-                while (RunData.ToByte(ref tempOffset) != 0)
+                /* Decode the RunData and calculate the next Lcn. */
+                int runLengthSize = (runDataValue & 0x0F);
+                Debug.Assert(runLengthSize <= 8);
+                int runOffsetSize = ((runDataValue & 0xF0) >> 4);
+                Debug.Assert(runOffsetSize <= 8);
+
+                CheckIndex(runDataLength);
+
+                RunLength.Value = 0;
+                for (int i = 0; i < runLengthSize; i++)
                 {
-                    tempOffset = Index;
-                    Byte runDataValue = RunData.ToByte(ref tempOffset);
-
-                    /* Decode the RunData and calculate the next Lcn. */
-                    RunLengthSize = (runDataValue & 0x0F);
-                    RunOffsetSize = ((runDataValue & 0xF0) >> 4);
-
-                    Index++;
-
-                    if (Index >= RunDataLength)
-                    {
-                        // Exception just here to show ther is an issue
-                        throw new Exception("implementation error");
-                        ShowDebug(0, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. m_iNode {0:G}.",
-                            InodeData.m_iNode));
-
-                        return false;
-                    }
-
-                    //RunLength = new UlongBytes();
-                    RunLength.Value = 0;
-
-                    for (i = 0; i < RunLengthSize; i++)
-                    {
-                        tempOffset = Index;
-                        Byte tempDataValue = RunData.ToByte(ref tempOffset);
-
-                        if (i < 8)
-                        {
-                            RunLength.Bytes[i] = tempDataValue;
-                        }
-
-                        Index++;
-
-                        if (Index >= RunDataLength)
-                        {
-                            throw new Exception("implementation error");
-                            ShowDebug(0, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. m_iNode {0:G}.",
-                                  InodeData.m_iNode));
-
-                            return false;
-                        }
-                    }
-
-                    //RunOffset = new UlongBytes();
-                    RunOffset.Value = 0;
-
-                    for (i = 0; i < RunOffsetSize; i++)
-                    {
-                        tempOffset = Index;
-                        Byte tempDataValue = RunData.ToByte(ref tempOffset);
-
-                        if (i < RunOffset.Bytes.Length)
-                        {
-                            RunOffset.Bytes[i] = tempDataValue;
-                        }
-
-                        Index++;
-
-                        if (Index >= RunDataLength)
-                        {
-                            throw new Exception("implementation error");
-                            ShowDebug(0, String.Format("Error: datarun is longer than buffer, the MFT may be corrupt. m_iNode {0:G}.",
-                                InodeData.m_iNode));
-
-                            return false;
-                        }
-                    }
-
-                    if ((i < 8) && (i > 0) && (RunOffset.Bytes[i - 1] >= 0x80))
-                    {
-                        while (i < 8) RunOffset.Bytes[i++] = 0Xff;
-                    }
-
-                    Lcn += RunOffset.Value;
-                    Vcn += RunLength.Value;
-
-                    /* Show debug message. */
-                    if (RunOffset.Value != 0)
-                    {
-                        ShowDebug(6, String.Format("    Extent: Lcn={0:G}, Vcn={1:G}, NextVcn={2:G}", Lcn, Vcn - RunLength.Value, Vcn));
-                    }
-                    else
-                    {
-                        ShowDebug(6, String.Format("    Extent (virtual): Vcn={0:G}, NextVcn={1:G}", Vcn - RunLength.Value, Vcn));
-                    }
-
-                    /* 
-                        Add the size of the fragment to the total number of clusters.
-                        There are two kinds of fragments: real and virtual. The latter do not
-                        occupy clusters on disk, but are information used by compressed
-                        and sparse files. 
-                    */
-
-                    if (RunOffset.Value != 0)
-                    {
-                        foundStream.Clusters += RunLength.Value;
-                    }
-
-                    /* Add the extent to the Fragments. */
-                    NewFragment = new Fragment();
-
-                    if (NewFragment == null)
-                    {
-                        ShowDebug(2, "Error: malloc() returned null.");
-
-                        return false;
-                    }
-
-                    NewFragment.Lcn = Lcn;
-
-                    if (RunOffset.Value == 0) NewFragment.Lcn = VIRTUALFRAGMENT;
-
-                    NewFragment.NextVcn = Vcn;
-                    NewFragment.Next = null;
-
-                    if (foundStream.Fragments._LIST == null)
-                    {
-                        foundStream.Fragments._LIST = NewFragment;
-                    }
-                    else
-                    {
-                        if (LastFragment != null)
-                            LastFragment.Next = NewFragment;
-                    }
-
-                    LastFragment = NewFragment;
+                    RunLength.Bytes[i] = runData.ReadByte();
+                    CheckIndex(runDataLength);
                 }
-            }
 
+                RunOffset.Value = 0;
+                for (int j = 0; j < runOffsetSize; j++)
+                {
+                    RunOffset.Bytes[j] = runData.ReadByte();
+                    CheckIndex(runDataLength);
+                }
+
+                //if ((i < 8) && (i > 0) && (RunOffset.Bytes[i - 1] >= 0x80))
+                //{
+                //    while (i < 8)
+                //        RunOffset.Bytes[i++] = 0Xff;
+                //}
+
+                Lcn += RunOffset.Value;
+                Vcn += RunLength.Value;
+
+                /* Show debug message. */
+                if (RunOffset.Value != 0)
+                {
+                    ShowDebug(6, String.Format("    Extent: Lcn={0:G}, Vcn={1:G}, NextVcn={2:G}", Lcn, Vcn - RunLength.Value, Vcn));
+                }
+                else
+                {
+                    ShowDebug(6, String.Format("    Extent (virtual): Vcn={0:G}, NextVcn={1:G}", Vcn - RunLength.Value, Vcn));
+                }
+
+                /* 
+                    Add the size of the fragment to the total number of clusters.
+                    There are two kinds of fragments: real and virtual. The latter do not
+                    occupy clusters on disk, but are information used by compressed
+                    and sparse files. 
+                */
+                if (RunOffset.Value != 0)
+                {
+                    foundStream.Clusters += RunLength.Value;
+                }
+
+                /* Add the extent to the Fragments. */
+                Fragment newFragment = new Fragment();
+                newFragment.Lcn = Lcn;
+
+                if (RunOffset.Value == 0) newFragment.Lcn = VIRTUALFRAGMENT;
+
+                newFragment.NextVcn = Vcn;
+                newFragment.Next = null;
+
+                if (foundStream.Fragments._LIST == null)
+                {
+                    foundStream.Fragments._LIST = newFragment;
+                }
+                else
+                {
+                    if (LastFragment != null)
+                        LastFragment.Next = newFragment;
+                }
+
+                LastFragment = newFragment;
+            }
             return true;
         }
 
@@ -1150,7 +1092,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                     /* Create a new stream with a list of fragments for this data. */
                     TranslateRundataToFragmentlist(InodeData, p1, attribute.Type,
-                            Buffer.ToByteArray((Int64)(AttributeOffset + nonResidentAttribute.m_runArrayOffset), Buffer.GetLength() - (Int64)((AttributeOffset + nonResidentAttribute.m_runArrayOffset))),
+                        Helper.BinaryReader(Buffer, (Int64)(AttributeOffset + nonResidentAttribute.m_runArrayOffset)),
                             attribute.Length - nonResidentAttribute.m_runArrayOffset,
                             nonResidentAttribute.m_startingVcn, nonResidentAttribute.m_dataSize);
 
