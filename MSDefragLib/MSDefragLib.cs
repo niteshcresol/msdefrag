@@ -5860,7 +5860,7 @@ namespace MSDefragLib
 
             aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
 
-            aTimer.Interval = 300;
+            aTimer.Interval = 1000;
             aTimer.Enabled = true;
 
             int numNotify = 0;

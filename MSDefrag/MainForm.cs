@@ -47,6 +47,8 @@ namespace MSDefrag
 
             InitBrushes();
 
+            DrawSquares();
+
         }
 
         public void InitializeStatusPanel()
@@ -69,13 +71,14 @@ namespace MSDefrag
             m_numSquaresX = pictureBox1.Width / m_squareSize;
             m_numSquaresY = pictureBox1.Height / m_squareSize;
 
-            bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
-            pictureBox1.Image = bmp;
+            m_diskmapBitmap = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+
+            m_displayedBitmap = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+            pictureBox1.Image = m_displayedBitmap;
 
             m_numSquares = m_numSquaresX * m_numSquaresY;
             m_msDefragLib.NumSquares = m_numSquares;
 
-            DrawSquares();
         }
 
         private void InitBrushes()
@@ -170,7 +173,7 @@ namespace MSDefrag
             if (squaresList == null)
                 return;
 
-            using (Graphics g1 = Graphics.FromImage(bmp))
+            using (Graphics g1 = Graphics.FromImage(m_diskmapBitmap))
             {
                 foreach (MSDefragLib.ClusterSquare square in squaresList)
                 {
@@ -187,13 +190,13 @@ namespace MSDefrag
                     Byte brightnessFactor = 80;
                     Byte darknessFactor = 70;
 
-                    Byte r = (Byte)(((col.R - darknessFactor) > 0) ? (col.R - darknessFactor) : 0);
-                    Byte g = (Byte)(((col.G - darknessFactor) > 0) ? (col.G - darknessFactor) : 0);
-                    Byte b = (Byte)(((col.B - darknessFactor) > 0) ? (col.B - darknessFactor) : 0);
+                    Byte r = (Byte)Math.Max(0, col.R - darknessFactor);
+                    Byte g = (Byte)Math.Max(0, col.G - darknessFactor);
+                    Byte b = (Byte)Math.Max(0, col.B - darknessFactor);
 
-                    Byte r2 = (Byte)(((col.R + brightnessFactor) < Byte.MaxValue) ? (col.R + brightnessFactor) : Byte.MaxValue);
-                    Byte g2 = (Byte)(((col.G + brightnessFactor) < Byte.MaxValue) ? (col.G + brightnessFactor) : Byte.MaxValue);
-                    Byte b2 = (Byte)(((col.B + brightnessFactor) < Byte.MaxValue) ? (col.B + brightnessFactor) : Byte.MaxValue);
+                    Byte r2 = (Byte)Math.Min(Byte.MaxValue, col.R + brightnessFactor);
+                    Byte g2 = (Byte)Math.Min(Byte.MaxValue, col.G + brightnessFactor);
+                    Byte b2 = (Byte)Math.Min(Byte.MaxValue, col.B + brightnessFactor);
 
                     Color darkColor = Color.FromArgb(r, g, b);
                     Color brightColor = Color.FromArgb(r2, g2, b2);
@@ -215,6 +218,19 @@ namespace MSDefrag
                     }
 
                 }
+            }
+
+            using (Graphics g2 = Graphics.FromImage(m_displayedBitmap))
+            {
+                g2.DrawImage(m_diskmapBitmap, 0, 0);
+
+                SolidBrush br = new SolidBrush(Color.FromArgb(210, Color.LightBlue));
+
+                g2.FillRectangle(br, 23, 23, 700, 400);
+                g2.DrawRectangle(Pens.Black, 23, 23, 700, 400);
+
+                for (int ii = 0; ii < maxMessages; ii++ )
+                    g2.DrawString(messages[ii], m_font, Brushes.Black, new PointF(25, 25 + 15 * ii));
             }
 
             pictureBox1.Refresh();
@@ -247,7 +263,7 @@ namespace MSDefrag
             {
                 return;
             }
-            Graphics g1 = Graphics.FromImage(bmp);
+            Graphics g1 = Graphics.FromImage(m_diskmapBitmap);
 
             Int32 squareIndex = square.m_squareIndex;
             MSDefragLib.MSDefragLib.CLUSTER_COLORS color = square.m_color;
@@ -314,8 +330,8 @@ namespace MSDefrag
 
         private void Defrag()
         {
-            //m_msDefragLib.Simulate();
-            m_msDefragLib.RunJkDefrag("C:\\*", 2, 100, 10, null, null);
+            m_msDefragLib.Simulate();
+            //m_msDefragLib.RunJkDefrag("C:\\*", 2, 100, 10, null, null);
         }
 
         #endregion
@@ -324,6 +340,9 @@ namespace MSDefrag
 
         private void Notified(object sender, EventArgs e)
         {
+            if (ignoreEvent)
+                return;
+
             if (e is NotifyGuiEventArgs)
             {
                 NotifyGuiEventArgs ngea = (NotifyGuiEventArgs)e;
@@ -335,6 +354,9 @@ namespace MSDefrag
         // This will be called whenever the list changes.
         private void ShowChanges(object sender, EventArgs e)
         {
+            if (ignoreEvent)
+                return;
+
             String message = "";
             UInt32 level = 0;
 
@@ -403,8 +425,9 @@ namespace MSDefrag
 
         private String[] messages;
 
-        private Bitmap bmp;
+        private Bitmap m_diskmapBitmap;
         private Bitmap statusBmp;
+        private Bitmap m_displayedBitmap;
 
         private Rectangle m_rec2;
 
@@ -422,6 +445,8 @@ namespace MSDefrag
         private Int32 m_numSquaresY;
         private Int32 m_numSquares;
 
+        private Boolean ignoreEvent = false;
+
         #endregion
 
         #region Other variables
@@ -431,6 +456,20 @@ namespace MSDefrag
         MSDefragLib.MSDefragLib m_msDefragLib = null;
 
         #endregion
+
+        private void OnResizeBegin(object sender, EventArgs e)
+        {
+            ignoreEvent = true;
+
+            defragThread.Suspend();
+        }
+
+        private void OnResizeEnd(object sender, EventArgs e)
+        {
+            ignoreEvent = false;
+
+            defragThread.Resume();
+        }
 
     }
 }

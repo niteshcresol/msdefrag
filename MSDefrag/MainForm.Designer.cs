@@ -13,7 +13,7 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-        	bmp.Dispose();
+        	m_diskmapBitmap.Dispose();
         	fontBrush.Dispose();
         	m_font.Dispose();
         	statusBmp.Dispose();
@@ -124,7 +124,9 @@
             this.Controls.Add(this.tableLayoutPanel1);
             this.Name = "Form1";
             this.Text = "Marko\'s Defragmentation Tool";
+            this.ResizeBegin += new System.EventHandler(this.OnResizeBegin);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.OnGuiClosing);
+            this.ResizeEnd += new System.EventHandler(this.OnResizeEnd);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.statusPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
