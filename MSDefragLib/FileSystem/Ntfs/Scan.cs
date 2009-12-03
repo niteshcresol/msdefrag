@@ -302,10 +302,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             Int64 Lcn = 0;
             UInt64 Vcn = startingVcn;
 
-            while (runData.PeekChar() != 0)
+            Byte runDataValue = 0;
+            while ((runDataValue = runData.ReadByte())!= 0)
             {
-                Byte runDataValue = runData.ReadByte();
-
                 /* Decode the RunData and calculate the next Lcn. */
                 int runLengthSize = (runDataValue & 0x0F);
                 int runOffsetSize = ((runDataValue & 0xF0) >> 4);
@@ -1109,16 +1108,11 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 if (fragment.IsLogical)
                 {
-                    ShowDebug(6, String.Format("  Extent Lcn={0:G}, RealVcn={1:G}, Size={2:G}",
-                          fragment.Lcn, RealVcn, fragment.Length));
-
                     tempLcn = fragment.Lcn * DiskInfo.BytesPerCluster;
 
                     UInt64 numClusters = fragment.Length;
                     Int32 numBytes = (Int32)(numClusters * DiskInfo.BytesPerCluster);
                     Int32 startIndex = (Int32)(RealVcn * DiskInfo.BytesPerCluster);
-
-                    ShowDebug(6, String.Format("    Reading {0:G} clusters ({1:G} bytes) from LCN={2:G}", numClusters, numBytes, fragment.Lcn));
 
                     m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn, MftBitmap.m_bytes,
                         startIndex, numBytes);

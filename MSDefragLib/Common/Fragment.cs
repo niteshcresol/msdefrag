@@ -58,13 +58,13 @@ namespace MSDefragLib
         /// <summary>
         /// Virtual cluster number of next fragment.
         /// </summary>
-        public UInt64 NextVirtualCluster
+        public UInt64 NextVcn
         { get { return Vcn + Length; } }
 
         /// <summary>
         /// Logical cluster number of next fragment.
         /// </summary>
-        public UInt64 NextLogicalCluster
+        public UInt64 NextLcn
         { get { return Lcn + Length; } }
     };
 }

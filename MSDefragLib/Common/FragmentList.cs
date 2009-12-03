@@ -25,8 +25,7 @@ namespace MSDefragLib
         {
             get
             {
-                Fragment fragment = _fragments.
-                    FirstOrDefault(x => x.Lcn == Fragment.VIRTUALFRAGMENT);
+                Fragment fragment = _fragments.FirstOrDefault(x => x.IsLogical);
                 if (fragment == null)
                     return 0;
                 return fragment.Lcn;
@@ -38,20 +37,19 @@ namespace MSDefragLib
             get
             {
                 int count = 0;
-
-                UInt64 NextLcn = 0;
+                UInt64 nextLcn = 0;
 
                 foreach (Fragment fragment in _fragments)
                 {
-                    if (fragment.Lcn != Fragment.VIRTUALFRAGMENT)
+                    if (fragment.IsLogical)
                     {
-                        if ((NextLcn != 0) && (fragment.Lcn != NextLcn))
+                        if ((nextLcn != 0) && (fragment.Lcn != nextLcn))
                             count++;
-                        NextLcn = fragment.NextLogicalCluster;
+                        nextLcn = fragment.NextLcn;
                     }
                 }
 
-                if (NextLcn != 0)
+                if (nextLcn != 0)
                     count++;
 
                 return count;

@@ -138,9 +138,6 @@ namespace MSDefragLib
             COLORMAX
         };
 
-        public const UInt64 VIRTUALFRAGMENT = UInt64.MaxValue - 1;          /* _UI64_MAX - 1 */
-
-
         /// <summary>
         /// Compare a string with a mask, case-insensitive. If it matches then return
         /// true, otherwise false. The mask may contain wildcard characters '?' (any
@@ -436,55 +433,6 @@ namespace MSDefragLib
             //Data.LastCheckpoint = Time.time * 1000 + Time.millitm;
         }
 
-/*
-        / * Return pointer to the last item in the tree (the last file on the volume). * /
-        struct ItemStruct *JKDefragLib::TreeBiggest(struct ItemStruct *Top)
-        {
-	        if (Top == NULL) return(NULL);
-
-	        while (Top->Bigger != NULL) Top = Top->Bigger;
-
-	        return(Top);
-        }
-
-        / *
-
-        If Direction=0 then return a pointer to the first file on the volume,
-        if Direction=1 then the last file.
-
-        * /
-        struct ItemStruct *JKDefragLib::TreeFirst(struct ItemStruct *Top, int Direction)
-        {
-	        if (Direction == 0) return(TreeSmallest(Top));
-
-	        return(TreeBiggest(Top));
-        }
-
-        / * Return pointer to the previous item in the tree. * /
-        struct ItemStruct *JKDefragLib::TreePrev(struct ItemStruct *Here)
-        {
-	        struct ItemStruct *Temp;
-
-	        if (Here == NULL) return(Here);
-
-	        if (Here->Smaller != NULL)
-	        {
-		        Here = Here->Smaller;
-
-		        while (Here->Bigger != NULL) Here = Here->Bigger;
-
-		        return(Here);
-	        }
-
-	        do
-	        {
-		        Temp = Here;
-		        Here = Here->Parent;
-	        } while ((Here != NULL) && (Here->Smaller == Temp));
-
-	        return(Here);
-        }
-*/
 /*
         / *
 
@@ -1187,7 +1135,7 @@ namespace MSDefragLib
 			        }
 
 			        FragmentEnd += fragment.Length;
-			        NextLcn = fragment.NextLogicalCluster;
+			        NextLcn = fragment.NextLcn;
 		        }
 	        }
 
@@ -1220,12 +1168,7 @@ namespace MSDefragLib
         /// <param name="BusyOffset">Number of first cluster to be highlighted.</param>
         /// <param name="BusySize">Number of clusters to be highlighted.</param>
         /// <param name="UnDraw">true to undraw the file from the screen.</param>
-        /// 
-        public void ColorizeItem(
-            ItemStruct Item,
-	        UInt64 BusyOffset,
-	        UInt64 BusySize,
-	        Boolean UnDraw)
+        public void ColorizeItem(ItemStruct Item, UInt64 BusyOffset, UInt64 BusySize, Boolean UnDraw)
         {
 	        UInt64 SegmentBegin;
 	        UInt64 SegmentEnd;
@@ -1318,7 +1261,8 @@ namespace MSDefragLib
 			        }
 
 			        /* Colorize the segment. */
-                    DrawCluster(fragment.Lcn + SegmentBegin - RealVcn, fragment.Lcn + SegmentEnd - RealVcn,Color);
+                    DrawCluster(fragment.Lcn + SegmentBegin - RealVcn,
+                        fragment.Lcn + SegmentEnd - RealVcn,Color);
 
 			        /* Next segment. */
 			        SegmentBegin = SegmentEnd;
@@ -1883,7 +1827,7 @@ namespace MSDefragLib
 						        }
 					        }
 
-					        RealVcn = RealVcn + fragment.Length;
+					        RealVcn += fragment.Length;
 				        }
 			        }
 		        }
