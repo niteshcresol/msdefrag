@@ -12,9 +12,10 @@ namespace MSDefragLib
             _fragments = new List<Fragment>();
         }
 
-        public void Add(Fragment fragment)
+
+        public void Add(UInt64 lcn, UInt64 vcn, UInt64 length, Boolean isVirtual)
         {
-            _fragments.Add(fragment);
+            _fragments.Add(new Fragment(lcn, vcn, length, isVirtual));
         }
 
         public UInt64 Lcn

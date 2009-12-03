@@ -449,27 +449,10 @@ namespace MSDefragLib.FileSystem.Ntfs
                 throw new Exception("Sanity check failed");
 
             /* Find the stream in the list of streams. If not found then create a new stream. */
-            Stream foundStream = null;
-            foreach (Stream Stream in InodeData.Streams)
-            {
-                if ((Stream.Name == StreamName) && (Stream.Type.Type == StreamType.Type))
-                {
-                    foundStream = Stream;
-                    break;
-                }
-            }
-
+            Stream foundStream = InodeData.Streams.FirstOrDefault(x => (x.Name == StreamName) && (x.Type.Type == StreamType.Type));
             if (foundStream == null)
             {
-                if (StreamName != null)
-                {
-                    ShowDebug(6, "    Creating new stream: '" + StreamName + ":" + StreamType.GetStreamTypeName() + "'");
-                }
-                else
-                {
-                    ShowDebug(6, "    Creating new stream: ':" + StreamType.GetStreamTypeName() + "'");
-                }
-
+                ShowDebug(6, "    Creating new stream: '" + StreamName + ":" + StreamType.GetStreamTypeName() + "'");
                 Stream newStream = new Stream(StreamName, StreamType);
                 newStream.Clusters = 0;
                 newStream.Bytes = Bytes;
@@ -479,15 +462,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
             else
             {
-                if (StreamName != null)
-                {
-                    ShowDebug(6, "    Appending rundata to existing stream: '" + StreamName + ":" + StreamType.GetStreamTypeName());
-                }
-                else
-                {
-                    ShowDebug(6, "    Appending rundata to existing stream: ':" + StreamType.GetStreamTypeName());
-                }
-
+                ShowDebug(6, "    Appending rundata to existing stream: '" + StreamName + ":" + StreamType.GetStreamTypeName());
                 if (foundStream.Bytes == 0)
                     foundStream.Bytes = Bytes;
             }
@@ -549,17 +524,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                 //}
 
                 Lcn += RunOffset.Value;
-                Vcn += RunLength.Value;
-
-                /* Show debug message. */
-                if (RunOffset.Value != 0)
-                {
-                    ShowDebug(6, String.Format("    Extent: Lcn={0:G}, Vcn={1:G}, NextVcn={2:G}", Lcn, Vcn - RunLength.Value, Vcn));
-                }
-                else
-                {
-                    ShowDebug(6, String.Format("    Extent (virtual): Vcn={0:G}, NextVcn={1:G}", Vcn - RunLength.Value, Vcn));
-                }
 
                 /* 
                     Add the size of the fragment to the total number of clusters.
@@ -572,15 +536,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                     foundStream.Clusters += RunLength.Value;
                 }
 
-                /* Add the extent to the Fragments. */
-                Fragment newFragment = new Fragment();
-                newFragment.Lcn = Lcn;
-
-                if (RunOffset.Value == 0) newFragment.Lcn = VIRTUALFRAGMENT;
-
-                newFragment.NextVcn = Vcn;
-                foundStream.Fragments.Add(newFragment);
-                lastFragment = newFragment;
+                foundStream.Fragments.Add(Lcn, Vcn, RunLength.Value, RunOffset.Value == 0);
+                Vcn += RunLength.Value;
             }
             return true;
         }
