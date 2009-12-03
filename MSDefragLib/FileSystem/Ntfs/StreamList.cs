@@ -5,14 +5,36 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    public class StreamList
+    public class StreamList : IEnumerable<Stream>
     {
         public StreamList()
         {
-            Streams = new List<Stream>();
+            _streams = new List<Stream>();
         }
 
-        public IList<Stream> Streams
-        { get; private set; }
+        public void Add(Stream newStream)
+        {
+            _streams.Insert(0, newStream);
+        }
+
+        private IList<Stream> _streams;
+
+        #region IEnumerable<Stream> Members
+
+        public IEnumerator<Stream> GetEnumerator()
+        {
+            return _streams.GetEnumerator();
+        }
+
+        #endregion
+
+        #region IEnumerable Members
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
     }
 }

@@ -450,7 +450,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             /* Find the stream in the list of streams. If not found then create a new stream. */
             Stream foundStream = null;
-            foreach (Stream Stream in InodeData.Streams.Streams)
+            foreach (Stream Stream in InodeData.Streams)
             {
                 if ((Stream.Name == StreamName) && (Stream.Type.Type == StreamType.Type))
                 {
@@ -474,7 +474,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 newStream.Clusters = 0;
                 newStream.Bytes = Bytes;
 
-                InodeData.Streams.Streams.Insert(0, newStream);
+                InodeData.Streams.Add(newStream);
                 foundStream = newStream;
             }
             else
@@ -1010,14 +1010,14 @@ namespace MSDefragLib.FileSystem.Ntfs
                         if ((attribute.Type == AttributeTypeEnum.AttributeData) &&
                             (InodeData.MftDataFragments == null))
                         {
-                            InodeData.MftDataFragments = InodeData.Streams.Streams[0].Fragments;
+                            InodeData.MftDataFragments = InodeData.Streams.First().Fragments;
                             InodeData.m_mftDataLength = nonResidentAttribute.m_dataSize;
                         }
 
                         if ((attribute.Type== AttributeTypeEnum.AttributeBitmap) &&
                             (InodeData.MftBitmapFragments == null))
                         {
-                            InodeData.MftBitmapFragments = InodeData.Streams.Streams[0].Fragments;
+                            InodeData.MftBitmapFragments = InodeData.Streams.First().Fragments;
                             InodeData.m_mftBitmapLength = nonResidentAttribute.m_dataSize;
                         }
                     }
@@ -1184,7 +1184,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             /* Create an item in the Data->ItemTree for every stream. */
-            foreach (Stream stream in InodeData.Streams.Streams)
+            foreach (Stream stream in InodeData.Streams)
             {
                 /* Create and fill a new item record in memory. */
                 ItemStruct Item = new ItemStruct(stream);
