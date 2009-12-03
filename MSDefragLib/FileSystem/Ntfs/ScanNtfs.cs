@@ -1609,7 +1609,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 /* Setup the ParentDirectory in all the items with the info in the InodeArray. */
-                for (Item = m_msDefragLib.TreeSmallest(m_msDefragLib.m_data.ItemTree); Item != null; Item = m_msDefragLib.TreeNext(Item))
+                for (Item = ItemTree.TreeSmallest(m_msDefragLib.m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
                 {
                     Item.ParentDirectory = (ItemStruct)InodeArray.GetValue((Int64)Item.ParentInode);
 

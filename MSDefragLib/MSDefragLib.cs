@@ -441,15 +441,6 @@ namespace MSDefragLib
             //Data.LastCheckpoint = Time.time * 1000 + Time.millitm;
         }
 
-        /* Return pointer to the first item in the tree (the first file on the volume). */
-        public ItemStruct TreeSmallest(ItemStruct Top)
-        {
-	        if (Top == null) return null;
-
-	        while (Top.Smaller != null) Top = Top.Smaller;
-
-	        return Top;
-        }
 /*
         / * Return pointer to the last item in the tree (the last file on the volume). * /
         struct ItemStruct *JKDefragLib::TreeBiggest(struct ItemStruct *Top)
@@ -499,30 +490,6 @@ namespace MSDefragLib
 	        return(Here);
         }
 */
-        /* Return pointer to the next item in the tree. */
-        public ItemStruct TreeNext(ItemStruct Here)
-        {
-	        ItemStruct Temp;
-
-	        if (Here == null) return null;
-
-	        if (Here.Bigger != null)
-	        {
-		        Here = Here.Bigger;
-
-		        while (Here.Smaller != null) Here = Here.Smaller;
-
-		        return(Here);
-	        }
-
-	        do
-	        {
-		        Temp = Here;
-		        Here = Here.Parent;
-	        } while ((Here != null) && (Here.Bigger == Temp));
-
-	        return Here;
-        }
 /*
         / *
 
@@ -1565,7 +1532,7 @@ namespace MSDefragLib
             /* Colorize all the files on the screen.
                 Note: the "$BadClus" file on NTFS disks maps the entire disk, so we have to
                 ignore it. */
-            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = ItemTree.TreeSmallest(m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
             {
                 if (m_data.Running != RunningState.RUNNING) break;
                 if (m_data.RedrawScreen != 2) break;
@@ -1857,7 +1824,7 @@ namespace MSDefragLib
                 SizeOfMovableFiles[Zone] = 0;
             }
 
-            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = ItemTree.TreeSmallest(m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
 	        {
 		        if (Item.Unmovable == true) continue;
 		        if (Item.Exclude == true) continue;
@@ -1921,7 +1888,7 @@ namespace MSDefragLib
 
 		        /* Walk through all items and count the unmovable fragments. Ignore unmovable fragments
 		        in the MFT zones, we have already counted the zones. */
-                for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
+                for (Item = ItemTree.TreeSmallest(m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
 		        {
 			        if ((Item.Unmovable == false) &&
 				        (Item.Exclude == false) &&
@@ -2791,7 +2758,7 @@ namespace MSDefragLib
             m_data.CountAllClusters = 0;
             m_data.CountFragmentedClusters = 0;
 
-            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = ItemTree.TreeSmallest(m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
 	        {
 		        if ((Item.LongFilename != null) &&
 			        (Item.LongFilename.Equals("$BadClus") ||
@@ -2853,7 +2820,7 @@ namespace MSDefragLib
 	        */
 	        Count = 0;
 
-            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = ItemTree.TreeSmallest(m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
 	        {
 		        if ((Item.LongFilename != null) &&
 			        (Item.LongFilename.Equals("$BadClus") ||
@@ -2872,7 +2839,7 @@ namespace MSDefragLib
 		        Factor = 1 - Count;
 		        Sum = 0;
 
-                for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
+                for (Item = ItemTree.TreeSmallest(m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
 		        {
                     if ((Item.LongFilename == "$BadClus") ||
                         (Item.LongFilename == "$BadClus:$Bad:$DATA"))
@@ -3519,7 +3486,7 @@ namespace MSDefragLib
             m_data.PhaseDone = 0;
             m_data.PhaseTodo = 0;
 
-            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = ItemTree.TreeSmallest(m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
 	        {
                 m_data.PhaseTodo++;
 	        }
@@ -3527,7 +3494,7 @@ namespace MSDefragLib
         //	jkGui->ShowAnalyze(NULL,NULL);
 
 	        /* Walk through all the items one by one. */
-            for (Item = TreeSmallest(m_data.ItemTree); Item != null; Item = TreeNext(Item))
+            for (Item = ItemTree.TreeSmallest(m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
 	        {
                 if (m_data.Running != RunningState.RUNNING) break;
 

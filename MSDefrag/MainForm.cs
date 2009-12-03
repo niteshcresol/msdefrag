@@ -14,11 +14,11 @@ using MSDefragLib.FileSystem.Ntfs;
 
 namespace MSDefrag
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         #region Constructor
 
-        public Form1()
+        public MainForm()
         {
             m_msDefragLib = new MSDefragLib.MSDefragLib();
 
@@ -312,7 +312,7 @@ namespace MSDefrag
             PaintStatus();
         }
 
-        public void Defrag()
+        private void Defrag()
         {
             //m_msDefragLib.Simulate();
             m_msDefragLib.RunJkDefrag("C:\\*", 2, 100, 10, null, null);

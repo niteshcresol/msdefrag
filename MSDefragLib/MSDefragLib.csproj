@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{EB340059-DCA9-4256-9643-5B066185EB5F}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -65,7 +65,9 @@
     <Compile Include="Common\Fragment.cs" />
     <Compile Include="Common\FragmentList.cs" />
     <Compile Include="Common\ItemStruct.cs" />
+    <Compile Include="Common\ItemTree.cs" />
     <Compile Include="FileSystem\Ntfs\IAttribute.cs" />
+    <Compile Include="FileSystem\Ntfs\MasterFileTable.cs" />
     <Compile Include="FileSystem\Ntfs\RefactoringHelper.cs" />
     <Compile Include="FileSystem\Ntfs\Stream.cs" />
     <Compile Include="FileSystem\Ntfs\StreamList.cs" />
