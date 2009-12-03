@@ -85,12 +85,11 @@
     <Compile Include="FileSystem\Ntfs\InodeDataStructure.cs" />
     <Compile Include="FileSystem\Ntfs\InodeReference.cs" />
     <Compile Include="FileSystem\Ntfs\NonResidentAttribute.cs" />
-    <Compile Include="FileSystem\Ntfs\NtfsBootSector.cs" />
-    <Compile Include="FileSystem\Ntfs\NtfsDiskInfoStructure.cs" />
-    <Compile Include="FileSystem\Ntfs\NtfsFileRecordHeader.cs" />
-    <Compile Include="FileSystem\Ntfs\NtfsRecordHeader.cs" />
+    <Compile Include="FileSystem\Ntfs\DiskInfoStructure.cs" />
+    <Compile Include="FileSystem\Ntfs\FileRecordHeader.cs" />
+    <Compile Include="FileSystem\Ntfs\RecordHeader.cs" />
     <Compile Include="FileSystem\Ntfs\ResidentAttribute.cs" />
-    <Compile Include="FileSystem\Ntfs\ScanNtfs.cs" />
+    <Compile Include="FileSystem\Ntfs\Scan.cs" />
     <Compile Include="FileSystem\Ntfs\StandardInformation.cs" />
     <Compile Include="IO\DiskStruct.cs" />
     <Compile Include="IO\IOWrapper.cs" />

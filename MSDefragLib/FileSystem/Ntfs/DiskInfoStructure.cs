@@ -5,9 +5,9 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class NtfsDiskInfoStructure
+    class DiskInfoStructure
     {
-        public NtfsDiskInfoStructure(FS.IBootSector bootSector)
+        public DiskInfoStructure(FS.IBootSector bootSector)
         {
             /* Extract data from the bootblock. */
             BytesPerSector = bootSector.BytesPerSector;

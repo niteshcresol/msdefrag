@@ -7,7 +7,7 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class NtfsRecordHeader : ISizeHelper
+    class RecordHeader : ISizeHelper
     {
         public UInt32 Type;                     /* File type, for example 'FILE' */
 
@@ -16,13 +16,13 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public UInt64 Lsn;                      /* $LogFile Sequence Number (LSN) */
 
-        private NtfsRecordHeader()
+        private RecordHeader()
         {
         }
 
-        public static NtfsRecordHeader Parse(BinaryReader reader)
+        public static RecordHeader Parse(BinaryReader reader)
         {
-            NtfsRecordHeader r = new NtfsRecordHeader();
+            RecordHeader r = new RecordHeader();
             r.Type = reader.ReadUInt32();
             r.UsaOffset = reader.ReadUInt16();
             r.UsaCount = reader.ReadUInt16();

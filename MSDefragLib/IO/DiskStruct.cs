@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace MSDefragLib
@@ -88,7 +89,7 @@ namespace MSDefragLib
             int bytesRead = IO.IOWrapper.Read(VolumeHandle, buffer, start, count, overlapped);
             if (bytesRead != count)
             {
-                //String errorMessage = IO.IOWrapper.GetMessage(Marshal.GetLastWin32Error());
+                String errorMessage = IO.IOWrapper.GetMessage(Marshal.GetLastWin32Error());
                 //ShowDebug(2, String.Format("      Error while reading Inode {0:G}: " + errorMessage, RefInode));
                 throw new Exception("Could not read the data from disk!");
             }

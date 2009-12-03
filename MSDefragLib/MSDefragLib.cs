@@ -45,13 +45,13 @@ namespace MSDefragLib
             public UInt64 StartingLcn;
         };
 
-        private ScanNtfs m_scanNtfs;
+        private Scan m_scanNtfs;
 
         public MSDefragLib()
         {
-            m_scanNtfs = new ScanNtfs(this);
+            m_scanNtfs = new Scan(this);
 
-            m_scanNtfs.ShowDebugEvent += new ScanNtfs.ShowDebugHandler(ScanNtfsEventHandler);
+            m_scanNtfs.ShowDebugEvent += new Scan.ShowDebugHandler(ScanNtfsEventHandler);
             //ShowDebugEvent += new ShowDebugHandler(ShowDebugEventHandler);
         }
 

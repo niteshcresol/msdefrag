@@ -7,9 +7,9 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class NtfsFileRecordHeader : ISizeHelper
+    class FileRecordHeader : ISizeHelper
     {
-        public NtfsRecordHeader RecHdr;
+        public RecordHeader RecHdr;
 
         public UInt16 SequenceNumber;           /* Sequence number */
         public UInt16 LinkCount;                /* Hard link count */
@@ -29,14 +29,14 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public UInt16 UpdateSeqNum;             /*  */
 
-        private NtfsFileRecordHeader()
+        private FileRecordHeader()
         {
         }
 
-        public static NtfsFileRecordHeader Parse(BinaryReader reader)
+        public static FileRecordHeader Parse(BinaryReader reader)
         {
-            NtfsFileRecordHeader r = new NtfsFileRecordHeader();
-            r.RecHdr = NtfsRecordHeader.Parse(reader);
+            FileRecordHeader r = new FileRecordHeader();
+            r.RecHdr = RecordHeader.Parse(reader);
             r.SequenceNumber = reader.ReadUInt16();
             r.LinkCount = reader.ReadUInt16();
             r.AttributeOffset = reader.ReadUInt16();
