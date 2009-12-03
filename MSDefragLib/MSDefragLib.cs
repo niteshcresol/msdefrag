@@ -1173,7 +1173,7 @@ namespace MSDefragLib
 	        FragmentEnd = 0;
 	        Vcn = 0;
 	        NextLcn = 0;
-	        foreach (Fragment Fragment in Item.FragmentList.Fragments)
+	        foreach (Fragment Fragment in Item.FragmentList)
 	        {
 		        /* Virtual fragments do not occupy space on disk and do not count as fragments. */
 		        if (Fragment.Lcn != VIRTUALFRAGMENT)
@@ -1261,7 +1261,7 @@ namespace MSDefragLib
 	        Vcn = 0;
 	        RealVcn = 0;
 
-	        foreach (Fragment Fragment in Item.FragmentList.Fragments)
+	        foreach (Fragment Fragment in Item.FragmentList)
 	        {
 		        /* Ignore virtual fragments. They do not occupy space on disk and
                  * do not require colorization. */
@@ -1897,7 +1897,7 @@ namespace MSDefragLib
 			        Vcn = 0;
 			        RealVcn = 0;
 
-			        foreach (Fragment fragment in Item.FragmentList.Fragments)
+			        foreach (Fragment fragment in Item.FragmentList)
 			        {
 				        if (fragment.Lcn != VIRTUALFRAGMENT)
 				        {

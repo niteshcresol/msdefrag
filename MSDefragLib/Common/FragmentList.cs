@@ -5,18 +5,23 @@ using System.Text;
 
 namespace MSDefragLib
 {
-    public class FragmentList
+    public class FragmentList : IEnumerable<Fragment>
     {
         public FragmentList()
         {
-            Fragments = new List<Fragment>();
+            _fragments = new List<Fragment>();
+        }
+
+        public void Add(Fragment fragment)
+        {
+            _fragments.Add(fragment);
         }
 
         public UInt64 Lcn
         {
             get
             {
-                Fragment fragment = Fragments.
+                Fragment fragment = _fragments.
                     FirstOrDefault(x => x.Lcn == Fragment.VIRTUALFRAGMENT);
                 if (fragment == null)
                     return 0;
@@ -33,7 +38,7 @@ namespace MSDefragLib
                 UInt64 Vcn = 0;
                 UInt64 NextLcn = 0;
 
-                foreach (Fragment fragment in Fragments)
+                foreach (Fragment fragment in _fragments)
                 {
                     if (fragment.Lcn != Fragment.VIRTUALFRAGMENT)
                     {
@@ -53,7 +58,24 @@ namespace MSDefragLib
             }
         }
 
-        public IList<Fragment> Fragments
-        { get; private set; }
+        private IList<Fragment> _fragments;
+
+        #region IEnumerable<Fragment> Members
+
+        public IEnumerator<Fragment> GetEnumerator()
+        {
+            return _fragments.GetEnumerator();
+        }
+
+        #endregion
+
+        #region IEnumerable Members
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
     }
 }

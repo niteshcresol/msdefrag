@@ -493,7 +493,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             /* If the stream already has a list of fragments then find the last fragment. */
-            Fragment lastFragment = foundStream.Fragments.Fragments.LastOrDefault();
+            Fragment lastFragment = foundStream.Fragments.LastOrDefault();
             if (lastFragment != null)
             {
                 if (StartingVcn != lastFragment.NextVcn)
@@ -579,7 +579,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (RunOffset.Value == 0) newFragment.Lcn = VIRTUALFRAGMENT;
 
                 newFragment.NextVcn = Vcn;
-                foundStream.Fragments.Fragments.Add(newFragment);
+                foundStream.Fragments.Add(newFragment);
                 lastFragment = newFragment;
             }
             return true;
@@ -787,7 +787,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 RefInodeVcn = RefInode * DiskInfo.BytesPerMftRecord / (DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster);
 
                 Fragment foundFragment = null;
-                foreach (Fragment fragment in InodeData.MftDataFragments.Fragments)
+                foreach (Fragment fragment in InodeData.MftDataFragments)
                 {
                     if (fragment.Lcn != VIRTUALFRAGMENT)
                     {
@@ -1388,7 +1388,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             UInt64 Vcn = 0;
             UInt64 MaxMftBitmapBytes = 0;
 
-            foreach (Fragment fragment in MftBitmapFragments.Fragments)
+            foreach (Fragment fragment in MftBitmapFragments)
             {
                 if (fragment.Lcn != VIRTUALFRAGMENT)
                 {
@@ -1410,7 +1410,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ShowDebug(6, "Reading $MFT::$BITMAP into memory");
 
-            foreach (Fragment fragment in MftBitmapFragments.Fragments)
+            foreach (Fragment fragment in MftBitmapFragments)
             {
                 if (fragment.Lcn != VIRTUALFRAGMENT)
                 {
@@ -1513,7 +1513,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     if (BlockEnd > MftBitmapBytes * 8) BlockEnd = MftBitmapBytes * 8;
 
                     Fragment foundFragment = null;
-                    foreach (Fragment fragment in MftDataFragments.Fragments)
+                    foreach (Fragment fragment in MftDataFragments)
                     {
                         /* Calculate m_iNode at the end of the fragment. */
                         u1 = (RealVcn + fragment.NextVcn - Vcn) * 
