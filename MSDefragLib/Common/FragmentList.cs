@@ -36,7 +36,6 @@ namespace MSDefragLib
             {
                 int count = 0;
 
-                UInt64 Vcn = 0;
                 UInt64 NextLcn = 0;
 
                 foreach (Fragment fragment in _fragments)
@@ -45,11 +44,8 @@ namespace MSDefragLib
                     {
                         if ((NextLcn != 0) && (fragment.Lcn != NextLcn))
                             count++;
-
-                        NextLcn = fragment.Lcn + fragment.NextVcn - Vcn;
+                        NextLcn = fragment.NextLogicalCluster;
                     }
-
-                    Vcn = fragment.NextVcn;
                 }
 
                 if (NextLcn != 0)

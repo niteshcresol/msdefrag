@@ -31,6 +31,14 @@ namespace MSDefragLib
         }
 
         /// <summary>
+        /// Is this a logical fragment or a virtual one
+        /// </summary>
+        public Boolean IsLogical
+        { get { return Lcn != VIRTUALFRAGMENT; } }
+        public Boolean IsVirtual
+        { get { return Lcn == VIRTUALFRAGMENT; } }
+
+        /// <summary>
         /// Logical cluster number, location on disk.
         /// </summary>
         public UInt64 Lcn
@@ -42,13 +50,22 @@ namespace MSDefragLib
         public UInt64 Vcn
         { get; private set; }
 
+        /// <summary>
+        /// Length of this fragment
+        /// </summary>
         public UInt64 Length
         { get; private set; }
 
         /// <summary>
         /// Virtual cluster number of next fragment.
         /// </summary>
-        public UInt64 NextVcn
+        public UInt64 NextVirtualCluster
         { get { return Vcn + Length; } }
+
+        /// <summary>
+        /// Logical cluster number of next fragment.
+        /// </summary>
+        public UInt64 NextLogicalCluster
+        { get { return Lcn + Length; } }
     };
 }

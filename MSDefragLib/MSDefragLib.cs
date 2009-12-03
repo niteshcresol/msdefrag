@@ -799,8 +799,6 @@ namespace MSDefragLib
         /* Delete the entire ItemTree. */
         public void DeleteItemTree(ItemStruct Top)
         {
-	        Fragment Fragment;
-
 	        if (Top == null) return;
             if (Top.Smaller != null) DeleteItemTree(Top.Smaller);
             if (Top.Bigger != null) DeleteItemTree(Top.Bigger);
@@ -1163,7 +1161,6 @@ namespace MSDefragLib
         {
             UInt64 FragmentBegin;
             UInt64 FragmentEnd;
-            UInt64 Vcn;
             UInt64 NextLcn;
 
 	        /*  Walk through all fragments. If a fragment is found where either the
@@ -1171,18 +1168,17 @@ namespace MSDefragLib
              *  fragmented and return YES. */
 	        FragmentBegin = 0;
 	        FragmentEnd = 0;
-	        Vcn = 0;
 	        NextLcn = 0;
-	        foreach (Fragment Fragment in Item.FragmentList)
+	        foreach (Fragment fragment in Item.FragmentList)
 	        {
 		        /* Virtual fragments do not occupy space on disk and do not count as fragments. */
-		        if (Fragment.Lcn != VIRTUALFRAGMENT)
+		        if (fragment.IsLogical)
 		        {
 			        /* Treat aligned fragments as a single fragment. Windows will frequently
                      * split files in fragments even though they are perfectly aligned on disk,
                      * especially system files and very large files. The defragger treats these
                      * files as unfragmented. */
-			        if ((NextLcn != 0) && (Fragment.Lcn != NextLcn))
+			        if ((NextLcn != 0) && (fragment.Lcn != NextLcn))
 			        {
 				        /* If the fragment is above the block then return NO, the block is
                          * not fragmented and we don't have to scan any further. */
@@ -1201,12 +1197,9 @@ namespace MSDefragLib
 				        FragmentBegin = FragmentEnd;
 			        }
 
-			        FragmentEnd += Fragment.NextVcn - Vcn;
-			        NextLcn = Fragment.Lcn + Fragment.NextVcn - Vcn;
+			        FragmentEnd += fragment.Length;
+			        NextLcn = fragment.Lcn + fragment.Length;
 		        }
-
-		        /* Next fragment. */
-		        Vcn = Fragment.NextVcn;
 	        }
 
 	        /* Handle the last fragment. */
@@ -1244,7 +1237,6 @@ namespace MSDefragLib
 	        UInt64 BusySize,
 	        Boolean UnDraw)
         {
-	        UInt64 Vcn;
 	        UInt64 RealVcn;
 
 	        UInt64 SegmentBegin;
@@ -1258,18 +1250,16 @@ namespace MSDefragLib
 	        Fragmented = IsFragmented(Item,0,Item.Clusters);
 
 	        /* Walk through all the fragments of the file. */
-	        Vcn = 0;
 	        RealVcn = 0;
 
-	        foreach (Fragment Fragment in Item.FragmentList)
+	        foreach (Fragment fragment in Item.FragmentList)
 	        {
 		        /* Ignore virtual fragments. They do not occupy space on disk and
                  * do not require colorization. */
-		        if (Fragment.Lcn > VIRTUALFRAGMENT)
-		        {
-			        Vcn = Fragment.NextVcn;
+		        if (fragment.IsVirtual)
 			        continue;
-		        }
+
+                UInt64 Vcn = fragment.Vcn;
 
 		        /* Walk through all the segments of the file. A segment is usually
                  * the same as a fragment, but if a fragment spans across a boundary
@@ -1278,16 +1268,16 @@ namespace MSDefragLib
                  * at the various possible boundaries.*/
 		        SegmentBegin = RealVcn;
 
-                UInt64 maxSegment = RealVcn + Fragment.NextVcn - Vcn;
+                UInt64 maxSegment = RealVcn + fragment.Length;
 
                 if (maxSegment > m_data.TotalClusters)
                 {
                     maxSegment = m_data.TotalClusters;
                 }
 
-		        while (SegmentBegin < RealVcn + Fragment.NextVcn - Vcn)
+		        while (SegmentBegin < RealVcn + fragment.Length)
 		        {
-			        SegmentEnd = RealVcn + Fragment.NextVcn - Vcn;
+			        SegmentEnd = RealVcn + fragment.Length;
 
 			        /* Determine the color with which to draw this segment. */
 			        if (UnDraw == false)
@@ -1322,18 +1312,18 @@ namespace MSDefragLib
 
 				        for (i = 0; i < 3; i++)
 				        {
-					        if ((Fragment.Lcn + SegmentBegin - RealVcn < m_data.MftExcludes[i].Start) &&
-						        (Fragment.Lcn + SegmentEnd - RealVcn > m_data.MftExcludes[i].Start))
+					        if ((fragment.Lcn + SegmentBegin - RealVcn < m_data.MftExcludes[i].Start) &&
+						        (fragment.Lcn + SegmentEnd - RealVcn > m_data.MftExcludes[i].Start))
 					        {
-                                SegmentEnd = RealVcn + m_data.MftExcludes[i].Start - Fragment.Lcn;
+                                SegmentEnd = RealVcn + m_data.MftExcludes[i].Start - fragment.Lcn;
 					        }
 
-                            if ((Fragment.Lcn + SegmentBegin - RealVcn >= m_data.MftExcludes[i].Start) &&
-                                (Fragment.Lcn + SegmentBegin - RealVcn < m_data.MftExcludes[i].End))
+                            if ((fragment.Lcn + SegmentBegin - RealVcn >= m_data.MftExcludes[i].Start) &&
+                                (fragment.Lcn + SegmentBegin - RealVcn < m_data.MftExcludes[i].End))
 					        {
-                                if (Fragment.Lcn + SegmentEnd - RealVcn > m_data.MftExcludes[i].End)
+                                if (fragment.Lcn + SegmentEnd - RealVcn > m_data.MftExcludes[i].End)
 						        {
-                                    SegmentEnd = RealVcn + m_data.MftExcludes[i].End - Fragment.Lcn;
+                                    SegmentEnd = RealVcn + m_data.MftExcludes[i].End - fragment.Lcn;
 						        }
 
                                 Color = CLUSTER_COLORS.COLORMFT;
@@ -1342,16 +1332,14 @@ namespace MSDefragLib
 			        }
 
 			        /* Colorize the segment. */
-                    DrawCluster(Fragment.Lcn + SegmentBegin - RealVcn, Fragment.Lcn + SegmentEnd - RealVcn,Color);
+                    DrawCluster(fragment.Lcn + SegmentBegin - RealVcn, fragment.Lcn + SegmentEnd - RealVcn,Color);
 
 			        /* Next segment. */
 			        SegmentBegin = SegmentEnd;
 		        }
 
 		        /* Next fragment. */
-		        RealVcn += Fragment.NextVcn - Vcn;
-
-		        Vcn = Fragment.NextVcn;
+		        RealVcn += fragment.Length;
 	        }
         }
 
@@ -1804,13 +1792,10 @@ namespace MSDefragLib
         {
 	        ItemStruct Item;
 
-	        Fragment Fragment;
-
             UInt64[] SizeOfMovableFiles/*[3]*/ = new UInt64[3];
 	        UInt64[] SizeOfUnmovableFragments/*[3]*/ = new UInt64[3];
 	        UInt64[] ZoneEnd/*[3]*/ = new UInt64[3];
 	        UInt64[] OldZoneEnd/*[3]*/ = new UInt64[3];
-	        UInt64 Vcn;
 	        UInt64 RealVcn;
 
 	        int Zone;
@@ -1894,12 +1879,11 @@ namespace MSDefragLib
 				        (Item.Exclude == false) &&
                         ((Item.Directory == false) || (m_data.CannotMoveDirs <= 20))) continue;
 
-			        Vcn = 0;
 			        RealVcn = 0;
 
 			        foreach (Fragment fragment in Item.FragmentList)
 			        {
-				        if (fragment.Lcn != VIRTUALFRAGMENT)
+				        if (fragment.IsLogical)
 				        {
                             if (((fragment.Lcn < m_data.MftExcludes[0].Start) || (fragment.Lcn >= m_data.MftExcludes[0].End)) &&
                                 ((fragment.Lcn < m_data.MftExcludes[1].Start) || (fragment.Lcn >= m_data.MftExcludes[1].End)) &&
@@ -1907,22 +1891,20 @@ namespace MSDefragLib
 					        {
 						        if (fragment.Lcn < ZoneEnd[0])
 						        {
-							        SizeOfUnmovableFragments[0] = SizeOfUnmovableFragments[0] + fragment.NextVcn - Vcn;
+							        SizeOfUnmovableFragments[0] = SizeOfUnmovableFragments[0] + fragment.Length;
 						        }
 						        else if (fragment.Lcn < ZoneEnd[1])
 						        {
-							        SizeOfUnmovableFragments[1] = SizeOfUnmovableFragments[1] + fragment.NextVcn - Vcn;
+							        SizeOfUnmovableFragments[1] = SizeOfUnmovableFragments[1] + fragment.Length;
 						        }
 						        else if (fragment.Lcn < ZoneEnd[2])
 						        {
-							        SizeOfUnmovableFragments[2] = SizeOfUnmovableFragments[2] + fragment.NextVcn - Vcn;
+							        SizeOfUnmovableFragments[2] = SizeOfUnmovableFragments[2] + fragment.Length;
 						        }
 					        }
 
-					        RealVcn = RealVcn + fragment.NextVcn - Vcn;
+					        RealVcn = RealVcn + fragment.Length;
 				        }
-
-				        Vcn = fragment.NextVcn;
 			        }
 		        }
 	        }
@@ -5862,8 +5844,6 @@ namespace MSDefragLib
 
             aTimer.Interval = 1000;
             aTimer.Enabled = true;
-
-            int numNotify = 0;
 
             for (int testNumber = 0; testNumber < 1000000; testNumber++)
             {
