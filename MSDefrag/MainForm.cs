@@ -330,8 +330,8 @@ namespace MSDefrag
 
         private void Defrag()
         {
-            m_msDefragLib.Simulate();
-            //m_msDefragLib.RunJkDefrag("C:\\*", 2, 100, 10, null, null);
+            //m_msDefragLib.Simulate();
+            m_msDefragLib.RunJkDefrag("C:\\*", 2, 100, 10, null, null);
         }
 
         #endregion
