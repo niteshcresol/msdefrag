@@ -1,26 +1,21 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace MSDefragLib
 {
-    /* List in memory of the fragments of a file. */
+    /// <summary>
+    /// List in memory of the fragments of a file.
+    /// </summary>
+    [DebuggerDisplay("Lcn={Lcn}, Vcn={Vcn}, Len={Length}")]
     public class Fragment
     {
         public const UInt64 VIRTUALFRAGMENT = UInt64.MaxValue;
 
         public Fragment(UInt64 lcn, UInt64 vcn, UInt64 length, Boolean isVirtual)
         {
-            //if (offset != 0)
-            //{
-            //    ShowDebug(6, String.Format("    Extent: Lcn={0:G}, Vcn={1:G}, NextVcn={2:G}", Lcn, Vcn - RunLength.Value, Vcn));
-            //}
-            //else
-            //{
-            //    ShowDebug(6, String.Format("    Extent (virtual): Vcn={0:G}, NextVcn={1:G}", Vcn - RunLength.Value, Vcn));
-            //}
-
             Length = length;
             Vcn = vcn;
 

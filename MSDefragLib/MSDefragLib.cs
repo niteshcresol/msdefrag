@@ -343,12 +343,9 @@ namespace MSDefragLib
         */
         String GetShortPath(MSDefragDataStruct Data, ItemStruct Item)
         {
-	        String Path = "";
-
-	        /* Sanity check. */
             Debug.Assert(Item != null);
 
-            Path = Data.Disk.MountPoint;
+            String Path = Data.Disk.MountPoint;
 
 	        /* Append all the strings. */
 	        AppendToShortPath(Item, ref Path);
@@ -359,7 +356,8 @@ namespace MSDefragLib
         /* Subfunction of GetLongPath(). */
         void AppendToLongPath(ItemStruct Item, ref String Path)
         {
-	        if (Item.ParentDirectory != null) AppendToLongPath(Item.ParentDirectory, ref Path);
+	        if (Item.ParentDirectory != null)
+                AppendToLongPath(Item.ParentDirectory, ref Path);
 
             Path += "\\";
 
@@ -381,12 +379,9 @@ namespace MSDefragLib
         */
         String GetLongPath(MSDefragDataStruct Data, ItemStruct Item)
         {
-	        String Path = "";
-
-	        /* Sanity check. */
 	        Debug.Assert(Item != null);
 
-            Path = Data.Disk.MountPoint;
+            String Path = Data.Disk.MountPoint;
 
 	        /* Append all the strings. */
 	        AppendToLongPath(Item, ref Path);
@@ -572,13 +567,10 @@ namespace MSDefragLib
 
 	        m_data.BalanceCount = 0;
 
-            ItemStruct A;
-            ItemStruct B;
-            ItemStruct C;
-
             /* Convert the tree into a vine. */
-	        A = m_data.ItemTree;
-	        C = A;
+            ItemStruct A = m_data.ItemTree;
+            ItemStruct C = A;
+            ItemStruct B;
 
             long Count = 0;
 
@@ -1159,16 +1151,12 @@ namespace MSDefragLib
         /// <returns></returns>
         Boolean IsFragmented(ItemStruct Item, UInt64 Offset, UInt64 Size)
         {
-            UInt64 FragmentBegin;
-            UInt64 FragmentEnd;
-            UInt64 NextLcn;
-
 	        /*  Walk through all fragments. If a fragment is found where either the
              *  begin or the end of the fragment is inside the block then the file is
              *  fragmented and return YES. */
-	        FragmentBegin = 0;
-	        FragmentEnd = 0;
-	        NextLcn = 0;
+            UInt64 FragmentBegin = 0;
+            UInt64 FragmentEnd = 0;
+            UInt64 NextLcn = 0;
 	        foreach (Fragment fragment in Item.FragmentList)
 	        {
 		        /* Virtual fragments do not occupy space on disk and do not count as fragments. */
@@ -1182,7 +1170,8 @@ namespace MSDefragLib
 			        {
 				        /* If the fragment is above the block then return NO, the block is
                          * not fragmented and we don't have to scan any further. */
-				        if (FragmentBegin >= Offset + Size) return false;
+				        if (FragmentBegin >= Offset + Size)
+                            return false;
 
 				        /* If the first cluster of the fragment is above the first cluster of
                          * the block, or the last cluster of the fragment is before the last
@@ -1198,12 +1187,13 @@ namespace MSDefragLib
 			        }
 
 			        FragmentEnd += fragment.Length;
-			        NextLcn = fragment.Lcn + fragment.Length;
+			        NextLcn = fragment.NextLogicalCluster;
 		        }
 	        }
 
 	        /* Handle the last fragment. */
-	        if (FragmentBegin >= Offset + Size) return false;
+	        if (FragmentBegin >= Offset + Size)
+                return false;
 
 	        if ((FragmentBegin > Offset) ||
 		        ((FragmentEnd - 1 >= Offset) &&
@@ -1237,20 +1227,16 @@ namespace MSDefragLib
 	        UInt64 BusySize,
 	        Boolean UnDraw)
         {
-	        UInt64 RealVcn;
-
 	        UInt64 SegmentBegin;
 	        UInt64 SegmentEnd;
 
-	        Boolean Fragmented;                 /* YES: file is fragmented. */
 	        CLUSTER_COLORS Color;
-	        int i;
 
-	        /* Determine if the item is fragmented. */
-	        Fragmented = IsFragmented(Item,0,Item.Clusters);
+            /* Determine if the item is fragmented. */
+            Boolean Fragmented = IsFragmented(Item, 0, Item.Clusters);
 
 	        /* Walk through all the fragments of the file. */
-	        RealVcn = 0;
+            UInt64 RealVcn = 0;
 
 	        foreach (Fragment fragment in Item.FragmentList)
 	        {
@@ -1310,7 +1296,7 @@ namespace MSDefragLib
 			        {
                         Color = CLUSTER_COLORS.COLOREMPTY;
 
-				        for (i = 0; i < 3; i++)
+				        for (int i = 0; i < 3; i++)
 				        {
 					        if ((fragment.Lcn + SegmentBegin - RealVcn < m_data.MftExcludes[i].Start) &&
 						        (fragment.Lcn + SegmentEnd - RealVcn > m_data.MftExcludes[i].Start))
@@ -1357,18 +1343,10 @@ namespace MSDefragLib
         public void ShowDiskmap()
         {
             ItemStruct Item;
-            //STARTING_LCN_INPUT_BUFFER BitmapParam;
-
-            UInt64 Lcn;
-            UInt64 ClusterStart;
-            //UInt16 ErrorCode;
             int Index;
             int IndexMax;
-            //Byte Mask;
             Boolean InUse = false;
             Boolean PrevInUse = false;
-            //UInt16 w;
-            int i;
 
             IO.IOWrapper.BitmapData bitmapData = null;
 
@@ -1385,8 +1363,8 @@ namespace MSDefragLib
             //m_jkGui->ClearScreen(NULL);
 
             /* Show the map of all the clusters in use. */
-            Lcn = 0;
-            ClusterStart = 0;
+            UInt64 Lcn = 0;
+            UInt64 ClusterStart = 0;
 
             PrevInUse = true;
 
@@ -1509,7 +1487,7 @@ namespace MSDefragLib
             }
 
             /* Show the MFT zones. */
-            for (i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
             {
                 if (m_data.RedrawScreen != 2) break;
                 if (m_data.MftExcludes[i].Start <= 0) continue;
@@ -1798,12 +1776,11 @@ namespace MSDefragLib
 	        UInt64[] OldZoneEnd/*[3]*/ = new UInt64[3];
 	        UInt64 RealVcn;
 
-	        int Zone;
 	        int Iterate;
 	        int i;
 
 	        /* Calculate the number of clusters in movable items for every zone. */
-            for (Zone = 0; Zone <= 2; Zone++)
+            for (int Zone = 0; Zone <= 2; Zone++)
             {
                 SizeOfMovableFiles[Zone] = new UInt64();
                 SizeOfMovableFiles[Zone] = 0;
@@ -1815,8 +1792,7 @@ namespace MSDefragLib
 		        if (Item.Exclude == true) continue;
                 if ((Item.Directory == true) && (m_data.CannotMoveDirs > 20)) continue;
 
-		        Zone = 1;
-
+		        int Zone = 1;
 		        if (Item.SpaceHog == true) Zone = 2;
 		        if (Item.Directory == true) Zone = 0;
 
@@ -1824,9 +1800,11 @@ namespace MSDefragLib
 	        }
 
 	        /* Iterate until the calculation does not change anymore, max 10 times. */
-	        for (Zone = 0; Zone <= 2; Zone++) SizeOfUnmovableFragments[Zone] = 0;
+	        for (int Zone = 0; Zone <= 2; Zone++)
+                SizeOfUnmovableFragments[Zone] = 0;
 
-	        for (Zone = 0; Zone <= 2; Zone++) OldZoneEnd[Zone] = 0;
+	        for (int Zone = 0; Zone <= 2; Zone++) 
+                OldZoneEnd[Zone] = 0;
 
 	        for (Iterate = 1; Iterate <= 10; Iterate++)
 	        {
@@ -1844,7 +1822,8 @@ namespace MSDefragLib
 			        (OldZoneEnd[1] == ZoneEnd[1]) &&
 			        (OldZoneEnd[2] == ZoneEnd[2])) break;
 
-		        for (Zone = 0; Zone <= 2; Zone++) OldZoneEnd[Zone] = ZoneEnd[Zone];
+		        for (int Zone = 0; Zone <= 2; Zone++)
+                    OldZoneEnd[Zone] = ZoneEnd[Zone];
 
 		        /* Show debug info. */
         		ShowDebug(4, String.Format("Zone calculation, iteration {0:G}: 0 - {0:G} - {0:G} - {0:G}",
@@ -1852,7 +1831,8 @@ namespace MSDefragLib
 
                 /* Reset the SizeOfUnmovableFragments array. We are going to (re)calculate these numbers
 		        based on the just calculates ZoneEnd's. */
-		        for (Zone = 0; Zone <= 2; Zone++) SizeOfUnmovableFragments[Zone] = 0;
+		        for (int Zone = 0; Zone <= 2; Zone++) 
+                    SizeOfUnmovableFragments[Zone] = 0;
 
 		        /* The MFT reserved areas are counted as unmovable data. */
 		        for (i = 0; i < 3; i++)
@@ -2638,14 +2618,8 @@ namespace MSDefragLib
 
 	        STARTING_LCN_INPUT_BUFFER BitmapParam = new STARTING_LCN_INPUT_BUFFER();
 
-	        UInt64 Lcn;
-	        UInt64 ClusterStart;
-
 	        int Index;
 	        int IndexMax;
-
-	        Boolean InUse;
-	        Boolean PrevInUse;
 
 	        Int64 Count;
 	        Int64 Factor;
@@ -2658,9 +2632,9 @@ namespace MSDefragLib
             m_data.CountGapsLess16 = 0;
             m_data.CountClustersLess16 = 0;
 
-	        Lcn = 0;
-	        ClusterStart = 0;
-	        PrevInUse = true;
+            UInt64 Lcn = 0;
+            UInt64 ClusterStart = 0;
+            Boolean PrevInUse = true;
 
             IO.IOWrapper.BitmapData bitmapData = null;
 
@@ -2682,9 +2656,10 @@ namespace MSDefragLib
 
 		        IndexMax = bitmapData.Buffer.Count;
 
+                Boolean InUse = false;
 		        while (Index < IndexMax)
 		        {
-			        InUse = bitmapData.Buffer[Index];
+                    InUse = bitmapData.Buffer[Index];
 
                     if (((Lcn >= m_data.MftExcludes[0].Start) && (Lcn < m_data.MftExcludes[0].End)) ||
                         ((Lcn >= m_data.MftExcludes[1].Start) && (Lcn < m_data.MftExcludes[1].End)) ||
@@ -3536,12 +3511,11 @@ namespace MSDefragLib
 		        /* Exclude my own logfile. */
 		        if ((Item.Exclude == false) &&
 			        (Item.LongFilename != null) &&
-                    ((Item.LongFilename.CompareTo("jkdefrag.log") == 0) ||
-                    (Item.LongFilename.CompareTo("jkdefragcmd.log") == 0) ||
-                    (Item.LongFilename.CompareTo("jkdefragscreensaver.log") == 0)))
+                    ((Item.LongFilename == "jkdefrag.log") ||
+                    (Item.LongFilename == "jkdefragcmd.log") ||
+                    (Item.LongFilename == "jkdefragscreensaver.log")))
 		        {
 			        Item.Exclude = true;
-
 			        ColorizeItem(Item,0,0,false);
 		        }
 
@@ -3577,22 +3551,26 @@ namespace MSDefragLib
 		        }
 
 		        /* Special exception for "http://www.safeboot.com/". */
-		        if (MatchMask(Item.LongPath,"*\\safeboot.fs") == true) Item.Unmovable = true;
+		        if (MatchMask(Item.LongPath,"*\\safeboot.fs") == true)
+                    Item.Unmovable = true;
 
 		        /* Special exception for Acronis OS Selector. */
-		        if (MatchMask(Item.LongPath,"?:\\bootwiz.sys") == true) Item.Unmovable = true;
-		        if (MatchMask(Item.LongPath,"*\\BOOTWIZ\\*") == true) Item.Unmovable = true;
+		        if (MatchMask(Item.LongPath,"?:\\bootwiz.sys") == true)
+                    Item.Unmovable = true;
+		        if (MatchMask(Item.LongPath,"*\\BOOTWIZ\\*") == true)
+                    Item.Unmovable = true;
 
 		        /* Special exception for DriveCrypt by "http://www.securstar.com/". */
-		        if (MatchMask(Item.LongPath,"?:\\BootAuth?.sys") == true) Item.Unmovable = true;
+		        if (MatchMask(Item.LongPath,"?:\\BootAuth?.sys") == true)
+                    Item.Unmovable = true;
 
 		        /* Special exception for Symantec GoBack. */
-		        if (MatchMask(Item.LongPath,"*\\Gobackio.bin") == true) Item.Unmovable = true;
+		        if (MatchMask(Item.LongPath,"*\\Gobackio.bin") == true)
+                    Item.Unmovable = true;
 
 		        /* The $BadClus file maps the entire disk and is always unmovable. */
-		        if ((Item.LongFilename != null) &&
-			        ((Item.LongFilename.CompareTo("$BadClus") == 0) ||
-			        (Item.LongFilename.CompareTo("$BadClus:$Bad:$DATA") == 0)))
+		        if ((Item.LongFilename == "$BadClus") ||
+			        (Item.LongFilename == "$BadClus:$Bad:$DATA"))
 		        {
 			        Item.Unmovable = true;
 		        }

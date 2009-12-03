@@ -597,7 +597,8 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 StreamName = Stream.Name;
 
-                if ((StreamName != null) && (StreamName.Length == 0)) StreamName = null;
+                if (String.IsNullOrEmpty(StreamName))
+                    StreamName = null;
 
                 StreamType = Stream.Type;
             }
@@ -606,10 +607,10 @@ namespace MSDefragLib.FileSystem.Ntfs
                 If the StreamName is empty and the StreamType is Data then return only the
                 FileName. The Data stream is the default stream of regular files.
             */
-            if (((StreamName == null) || (StreamName.Length == 0)) && (StreamType == AttributeTypeEnum.AttributeData))
+            if ((String.IsNullOrEmpty(StreamName)) && (StreamType == AttributeTypeEnum.AttributeData))
             {
-                if ((FileName == null) || (FileName.Length == 0)) return (null);
-
+                if (String.IsNullOrEmpty(FileName))
+                    return null;
                 return FileName;
             }
 
@@ -618,12 +619,11 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return only the FileName. This must be a directory, and the Microsoft defragmentation
                 API will automatically select this stream.
             */
-            if ((StreamName != null) &&
-                (StreamName.CompareTo("$I30") == 0) &&
+            if ((StreamName == "$I30") &&
                 (StreamType == AttributeTypeEnum.AttributeIndexAllocation))
             {
-                if ((FileName == null) || (FileName.Length == 0)) return null;
-
+                if (String.IsNullOrEmpty(FileName))
+                    return null;
                 return FileName;
             }
 
@@ -631,11 +631,11 @@ namespace MSDefragLib.FileSystem.Ntfs
                 If the StreamName is empty and the StreamType is Data then return only the
                 FileName. The Data stream is the default stream of regular files. 
             */
-            if (((StreamName == null) || (StreamName.Length == 0)) &&
+            if ((String.IsNullOrEmpty(StreamName)) &&
                 (StreamType.GetStreamTypeName().Length == 0))
             {
-                if ((FileName == null) || (FileName.Length == 0)) return (null);
-
+                if (String.IsNullOrEmpty(FileName))
+                    return null;
                 return FileName;
             }
 
@@ -1425,7 +1425,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Byte val = MftBitmap.GetValue((Int64)(InodeNumber >> 3));
                 Boolean mask = ((val & BitmapMasks[InodeNumber % 8]) == 0);
 
-                if (mask == false) continue;
+                if (mask == false)
+                    continue;
 
                 m_msDefragLib.m_data.PhaseTodo++;
             }
@@ -1495,8 +1496,10 @@ namespace MSDefragLib.FileSystem.Ntfs
                         //}
                     }
 
-                    if (foundFragment == null) break;
-                    if (BlockEnd >= u1) BlockEnd = u1;
+                    if (foundFragment == null)
+                        break;
+                    if (BlockEnd >= u1)
+                        BlockEnd = u1;
 
                     tempLcn = (foundFragment.Lcn - RealVcn) * DiskInfo.BytesPerCluster +
                         BlockStart * DiskInfo.BytesPerMftRecord;
@@ -1512,12 +1515,10 @@ namespace MSDefragLib.FileSystem.Ntfs
                 /* Fixup the raw data of this m_iNode. */
                 if (FixupRawMftdata(DiskInfo,
                         Buffer.ToByteArray((Int64)((InodeNumber - BlockStart) * DiskInfo.BytesPerMftRecord), Buffer.GetLength() - (Int64)((InodeNumber - BlockStart) * DiskInfo.BytesPerMftRecord)),
-                    //(ByteArray)Buffer.m_bytes.GetValue((Int64)((InodeNumber - BlockStart) * DiskInfo.BytesPerMftRecord),Buffer.m_bytes.m_length - 1),
                         DiskInfo.BytesPerMftRecord) == false)
                 {
                     ShowDebug(2, String.Format("The error occurred while processing m_iNode {0:G} (max {0:G})",
                             InodeNumber, MaxInode));
-
                     continue;
                 }
 
@@ -1554,8 +1555,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                 for (Item = ItemTree.TreeSmallest(m_msDefragLib.m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
                 {
                     Item.ParentDirectory = (ItemStruct)InodeArray.GetValue((Int64)Item.ParentInode);
-
-                    if (Item.ParentInode == 5) Item.ParentDirectory = null;
+                    if (Item.ParentInode == 5)
+                        Item.ParentDirectory = null;
                 }
             }
             return true;
