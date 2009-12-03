@@ -855,13 +855,13 @@ namespace MSDefragLib
             Top.LongPath = null;
 	        Top.LongFilename = null;
 
-            while (Top.FirstFragmentInList != null)
-	        {
-		        Fragment = Top.FragmentList._LIST.Next;
+            //while (Top.FirstFragmentInList != null)
+            //{
+            //    Fragment = Top.FragmentList._LIST.Next;
 
-                //TODO: ???? What is this for???
-		        Top.FragmentList._LIST = Fragment;
-	        }
+            //    //TODO: ???? What is this for???
+            //    Top.FragmentList._LIST = Fragment;
+            //}
 
             Top = null;
         }
@@ -1181,38 +1181,6 @@ namespace MSDefragLib
         }
         */
 
-        /* Return the number of fragments in the item. */
-        public int FragmentCount(ItemStruct Item)
-        {
-	        Fragment Fragment;
-
-	        int Fragments;
-
-	        UInt64 Vcn;
-            UInt64 NextLcn;
-
-	        Fragments = 0;
-	        Vcn = 0;
-	        NextLcn = 0;
-
-            Fragment = Item.FirstFragmentInList;
-	        for (; Fragment != null; Fragment = Fragment.Next)
-	        {
-		        if (Fragment.Lcn != VIRTUALFRAGMENT)
-		        {
-			        if ((NextLcn != 0) && (Fragment.Lcn != NextLcn)) Fragments++;
-
-			        NextLcn = Fragment.Lcn + Fragment.NextVcn - Vcn;
-		        }
-
-		        Vcn = Fragment.NextVcn;
-	        }
-
-	        if (NextLcn != 0) Fragments++;
-
-	        return(Fragments);
-        }
-
         /// <summary>
         /// Return true if the block in the item starting at Offset with Size clusters
         /// is fragmented, otherwise return false.
@@ -1226,8 +1194,6 @@ namespace MSDefragLib
         /// <returns></returns>
         Boolean IsFragmented(ItemStruct Item, UInt64 Offset, UInt64 Size)
         {
-	        Fragment Fragment;
-
             UInt64 FragmentBegin;
             UInt64 FragmentEnd;
             UInt64 Vcn;
@@ -1240,9 +1206,7 @@ namespace MSDefragLib
 	        FragmentEnd = 0;
 	        Vcn = 0;
 	        NextLcn = 0;
-	        Fragment = Item.FirstFragmentInList;
-
-	        while (Fragment != null)
+	        foreach (Fragment Fragment in Item.FragmentList.Fragments)
 	        {
 		        /* Virtual fragments do not occupy space on disk and do not count as fragments. */
 		        if (Fragment.Lcn != VIRTUALFRAGMENT)
@@ -1276,7 +1240,6 @@ namespace MSDefragLib
 
 		        /* Next fragment. */
 		        Vcn = Fragment.NextVcn;
-		        Fragment = Fragment.Next;
 	        }
 
 	        /* Handle the last fragment. */
@@ -1314,8 +1277,6 @@ namespace MSDefragLib
 	        UInt64 BusySize,
 	        Boolean UnDraw)
         {
-	        Fragment Fragment;
-
 	        UInt64 Vcn;
 	        UInt64 RealVcn;
 
@@ -1333,17 +1294,13 @@ namespace MSDefragLib
 	        Vcn = 0;
 	        RealVcn = 0;
 
-	        Fragment = Item.FirstFragmentInList;
-
-	        while (Fragment != null)
+	        foreach (Fragment Fragment in Item.FragmentList.Fragments)
 	        {
 		        /* Ignore virtual fragments. They do not occupy space on disk and
                  * do not require colorization. */
 		        if (Fragment.Lcn > VIRTUALFRAGMENT)
 		        {
 			        Vcn = Fragment.NextVcn;
-			        Fragment = Fragment.Next;
-
 			        continue;
 		        }
 
@@ -1428,7 +1385,6 @@ namespace MSDefragLib
 		        RealVcn += Fragment.NextVcn - Vcn;
 
 		        Vcn = Fragment.NextVcn;
-		        Fragment = Fragment.Next;
 	        }
         }
 
@@ -1974,32 +1930,32 @@ namespace MSDefragLib
 			        Vcn = 0;
 			        RealVcn = 0;
 
-			        for (Fragment = Item.FirstFragmentInList; Fragment != null; Fragment = Fragment.Next)
+			        foreach (Fragment fragment in Item.FragmentList.Fragments)
 			        {
-				        if (Fragment.Lcn != VIRTUALFRAGMENT)
+				        if (fragment.Lcn != VIRTUALFRAGMENT)
 				        {
-                            if (((Fragment.Lcn < m_data.MftExcludes[0].Start) || (Fragment.Lcn >= m_data.MftExcludes[0].End)) &&
-                                ((Fragment.Lcn < m_data.MftExcludes[1].Start) || (Fragment.Lcn >= m_data.MftExcludes[1].End)) &&
-                                ((Fragment.Lcn < m_data.MftExcludes[2].Start) || (Fragment.Lcn >= m_data.MftExcludes[2].End)))
+                            if (((fragment.Lcn < m_data.MftExcludes[0].Start) || (fragment.Lcn >= m_data.MftExcludes[0].End)) &&
+                                ((fragment.Lcn < m_data.MftExcludes[1].Start) || (fragment.Lcn >= m_data.MftExcludes[1].End)) &&
+                                ((fragment.Lcn < m_data.MftExcludes[2].Start) || (fragment.Lcn >= m_data.MftExcludes[2].End)))
 					        {
-						        if (Fragment.Lcn < ZoneEnd[0])
+						        if (fragment.Lcn < ZoneEnd[0])
 						        {
-							        SizeOfUnmovableFragments[0] = SizeOfUnmovableFragments[0] + Fragment.NextVcn - Vcn;
+							        SizeOfUnmovableFragments[0] = SizeOfUnmovableFragments[0] + fragment.NextVcn - Vcn;
 						        }
-						        else if (Fragment.Lcn < ZoneEnd[1])
+						        else if (fragment.Lcn < ZoneEnd[1])
 						        {
-							        SizeOfUnmovableFragments[1] = SizeOfUnmovableFragments[1] + Fragment.NextVcn - Vcn;
+							        SizeOfUnmovableFragments[1] = SizeOfUnmovableFragments[1] + fragment.NextVcn - Vcn;
 						        }
-						        else if (Fragment.Lcn < ZoneEnd[2])
+						        else if (fragment.Lcn < ZoneEnd[2])
 						        {
-							        SizeOfUnmovableFragments[2] = SizeOfUnmovableFragments[2] + Fragment.NextVcn - Vcn;
+							        SizeOfUnmovableFragments[2] = SizeOfUnmovableFragments[2] + fragment.NextVcn - Vcn;
 						        }
 					        }
 
-					        RealVcn = RealVcn + Fragment.NextVcn - Vcn;
+					        RealVcn = RealVcn + fragment.NextVcn - Vcn;
 				        }
 
-				        Vcn = Fragment.NextVcn;
+				        Vcn = fragment.NextVcn;
 			        }
 		        }
 	        }
@@ -2856,7 +2812,7 @@ namespace MSDefragLib
                     m_data.CountAllFiles++;
 		        }
 
-		        if (FragmentCount(Item) > 1)
+                if (Item.FragmentCount > 1)
 		        {
                     m_data.CountFragmentedItems++;
                     m_data.CountFragmentedBytes += Item.Bytes;

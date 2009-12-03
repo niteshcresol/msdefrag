@@ -11,21 +11,57 @@ namespace MSDefragLib
     /// </summary>
     public class ItemStruct
     {
-        /* Return the location on disk (LCN, Logical Cluster Number) of an item. */
+        /// <summary>
+        /// Return the location on disk (LCN, Logical
+        /// Cluster Number) of an item.
+        /// </summary>
         public UInt64 Lcn
         {
             get
             {
-                Fragment Fragment = FirstFragmentInList;
-                while ((Fragment != null) && (Fragment.Lcn == Fragment.VIRTUALFRAGMENT))
-                {
-                    Fragment = Fragment.Next;
-                }
-                if (Fragment == null)
+                Fragment fragment = FragmentList.Fragments.
+                    FirstOrDefault( x => x.Lcn == Fragment.VIRTUALFRAGMENT);
+                if (fragment == null)
                     return 0;
-                return Fragment.Lcn;
+                return fragment.Lcn;
             }
         }
+
+        /// <summary>
+        /// Return the number of fragments in the item.
+        /// </summary>
+        /// <param name="Item"></param>
+        /// <returns></returns>
+        public int FragmentCount
+        {
+            get
+            {
+                int count = 0;
+
+                UInt64 Vcn = 0;
+                UInt64 NextLcn = 0;
+
+                foreach (Fragment fragment in FragmentList.Fragments)
+                {
+                    if (fragment.Lcn != Fragment.VIRTUALFRAGMENT)
+                    {
+                        if ((NextLcn != 0) && (fragment.Lcn != NextLcn))
+                            count++;
+
+                        NextLcn = fragment.Lcn + fragment.NextVcn - Vcn;
+                    }
+
+                    Vcn = fragment.NextVcn;
+                }
+
+                if (NextLcn != 0)
+                    count++;
+
+                return count;
+            }
+        }
+
+
 
         public ItemStruct Parent;              /* Parent item. */
         public ItemStruct Smaller;             /* Next smaller item. */
@@ -44,17 +80,6 @@ namespace MSDefragLib
 
         /* List of fragments. */
         public FragmentList FragmentList { get; set; }
-
-        //HACK: for refactoring
-        public Fragment FirstFragmentInList
-        {
-            get
-            {
-                if (FragmentList == null)
-                    return null;
-                return FragmentList._LIST;
-            }
-        }
 
         public UInt64 ParentInode;                  /* The Inode number of the parent directory. */
 

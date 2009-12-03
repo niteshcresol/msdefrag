@@ -19,8 +19,5 @@ namespace MSDefragLib
         /// Virtual cluster number of next fragment.
         /// </summary>
         public UInt64 NextVcn;
-
-        // HACK: remove
-        public Fragment Next;
     };
 }

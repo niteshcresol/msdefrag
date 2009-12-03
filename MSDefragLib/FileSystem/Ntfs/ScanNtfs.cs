@@ -310,8 +310,6 @@ namespace MSDefragLib.FileSystem.Ntfs
             UInt64 ExtentLcn;
             UInt64 ExtentLength;
 
-            Int16 i;
-
             ShowDebug(6, String.Format("    Reading {0:G} bytes from offset {0:G}", WantedLength, Offset));
 
             /* Sanity check. */
@@ -495,18 +493,13 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             /* If the stream already has a list of fragments then find the last fragment. */
-            Fragment LastFragment = foundStream.Fragments._LIST;
-
-            if (LastFragment != null)
+            Fragment lastFragment = foundStream.Fragments.Fragments.LastOrDefault();
+            if (lastFragment != null)
             {
-                while (LastFragment.Next != null)
-                    LastFragment = LastFragment.Next;
-
-                if (StartingVcn != LastFragment.NextVcn)
+                if (StartingVcn != lastFragment.NextVcn)
                 {
                     ShowDebug(2, String.Format("Error: m_iNode {0:G} already has a list of fragments. LastVcn={1:G}, StartingVCN={2:G}",
-                      InodeData.m_iNode, LastFragment.NextVcn, StartingVcn));
-
+                      InodeData.m_iNode, lastFragment.NextVcn, StartingVcn));
                     return false;
                 }
             }
@@ -586,19 +579,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (RunOffset.Value == 0) newFragment.Lcn = VIRTUALFRAGMENT;
 
                 newFragment.NextVcn = Vcn;
-                newFragment.Next = null;
-
-                if (foundStream.Fragments._LIST == null)
-                {
-                    foundStream.Fragments._LIST = newFragment;
-                }
-                else
-                {
-                    if (LastFragment != null)
-                        LastFragment.Next = newFragment;
-                }
-
-                LastFragment = newFragment;
+                foundStream.Fragments.Fragments.Add(newFragment);
+                lastFragment = newFragment;
             }
             return true;
         }
@@ -804,22 +786,24 @@ namespace MSDefragLib.FileSystem.Ntfs
                 RealVcn = 0;
                 RefInodeVcn = RefInode * DiskInfo.BytesPerMftRecord / (DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster);
 
-                for (Fragment = InodeData.MftDataFragments._LIST; Fragment != null; Fragment = Fragment.Next)
+                Fragment foundFragment = null;
+                foreach (Fragment fragment in InodeData.MftDataFragments.Fragments)
                 {
-                    if (Fragment.Lcn != VIRTUALFRAGMENT)
+                    if (fragment.Lcn != VIRTUALFRAGMENT)
                     {
-                        if ((RefInodeVcn >= RealVcn) && (RefInodeVcn < RealVcn + Fragment.NextVcn - Vcn))
+                        if ((RefInodeVcn >= RealVcn) && (RefInodeVcn < RealVcn + fragment.NextVcn - Vcn))
                         {
+                            foundFragment = fragment;
                             break;
                         }
 
-                        RealVcn += Fragment.NextVcn - Vcn;
+                        RealVcn += fragment.NextVcn - Vcn;
                     }
 
-                    Vcn = Fragment.NextVcn;
+                    Vcn = fragment.NextVcn;
                 }
 
-                if (Fragment == null)
+                if (foundFragment == null)
                 {
                     ShowDebug(6, String.Format("      Error: m_iNode {0:G} is an extension of m_iNode {1:G}, but does not exist (outside the MFT).",
                             RefInode, InodeData.m_iNode));
@@ -828,7 +812,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 /* Fetch the record of the referenced m_iNode from disk. */
-                UInt64 tempVcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerCluster +
+                UInt64 tempVcn = (foundFragment.Lcn - RealVcn) * DiskInfo.BytesPerCluster +
                     RefInode * DiskInfo.BytesPerMftRecord;
 
                 Byte[] tempBuffer = new Byte[DiskInfo.BytesPerMftRecord];
@@ -1238,7 +1222,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 m_msDefragLib.m_data.CountAllClusters += stream.Clusters;
 
-                if (m_msDefragLib.FragmentCount(Item) > 1)
+                if (Item.FragmentCount > 1)
                 {
                     m_msDefragLib.m_data.CountFragmentedItems++;
                     m_msDefragLib.m_data.CountFragmentedBytes += InodeData.m_totalBytes;
@@ -1404,19 +1388,17 @@ namespace MSDefragLib.FileSystem.Ntfs
             */
             ShowDebug(6, "Reading $MFT::$BITMAP into memory");
 
-
-            Fragment Fragment = null;
             UInt64 Vcn = 0;
             UInt64 MaxMftBitmapBytes = 0;
 
-            for (Fragment = MftBitmapFragments._LIST; Fragment != null; Fragment = Fragment.Next)
+            foreach (Fragment fragment in MftBitmapFragments.Fragments)
             {
-                if (Fragment.Lcn != VIRTUALFRAGMENT)
+                if (fragment.Lcn != VIRTUALFRAGMENT)
                 {
-                    MaxMftBitmapBytes += (Fragment.NextVcn - Vcn);
+                    MaxMftBitmapBytes += (fragment.NextVcn - Vcn);
                 }
 
-                Vcn = Fragment.NextVcn;
+                Vcn = fragment.NextVcn;
             }
 
             // transform clusters into bytes
@@ -1431,28 +1413,28 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ShowDebug(6, "Reading $MFT::$BITMAP into memory");
 
-            for (Fragment = MftBitmapFragments._LIST; Fragment != null; Fragment = Fragment.Next)
+            foreach (Fragment fragment in MftBitmapFragments.Fragments)
             {
-                if (Fragment.Lcn != VIRTUALFRAGMENT)
+                if (fragment.Lcn != VIRTUALFRAGMENT)
                 {
                     ShowDebug(6, String.Format("  Extent Lcn={0:G}, RealVcn={1:G}, Size={2:G}",
-                          Fragment.Lcn, RealVcn, Fragment.NextVcn - Vcn));
+                          fragment.Lcn, RealVcn, fragment.NextVcn - Vcn));
 
-                    tempLcn = Fragment.Lcn * DiskInfo.BytesPerCluster;
+                    tempLcn = fragment.Lcn * DiskInfo.BytesPerCluster;
 
-                    UInt64 numClusters = Fragment.NextVcn - Vcn;
+                    UInt64 numClusters = fragment.NextVcn - Vcn;
                     Int32 numBytes = (Int32)(numClusters * DiskInfo.BytesPerCluster);
                     Int32 startIndex = (Int32)(RealVcn * DiskInfo.BytesPerCluster);
 
-                    ShowDebug(6, String.Format("    Reading {0:G} clusters ({1:G} bytes) from LCN={2:G}", numClusters, numBytes, Fragment.Lcn));
+                    ShowDebug(6, String.Format("    Reading {0:G} clusters ({1:G} bytes) from LCN={2:G}", numClusters, numBytes, fragment.Lcn));
 
                     m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn, MftBitmap.m_bytes,
                         startIndex, numBytes);
 
-                    RealVcn += Fragment.NextVcn - Vcn;
+                    RealVcn += fragment.NextVcn - Vcn;
                 }
 
-                Vcn = Fragment.NextVcn;
+                Vcn = fragment.NextVcn;
             }
 
             //////////////////////////////////////////////////////////////////////////
@@ -1482,7 +1464,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Read and process all the records in the MFT. The records are read into a
                 buffer and then given one by one to the InterpretMftRecord() subroutine.
             */
-            Fragment = MftDataFragments._LIST;
             UInt64 BlockEnd = 0;
             Vcn = 0;
             RealVcn = 0;
@@ -1534,37 +1515,45 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                     if (BlockEnd > MftBitmapBytes * 8) BlockEnd = MftBitmapBytes * 8;
 
-                    while (Fragment != null)
+                    Fragment foundFragment = null;
+                    foreach (Fragment fragment in MftDataFragments.Fragments)
                     {
                         /* Calculate m_iNode at the end of the fragment. */
-                        u1 = (RealVcn + Fragment.NextVcn - Vcn) * 
+                        u1 = (RealVcn + fragment.NextVcn - Vcn) * 
                             DiskInfo.BytesPerCluster / DiskInfo.BytesPerMftRecord;
 
-                        if (u1 > InodeNumber) break;
+                        if (u1 > InodeNumber)
+                        {
+                            foundFragment = fragment;
+                            break;
+                        }
 
                         do
                         {
                             ShowDebug(6, "Skipping to next extent");
 
-                            if (Fragment.Lcn != VIRTUALFRAGMENT) RealVcn += Fragment.NextVcn - Vcn;
+                            if (fragment.Lcn != VIRTUALFRAGMENT)
+                                RealVcn += fragment.NextVcn - Vcn;
 
-                            Vcn = Fragment.NextVcn;
-                            Fragment = Fragment.Next;
+                            Vcn = fragment.NextVcn;
+                            //fragment = fragment.Next;
 
-                            if (Fragment == null) break;
-                        } while (Fragment.Lcn == VIRTUALFRAGMENT);
+                            throw new NotImplementedException();
+                            if (fragment == null)
+                                break;
+                        } while (fragment.Lcn == VIRTUALFRAGMENT);
 
-                        if (Fragment != null)
-                        {
-                            ShowDebug(6, String.Format("  Extent Lcn={0:G}, RealVcn={1:G}, Size={2:G}",
-                                  Fragment.Lcn, RealVcn, Fragment.NextVcn - Vcn));
-                        }
+                        //if (fragment != null)
+                        //{
+                        //    ShowDebug(6, String.Format("  Extent Lcn={0:G}, RealVcn={1:G}, Size={2:G}",
+                        //          fragment.Lcn, RealVcn, fragment.NextVcn - Vcn));
+                        //}
                     }
 
-                    if (Fragment == null) break;
+                    if (foundFragment == null) break;
                     if (BlockEnd >= u1) BlockEnd = u1;
 
-                    tempLcn = (Fragment.Lcn - RealVcn) * DiskInfo.BytesPerCluster +
+                    tempLcn = (foundFragment.Lcn - RealVcn) * DiskInfo.BytesPerCluster +
                         BlockStart * DiskInfo.BytesPerMftRecord;
 
                     ShowDebug(6, String.Format("Reading block of {0:G} Inodes from MFT into memory, {1:G} bytes from LCN={2:G}",

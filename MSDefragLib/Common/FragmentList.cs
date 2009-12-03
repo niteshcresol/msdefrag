@@ -9,11 +9,8 @@ namespace MSDefragLib
     {
         public FragmentList()
         {
+            Fragments = new List<Fragment>();
         }
-
-        //HACK: for refactoring only
-        public Fragment _LIST
-        { get; set; }
 
         public IList<Fragment> Fragments
         { get; private set; }
