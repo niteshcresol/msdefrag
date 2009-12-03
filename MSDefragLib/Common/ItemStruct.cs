@@ -11,6 +11,11 @@ namespace MSDefragLib
     /// </summary>
     public class ItemStruct
     {
+        public ItemStruct(FileSystem.Ntfs.Stream stream)
+        {
+            FragmentList = stream.Fragments;
+        }
+
         /// <summary>
         /// Return the location on disk (LCN, Logical
         /// Cluster Number) of an item.
@@ -54,7 +59,7 @@ namespace MSDefragLib
         public UInt64 LastAccessTime;
 
         /* List of fragments. */
-        public FragmentList FragmentList { get; set; }
+        public FragmentList FragmentList { get; private set; }
 
         public UInt64 ParentInode;                  /* The Inode number of the parent directory. */
 

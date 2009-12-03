@@ -1179,7 +1179,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             foreach (Stream stream in InodeData.Streams.Streams)
             {
                 /* Create and fill a new item record in memory. */
-                ItemStruct Item = new ItemStruct();
+                ItemStruct Item = new ItemStruct(stream);
                 Item.LongFilename = ConstructStreamName(InodeData.m_longFilename, InodeData.m_shortFilename, stream);
                 Item.LongPath = null;
 
@@ -1197,9 +1197,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Item.CreationTime = InodeData.m_creationTime;
                 Item.MftChangeTime = InodeData.m_mftChangeTime;
                 Item.LastAccessTime = InodeData.m_lastAccessTime;
-                Item.FragmentList = null;
-
-                Item.FragmentList = stream.Fragments;
 
                 Item.ParentInode = InodeData.m_parentInode;
                 Item.Directory = InodeData.IsDirectory;
