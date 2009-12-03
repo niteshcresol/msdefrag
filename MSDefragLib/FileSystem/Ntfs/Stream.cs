@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -43,6 +44,7 @@ namespace MSDefragLib.FileSystem.Ntfs
     ///    0xF0  NT  $PROPERTY_SET
     ///   0x100  2K  $LOGGED_UTILITY_STREAM
     /// </summary>
+    [DebuggerDisplay("'{Name}':{Type},{Bytes}b")]
     public class Stream
     {
         /* "stream name" */

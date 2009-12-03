@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,6 +33,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         AttributeEndOfList = -1
     };
 
+    [DebuggerDisplay("{Type}")]
     public class AttributeType : ISizeHelper
     {
         private AttributeTypeEnum m_attributeType;

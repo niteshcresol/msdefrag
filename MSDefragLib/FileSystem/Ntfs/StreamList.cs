@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
+    [DebuggerDisplay("Streams: {Count}")]
     public class StreamList : IEnumerable<Stream>
     {
         public StreamList()
@@ -16,6 +18,8 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             _streams.Insert(0, newStream);
         }
+
+        public int Count { get { return _streams.Count; } }
 
         private IList<Stream> _streams;
 
