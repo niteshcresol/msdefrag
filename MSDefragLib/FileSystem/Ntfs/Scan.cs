@@ -10,153 +10,6 @@ using MSDefragLib.IO;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class UlongBytes
-    {
-        public Byte[] Bytes = new Byte[8];
-
-        public UInt64 Value
-        {
-            set
-            {
-                Bytes = BitConverter.GetBytes(value);
-            }
-
-            get
-            {
-                return BitConverter.ToUInt64(Bytes, 0); ;
-            }
-        }
-    };
-
-    class ByteArray
-    {
-        public Byte[] m_bytes;
-
-        public ByteArray(Int64 size)
-        {
-            Initialize(size);
-        }
-
-        public Int64 GetLength()
-        {
-            return m_bytes.Length;
-        }
-
-        public Byte GetValue(Int64 index)
-        {
-            return m_bytes[index];
-        }
-
-        public void SetValue(Int64 index, Byte value)
-        {
-            m_bytes[index] = value;
-        }
-
-        public void Initialize(Int64 length)
-        {
-            if (length != (int)length)
-                throw new Exception("This implementation does not support byte arrays with a length bigger than 32 bits");
-            m_bytes = new Byte[length];
-        }
-
-        public ByteArray ToByteArray(Int64 index, Int64 length)
-        {
-            ByteArray ba = new ByteArray(length);
-            Array.Copy(m_bytes, index, ba.m_bytes, 0, length);
-            return ba;
-        }
-
-        //TODO: check if this matters: offset is truncated to 32 bits
-        public UInt16Array ToUInt16Array(Int64 index, Int64 length)
-        {
-            UInt16Array ba = new UInt16Array();
-            ba.Initialize(length / 2);
-            int jj = 0;
-            for (int ii = 0; ii < length; ii += 2)
-            {
-                ba.SetValue(jj++, BitConverter.ToUInt16(m_bytes, (int)index + ii));
-            }
-            return ba;
-        }
-
-        //TODO: check if this matters: offset is truncated to 32 bits
-        public Byte ToByte(ref Int64 offset)
-        {
-            Byte retValue = m_bytes[(int)offset];
-            offset += sizeof(Byte);
-            return retValue;
-        }
-
-        //TODO: check if this matters: offset is truncated to 32 bits
-        public UInt16 ToUInt16(ref Int64 offset)
-        {
-            UInt16 retValue = BitConverter.ToUInt16(m_bytes, (int)offset);
-            offset += sizeof(UInt16);
-            return retValue;
-        }
-
-        //TODO: check if this matters: offset is truncated to 32 bits
-        public UInt32 ToUInt32(ref Int64 offset)
-        {
-            UInt32 retValue = BitConverter.ToUInt32(m_bytes, (int)offset);
-            offset += sizeof(UInt32);
-            return retValue;
-        }
-
-        //TODO: check if this matters: offset is truncated to 32 bits
-        public UInt64 ToUInt64(ref Int64 offset)
-        {
-            UInt64 retValue = BitConverter.ToUInt64(m_bytes, (int)offset);
-            offset += sizeof(UInt64);
-            return retValue;
-        }
-    }
-
-    class UInt16Array
-    {
-        private UInt16[] m_words;
-
-        public ByteArray ToByteArray(Int64 index, Int64 length)
-        {
-            ByteArray ba = new ByteArray(length * 2 + 1);
-
-            if (m_words.Length < index || m_words.Length < index + length)
-                throw new Exception("Bad index or length!");
-
-            int jj = 0;
-
-            for (int ii = 0; ii < length; ii++)
-            {
-                UInt16 val = GetValue(index + ii);
-
-                ba.SetValue(jj++, (Byte)(val & Byte.MaxValue));
-                ba.SetValue(jj++, (Byte)(val >> (1 >> 3)));
-            }
-
-            return ba;
-        }
-
-        public Int64 GetLength()
-        {
-            return m_words.Length;
-        }
-
-        public UInt16 GetValue(Int64 index)
-        {
-            return m_words[index];
-        }
-
-        public void SetValue(Int64 index, UInt16 value)
-        {
-            m_words[index] = value;
-        }
-
-        public void Initialize(Int64 length)
-        {
-            m_words = new UInt16[length];
-        }
-    }
-
     public class MSScanNtfsEventArgs : EventArgs
     {
         public UInt32 m_level;
@@ -299,12 +152,6 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             ByteArray Buffer = new ByteArray((Int64)WantedLength);
 
-            UInt64 Lcn;
-            UInt64 Vcn;
-
-            UlongBytes RunOffset = new UlongBytes();
-            UlongBytes RunLength = new UlongBytes();
-
             UInt64 ExtentVcn;
             UInt64 ExtentLcn;
             UInt64 ExtentLength;
@@ -338,9 +185,8 @@ namespace MSDefragLib.FileSystem.Ntfs
             //Buffer.Initialize();
 
             /* Walk through the RunData and read the requested data from disk. */
-            _index = 0;
-            Lcn = 0;
-            Vcn = 0;
+            UInt64 Lcn = 0;
+            UInt64 Vcn = 0;
 
             while (runData.PeekChar() != 0)
             {
@@ -348,46 +194,28 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 /* Decode the RunData and calculate the next Lcn. */
                 int runLengthSize = (runDataValue & 0x0F);
-                Debug.Assert(runLengthSize <= 8);
                 int runOffsetSize = ((runDataValue & 0xF0) >> 4);
-                Debug.Assert(runOffsetSize <= 8);
 
-                CheckIndex(runDataLength);
+                UInt64 runLength = RunData.ReadLength(runData, runLengthSize);
+                Int64 runOffset = RunData.ReadOffset(runData, runOffsetSize);
 
-                RunLength.Value = 0;
-                for (int j = 0; j < runLengthSize; j++)
-                {
-                    RunLength.Bytes[j] = runData.ReadByte();
-                    CheckIndex(runDataLength);
-                }
-
-                RunOffset.Value = 0;
-                for (int j = 0; j < runOffsetSize; j++)
-                {
-                    RunOffset.Bytes[j] = runData.ReadByte();
-                    CheckIndex(runDataLength);
-                }
-
-                //if (RunOffset.Bytes[i - 1] >= 0x80)
-                //{
-                //    while (i < 8) RunOffset.Bytes[i++] = 0xFF;
-                //}
-
-                Lcn += RunOffset.Value;
-                Vcn += RunLength.Value;
+                Lcn = (UInt64) ((Int64)Lcn + runOffset);
+                Vcn += runLength;
 
                 /* Ignore virtual extents. */
-                if (RunOffset.Bytes == null) continue;
+                if (runOffset == 0)
+                    continue;
 
                 /* I don't think the RunLength can ever be zero, but just in case. */
-                if (RunLength.Bytes == null) continue;
+                if (runLength == 0)
+                    continue;
 
                 /* Determine how many and which bytes we want to read. If we don't need
                  * any bytes from this extent then loop. */
-                ExtentVcn = (Vcn - RunLength.Value) * DiskInfo.BytesPerCluster;
+                ExtentVcn = (Vcn - runLength) * DiskInfo.BytesPerCluster;
                 ExtentLcn = Lcn * DiskInfo.BytesPerCluster;
 
-                ExtentLength = RunLength.Value * DiskInfo.BytesPerCluster;
+                ExtentLength = runLength * DiskInfo.BytesPerCluster;
 
                 if (Offset >= ExtentVcn + ExtentLength) continue;
 
@@ -421,18 +249,6 @@ namespace MSDefragLib.FileSystem.Ntfs
             return (Buffer);
         }
 
-        private UInt64 _index = 0;
-
-        [Conditional("DEBUG")]
-        private void CheckIndex(UInt64 max)
-        {
-            if (++_index >= max)
-            {
-                throw new Exception(
-                    "Error: datarun is longer than buffer, the MFT may be corrupt.");
-            }
-        }
-
         /* Read the RunData list and translate into a list of fragments. */
         Boolean TranslateRundataToFragmentlist(
                     InodeDataStructure InodeData,
@@ -440,7 +256,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     AttributeType StreamType,
                     BinaryReader runData,
                     UInt64 runDataLength,
-                    UInt64 StartingVcn,
+                    UInt64 startingVcn,
                     UInt64 Bytes)
         {
             /* Sanity check. */
@@ -483,12 +299,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return true;
 
             /* Walk through the RunData and add the extents. */
-            _index = 0;
-            UInt64 Lcn = 0;
-            UInt64 Vcn = StartingVcn;
-
-            UlongBytes RunOffset = new UlongBytes();
-            UlongBytes RunLength = new UlongBytes();
+            Int64 Lcn = 0;
+            UInt64 Vcn = startingVcn;
 
             while (runData.PeekChar() != 0)
             {
@@ -496,87 +308,22 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 /* Decode the RunData and calculate the next Lcn. */
                 int runLengthSize = (runDataValue & 0x0F);
-                Debug.Assert(runLengthSize <= 8);
                 int runOffsetSize = ((runDataValue & 0xF0) >> 4);
-                Debug.Assert(runOffsetSize <= 8);
 
-                CheckIndex(runDataLength);
+                UInt64 runLength = RunData.ReadLength(runData, runLengthSize);
+                Int64 runOffset = RunData.ReadOffset(runData, runOffsetSize);
 
-                RunLength.Value = 0;
-                for (int i = 0; i < runLengthSize; i++)
+                Lcn += runOffset;
+
+                if (runOffset != 0)
                 {
-                    RunLength.Bytes[i] = runData.ReadByte();
-                    CheckIndex(runDataLength);
+                    foundStream.Clusters += runLength;
                 }
 
-                RunOffset.Value = 0;
-                for (int j = 0; j < runOffsetSize; j++)
-                {
-                    RunOffset.Bytes[j] = runData.ReadByte();
-                    CheckIndex(runDataLength);
-                }
-
-                //TODO: handle signed offsets
-                //if ((i < 8) && (i > 0) && (RunOffset.Bytes[i - 1] >= 0x80))
-                //{
-                //    while (i < 8)
-                //        RunOffset.Bytes[i++] = 0Xff;
-                //}
-
-                Lcn += RunOffset.Value;
-
-                /* 
-                    Add the size of the fragment to the total number of clusters.
-                    There are two kinds of fragments: real and virtual. The latter do not
-                    occupy clusters on disk, but are information used by compressed
-                    and sparse files. 
-                */
-                if (RunOffset.Value != 0)
-                {
-                    foundStream.Clusters += RunLength.Value;
-                }
-
-                foundStream.Fragments.Add(Lcn, Vcn, RunLength.Value, RunOffset.Value == 0);
-                Vcn += RunLength.Value;
+                foundStream.Fragments.Add(Lcn, Vcn, runLength, runOffset == 0);
+                Vcn += runLength;
             }
             return true;
-        }
-
-        /*
-            Cleanup the m_streams data in an InodeData struct. If CleanFragments is TRUE then
-            also cleanup the fragments.
-        */
-        void CleanupStreams(InodeDataStructure InodeData, Boolean CleanupFragments)
-        {
-            //throw new NotImplementedException();
-            //TODO: let the GC do this for now...
-        //    Stream TempStream;
-
-        //    Fragment Fragment;
-        //    Fragment TempFragment;
-
-        //    Stream Stream = InodeData.m_streams._LIST;
-
-        //    while (Stream != null)
-        //    {
-        //        if (CleanupFragments == true)
-        //        {
-        //            Fragment = Stream.Fragments._LIST;
-
-        //            while (Fragment != null)
-        //            {
-        //                TempFragment = Fragment;
-        //                Fragment = Fragment.Next;
-
-        //                TempFragment = null;
-        //            }
-        //        }
-
-        //        TempStream = Stream;
-        //        Stream = Stream.Next;
-
-        //        TempStream = null;
-        //    }
         }
 
         /* Construct the full stream name from the filename, the stream name, and the stream type. */
@@ -1227,9 +974,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                     m_msDefragLib.ShowDiskmap();
                 }
             }
-
-            /* Cleanup and return true. */
-            CleanupStreams(inodeData, false);
 
             return true;
         }

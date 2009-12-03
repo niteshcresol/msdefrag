@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,9 +15,10 @@ namespace MSDefragLib
         }
 
 
-        public void Add(UInt64 lcn, UInt64 vcn, UInt64 length, Boolean isVirtual)
+        public void Add(Int64 lcn, UInt64 vcn, UInt64 length, Boolean isVirtual)
         {
-            _fragments.Add(new Fragment(lcn, vcn, length, isVirtual));
+            Debug.Assert(lcn >= 0);
+            _fragments.Add(new Fragment((UInt64)lcn, vcn, length, isVirtual));
         }
 
         public UInt64 Lcn
