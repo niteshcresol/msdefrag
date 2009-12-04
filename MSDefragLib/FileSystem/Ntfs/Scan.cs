@@ -995,28 +995,28 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return false;
             }
 
-            DiskInfoStructure DiskInfo = new DiskInfoStructure(bootSector);
+            DiskInfoStructure diskInfo = new DiskInfoStructure(bootSector);
 
-            m_msDefragLib.m_data.BytesPerCluster = DiskInfo.BytesPerCluster;
+            m_msDefragLib.m_data.BytesPerCluster = diskInfo.BytesPerCluster;
 
-            if (DiskInfo.SectorsPerCluster > 0)
+            if (diskInfo.SectorsPerCluster > 0)
             {
-                m_msDefragLib.m_data.TotalClusters = DiskInfo.TotalSectors / DiskInfo.SectorsPerCluster;
+                m_msDefragLib.m_data.TotalClusters = diskInfo.TotalSectors / diskInfo.SectorsPerCluster;
             }
 
             ShowDebug(0, "This is an NTFS disk.");
 
             ShowDebug(2, String.Format("  Disk cookie: {0:X}", bootSector.OemId));
-            ShowDebug(2, String.Format("  BytesPerSector: {0:G}", DiskInfo.BytesPerSector));
-            ShowDebug(2, String.Format("  TotalSectors: {0:G}", DiskInfo.TotalSectors));
-            ShowDebug(2, String.Format("  SectorsPerCluster: {0:G}", DiskInfo.SectorsPerCluster));
+            ShowDebug(2, String.Format("  BytesPerSector: {0:G}", diskInfo.BytesPerSector));
+            ShowDebug(2, String.Format("  TotalSectors: {0:G}", diskInfo.TotalSectors));
+            ShowDebug(2, String.Format("  SectorsPerCluster: {0:G}", diskInfo.SectorsPerCluster));
 
             ShowDebug(2, String.Format("  SectorsPerTrack: {0:G}", bootSector.SectorsPerTrack));
             ShowDebug(2, String.Format("  NumberOfHeads: {0:G}", bootSector.NumberOfHeads));
-            ShowDebug(2, String.Format("  MftStartLcn: {0:G}", DiskInfo.MftStartLcn));
-            ShowDebug(2, String.Format("  Mft2StartLcn: {0:G}", DiskInfo.Mft2StartLcn));
-            ShowDebug(2, String.Format("  BytesPerMftRecord: {0:G}", DiskInfo.BytesPerMftRecord));
-            ShowDebug(2, String.Format("  ClustersPerIndexRecord: {0:G}", DiskInfo.ClustersPerIndexRecord));
+            ShowDebug(2, String.Format("  MftStartLcn: {0:G}", diskInfo.MftStartLcn));
+            ShowDebug(2, String.Format("  Mft2StartLcn: {0:G}", diskInfo.Mft2StartLcn));
+            ShowDebug(2, String.Format("  BytesPerMftRecord: {0:G}", diskInfo.BytesPerMftRecord));
+            ShowDebug(2, String.Format("  ClustersPerIndexRecord: {0:G}", diskInfo.ClustersPerIndexRecord));
 
             ShowDebug(2, String.Format("  MediaType: {0:X}", bootSector.MediaType));
 
@@ -1026,21 +1026,21 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Calculate the size of first 16 Inodes in the MFT. The Microsoft defragmentation
                 API cannot move these inodes.
             */
-            m_msDefragLib.m_data.Disk.MftLockedClusters = DiskInfo.BytesPerCluster / DiskInfo.BytesPerMftRecord;
+            m_msDefragLib.m_data.Disk.MftLockedClusters = diskInfo.BytesPerCluster / diskInfo.BytesPerMftRecord;
 
             /*
                 Read the $MFT record from disk into memory, which is always the first record in
                 the MFT.
             */
-            UInt64 tempLcn = DiskInfo.MftStartLcn * DiskInfo.BytesPerCluster;
+            UInt64 tempLcn = diskInfo.MftStartLcn * diskInfo.BytesPerCluster;
 
             ByteArray Buffer = new ByteArray((Int64)MFTBUFFERSIZE);
 
             m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn, Buffer.m_bytes, 0,
-                (Int32)DiskInfo.BytesPerMftRecord);
+                (Int32)diskInfo.BytesPerMftRecord);
 
             /* Fixup the raw data from disk. This will also test if it's a valid $MFT record. */
-            if (FixupRawMftdata(DiskInfo, Buffer, DiskInfo.BytesPerMftRecord) == false)
+            if (FixupRawMftdata(diskInfo, Buffer, diskInfo.BytesPerMftRecord) == false)
             {
                 return false;
             }
@@ -1055,9 +1055,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             UInt64 MftDataBytes = 0;
             UInt64 MftBitmapBytes = 0;
 
-            Boolean Result = InterpretMftRecord(DiskInfo, null, 0, 0,
+            Boolean Result = InterpretMftRecord(diskInfo, null, 0, 0,
                 ref MftDataFragments, ref MftDataBytes, ref MftBitmapFragments, ref MftBitmapBytes,
-                Helper.BinaryReader(Buffer), DiskInfo.BytesPerMftRecord);
+                Helper.BinaryReader(Buffer), diskInfo.BytesPerMftRecord);
 
             if ((Result == false) ||
                 (MftDataFragments == null) || (MftDataBytes == 0) ||
@@ -1094,7 +1094,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             // transform clusters into bytes
-            MaxMftBitmapBytes *= DiskInfo.BytesPerCluster;
+            MaxMftBitmapBytes *= diskInfo.BytesPerCluster;
 
             MaxMftBitmapBytes = Math.Max(MaxMftBitmapBytes, MftBitmapBytes);
 
@@ -1108,11 +1108,11 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 if (fragment.IsLogical)
                 {
-                    tempLcn = fragment.Lcn * DiskInfo.BytesPerCluster;
+                    tempLcn = fragment.Lcn * diskInfo.BytesPerCluster;
 
                     UInt64 numClusters = fragment.Length;
-                    Int32 numBytes = (Int32)(numClusters * DiskInfo.BytesPerCluster);
-                    Int32 startIndex = (Int32)(RealVcn * DiskInfo.BytesPerCluster);
+                    Int32 numBytes = (Int32)(numClusters * diskInfo.BytesPerCluster);
+                    Int32 startIndex = (Int32)(RealVcn * diskInfo.BytesPerCluster);
 
                     m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn, MftBitmap.m_bytes,
                         startIndex, numBytes);
@@ -1131,7 +1131,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             //    bitmap. But that is rounded up to 8 Inodes, and the MFT can be shorter. 
             //
             //////////////////////////////////////////////////////////////////////////
-            UInt64 MaxInode = Math.Max(MftBitmapBytes * 8, MftDataBytes / DiskInfo.BytesPerMftRecord);
+            UInt64 MaxInode = Math.Max(MftBitmapBytes * 8, MftDataBytes / diskInfo.BytesPerMftRecord);
 
             ItemStruct[] InodeArray = new ItemStruct[MaxInode];
             InodeArray.SetValue(m_msDefragLib.m_data.ItemTree, 0);
@@ -1195,7 +1195,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     m_msDefragLib.SlowDown();
 
                     BlockStart = InodeNumber;
-                    BlockEnd = BlockStart + MFTBUFFERSIZE / DiskInfo.BytesPerMftRecord;
+                    BlockEnd = BlockStart + MFTBUFFERSIZE / diskInfo.BytesPerMftRecord;
 
                     if (BlockEnd > MftBitmapBytes * 8) BlockEnd = MftBitmapBytes * 8;
 
@@ -1203,9 +1203,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     foreach (Fragment fragment in MftDataFragments)
                     {
                         /* Calculate m_iNode at the end of the fragment. */
-                        u1 = (RealVcn + fragment.Length) * 
-                            DiskInfo.BytesPerCluster / DiskInfo.BytesPerMftRecord;
-
+                        u1 = diskInfo.ClusterToInode(RealVcn + fragment.Length);
                         if (u1 > InodeNumber)
                         {
                             foundFragment = fragment;
@@ -1239,21 +1237,22 @@ namespace MSDefragLib.FileSystem.Ntfs
                     if (BlockEnd >= u1)
                         BlockEnd = u1;
 
-                    tempLcn = (foundFragment.Lcn - RealVcn) * DiskInfo.BytesPerCluster +
-                        BlockStart * DiskInfo.BytesPerMftRecord;
+                    tempLcn = (foundFragment.Lcn - RealVcn) * diskInfo.BytesPerCluster +
+                        BlockStart * diskInfo.BytesPerMftRecord;
 
                     ShowDebug(6, String.Format("Reading block of {0:G} Inodes from MFT into memory, {1:G} bytes from LCN={2:G}",
-                          BlockEnd - BlockStart, ((BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord),
-                          tempLcn / (DiskInfo.BytesPerCluster)));
+                          BlockEnd - BlockStart, diskInfo.InodeToBytes(BlockEnd - BlockStart),
+                          tempLcn / diskInfo.BytesPerCluster));
 
                     m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn,
-                        Buffer.m_bytes, 0, (Int32)((BlockEnd - BlockStart) * DiskInfo.BytesPerMftRecord));
+                        Buffer.m_bytes, 0, (Int32)diskInfo.InodeToBytes(BlockEnd - BlockStart));
                 }
 
                 /* Fixup the raw data of this m_iNode. */
-                if (FixupRawMftdata(DiskInfo,
-                        Buffer.ToByteArray((Int64)((InodeNumber - BlockStart) * DiskInfo.BytesPerMftRecord), Buffer.GetLength() - (Int64)((InodeNumber - BlockStart) * DiskInfo.BytesPerMftRecord)),
-                        DiskInfo.BytesPerMftRecord) == false)
+                UInt64 lengthInBytes = diskInfo.InodeToBytes(InodeNumber - BlockStart);
+                if (FixupRawMftdata(diskInfo,
+                        Buffer.ToByteArray((Int64)lengthInBytes, Buffer.GetLength() - (Int64)(lengthInBytes)),
+                        diskInfo.BytesPerMftRecord) == false)
                 {
                     ShowDebug(2, String.Format("The error occurred while processing m_iNode {0:G} (max {0:G})",
                             InodeNumber, MaxInode));
@@ -1261,10 +1260,10 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 /* Interpret the m_iNode's attributes. */
-                Result = InterpretMftRecord(DiskInfo, InodeArray, InodeNumber, MaxInode,
+                Result = InterpretMftRecord(diskInfo, InodeArray, InodeNumber, MaxInode,
                         ref MftDataFragments, ref MftDataBytes, ref MftBitmapFragments, ref MftBitmapBytes,
-                        Helper.BinaryReader(Buffer, (Int64)((InodeNumber - BlockStart) * DiskInfo.BytesPerMftRecord)),
-                        DiskInfo.BytesPerMftRecord);
+                        Helper.BinaryReader(Buffer, (Int64)diskInfo.InodeToBytes(InodeNumber - BlockStart)),
+                        diskInfo.BytesPerMftRecord);
 
                 if (m_msDefragLib.m_data.PhaseDone % 50 == 0)
                     ShowDebug(1, "Done: " + m_msDefragLib.m_data.PhaseDone + "/" + m_msDefragLib.m_data.PhaseTodo);

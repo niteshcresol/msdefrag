@@ -30,6 +30,16 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
         }
 
+        public UInt64 ClusterToInode(UInt64 cluster)
+        {
+            return cluster * BytesPerCluster / BytesPerMftRecord;
+        }
+
+        public UInt64 InodeToBytes(UInt64 inode)
+        {
+            return inode * BytesPerMftRecord;
+        }
+
         public UInt64 BytesPerCluster
         {
             get
@@ -38,12 +48,25 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
         }
 
-        public UInt64 BytesPerSector;
-        public UInt64 SectorsPerCluster;
-        public UInt64 TotalSectors;
-        public UInt64 MftStartLcn;
-        public UInt64 Mft2StartLcn;
-        public UInt64 BytesPerMftRecord;
-        public UInt64 ClustersPerIndexRecord;
+        public UInt64 BytesPerSector
+        { get; private set; }
+
+        public UInt64 SectorsPerCluster
+        { get; private set; }
+
+        public UInt64 TotalSectors
+        { get; private set; }
+
+        public UInt64 MftStartLcn
+        { get; private set; }
+
+        public UInt64 Mft2StartLcn
+        { get; private set; }
+        
+        public UInt64 BytesPerMftRecord
+        { get; private set; }
+        
+        public UInt64 ClustersPerIndexRecord
+        { get; private set; }
     }
 }
