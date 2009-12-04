@@ -7,7 +7,7 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class InodeReference : ISizeHelper
+    public class InodeReference : ISizeHelper
     {
         public UInt32 m_iNodeNumberLowPart;
         public UInt16 m_iNodeNumberHighPart;

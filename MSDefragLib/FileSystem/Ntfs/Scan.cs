@@ -322,80 +322,62 @@ namespace MSDefragLib.FileSystem.Ntfs
         }
 
         /* Construct the full stream name from the filename, the stream name, and the stream type. */
-        String ConstructStreamName(String FileName1, String FileName2, Stream Stream)
+        private String ConstructStreamName(String fileName1, String fileName2, Stream thisStream)
         {
-            String FileName = FileName1;
+            String fileName = fileName1 ?? fileName2;
 
-            if (String.IsNullOrEmpty(FileName))
-                FileName = FileName2;
-            if (String.IsNullOrEmpty(FileName))
-                FileName = null;
+            String streamName = null;
+            AttributeType type = new AttributeType();
 
-            String StreamName = null;
-
-            AttributeType StreamType = new AttributeType();
-
-            if (Stream != null)
+            if (thisStream != null)
             {
-                StreamName = Stream.Name;
+                streamName = thisStream.Name;
+                type = thisStream.Type;
+            }
 
-                if (String.IsNullOrEmpty(StreamName))
-                    StreamName = null;
+            // If the StreamName is empty and the StreamType is Data then return only the
+            // FileName. The Data stream is the default stream of regular files.
+            if ((String.IsNullOrEmpty(streamName)) && type.IsData)
+            {
+                return fileName;
+            }
 
-                StreamType = Stream.Type;
+            // If the StreamName is "$I30" and the StreamType is AttributeIndexAllocation then
+            // return only the FileName. This must be a directory, and the Microsoft 
+            // defragmentation API will automatically select this stream.
+            if ((streamName == "$I30") && type.IsIndexAllocation)
+            {
+                return fileName;
             }
 
             //  If the StreamName is empty and the StreamType is Data then return only the
             //  FileName. The Data stream is the default stream of regular files. */
-            if ((String.IsNullOrEmpty(StreamName)) && StreamType.IsData)
+            if (String.IsNullOrEmpty(streamName) &&
+                String.IsNullOrEmpty(type.GetStreamTypeName()))
             {
-                if (String.IsNullOrEmpty(FileName))
-                    return null;
-
-                return FileName;
-            }
-
-            //  If the StreamName is "$I30" and the StreamType is AttributeIndexAllocation then
-            //  return only the FileName. This must be a directory, and the Microsoft 
-            //  defragmentation API will automatically select this stream. */
-            if ((StreamName == "$I30") && StreamType.IsIndexAllocation)
-            {
-                if (String.IsNullOrEmpty(FileName))
-                    return null;
-
-                return FileName;
-            }
-
-            //  If the StreamName is empty and the StreamType is Data then return only the
-            //  FileName. The Data stream is the default stream of regular files. */
-            if ((String.IsNullOrEmpty(StreamName)) &&
-                (StreamType.GetStreamTypeName().Length == 0))
-            {
-                if (String.IsNullOrEmpty(FileName))
-                    return null;
-                return FileName;
+                return fileName;
             }
 
             Int32 Length = 3;
 
-            if (FileName != null) 
-                Length += FileName.Length;
-            if (StreamName != null)
-                Length += StreamName.Length;
+            if (fileName != null) 
+                Length += fileName.Length;
+            if (streamName != null)
+                Length += streamName.Length;
 
-            Length += StreamType.GetStreamTypeName().Length;
+            Length += type.GetStreamTypeName().Length;
 
             if (Length == 3) return (null);
 
             StringBuilder p1 = new StringBuilder();
-            if (!String.IsNullOrEmpty(FileName))
-                p1.Append(FileName);
+            if (!String.IsNullOrEmpty(fileName))
+                p1.Append(fileName);
             p1.Append(":");
 
-            if (!String.IsNullOrEmpty(StreamName))
-                p1.Append(StreamName);
+            if (!String.IsNullOrEmpty(streamName))
+                p1.Append(streamName);
             p1.Append(":");
-            p1.Append(StreamType.GetStreamTypeName());
+            p1.Append(type.GetStreamTypeName());
 
             return p1.ToString();
         }
@@ -702,13 +684,13 @@ namespace MSDefragLib.FileSystem.Ntfs
                         if (attribute.Type.IsData && (inodeData.MftDataFragments == null))
                         {
                             inodeData.MftDataFragments = inodeData.Streams.First().Fragments;
-                            inodeData.m_mftDataLength = nonResidentAttribute.m_dataSize;
+                            inodeData.MftDataLength = nonResidentAttribute.m_dataSize;
                         }
 
                         if (attribute.Type.IsBitmap && (inodeData.MftBitmapFragments == null))
                         {
                             inodeData.MftBitmapFragments = inodeData.Streams.First().Fragments;
-                            inodeData.m_mftBitmapLength = nonResidentAttribute.m_dataSize;
+                            inodeData.MftBitmapLength = nonResidentAttribute.m_dataSize;
                         }
                     }
                 }
@@ -764,16 +746,11 @@ namespace MSDefragLib.FileSystem.Ntfs
         }
 
         Boolean InterpretMftRecord(
-            DiskInfoStructure DiskInfo,
-            Array InodeArray,
-            UInt64 InodeNumber,
-            UInt64 MaxInode,
-            ref FragmentList mftDataFragments,
-            ref UInt64 mftDataBytes,
-            ref FragmentList mftBitmapFragments,
-            ref UInt64 mftBitmapBytes,
-            BinaryReader reader,
-            UInt64 BufLength)
+            DiskInfoStructure DiskInfo, Array InodeArray,
+            UInt64 InodeNumber, UInt64 MaxInode,
+            ref FragmentList mftDataFragments, ref UInt64 mftDataBytes,
+            ref FragmentList mftBitmapFragments, ref UInt64 mftBitmapBytes,
+            BinaryReader reader, UInt64 BufLength)
         {
             /* If the record is not in use then quietly exit. */
             Int64 position = reader.BaseStream.Position;
@@ -801,6 +778,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             /* Show a warning if the Flags have an unknown value. */
             if (fileRecordHeader.IsUnknown)
             {
+                throw new Exception("implementation error");
                 // ShowDebug(6, String.Format("  Inode {0:G} has Flags = {1:G}", InodeNumber, fileRecordHeader.Flags));
             }
 
@@ -819,20 +797,16 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (fileRecordHeader.AttributeOffset >= BufLength)
             {
                 throw new Exception("implementation error");
-
                 ShowDebug(0, String.Format("Error: attributes in m_iNode {0:G} are outside the FILE record, the MFT may be corrupt.",
                       InodeNumber));
-
                 return false;
             }
 
             if (fileRecordHeader.BytesInUse > BufLength)
             {
                 throw new Exception("implementation error");
-
                 ShowDebug(0, String.Format("Error: in m_iNode {0:G} the record is bigger than the size of the buffer, the MFT may be corrupt.",
                       InodeNumber));
-
                 return false;
             }
 
@@ -840,7 +814,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             inodeData.IsDirectory = fileRecordHeader.IsDirectory;
             inodeData.MftDataFragments = mftDataFragments;
-            inodeData.m_mftDataLength = mftDataBytes;
+            inodeData.MftDataLength = mftDataBytes;
 
             /* Make sure that directories are always created. */
             if (inodeData.IsDirectory)
@@ -859,9 +833,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (InodeNumber == 0)
             {
                 mftDataFragments = inodeData.MftDataFragments;
-                mftDataBytes = inodeData.m_mftDataLength;
+                mftDataBytes = inodeData.MftDataLength;
                 mftBitmapFragments = inodeData.MftBitmapFragments;
-                mftBitmapBytes = inodeData.m_mftBitmapLength;
+                mftBitmapBytes = inodeData.MftBitmapLength;
             }
 
             /* Create an item in the Data->ItemTree for every stream. */
@@ -869,10 +843,10 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 /* Create and fill a new item record in memory. */
                 ItemStruct Item = new ItemStruct(stream);
-                Item.LongFilename = ConstructStreamName(inodeData.m_longFilename, inodeData.m_shortFilename, stream);
+                Item.LongFilename = ConstructStreamName(inodeData.LongFilename, inodeData.ShortFilename, stream);
                 Item.LongPath = null;
 
-                Item.ShortFilename = ConstructStreamName(inodeData.m_shortFilename, inodeData.m_longFilename, stream);
+                Item.ShortFilename = ConstructStreamName(inodeData.ShortFilename, inodeData.LongFilename, stream);
                 Item.ShortPath = null;
 
                 Item.Bytes = inodeData.m_totalBytes;
@@ -974,7 +948,6 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (bootSector.Filesystem != FS.Filesystem.NTFS)
             {
                 ShowDebug(2, "This is not an NTFS disk (different cookie).");
-
                 return false;
             }
 
@@ -1052,8 +1025,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             m_msDefragLib.Data.PhaseDone = 0;
             m_msDefragLib.Data.PhaseTodo = 0;
 
-            DateTime Time = DateTime.Now;
-            Int64 StartTime = Time.ToFileTime();
+            DateTime startTime = DateTime.Now;
 
             BitArray bits = new BitArray(MftBitmap.m_bytes);
             UInt64 c = 0;
@@ -1126,14 +1098,12 @@ namespace MSDefragLib.FileSystem.Ntfs
                 InodeNumber++;
             }
 
-            Time = DateTime.Now;
+            DateTime endTime = DateTime.Now;
 
-            Int64 EndTime = Time.ToFileTime();
-
-            if (EndTime > StartTime)
+            if (endTime > startTime)
             {
                 ShowDebug(2, String.Format("  Analysis speed: {0:G} items per second",
-                      (Int64)MaxInode * 1000 / (EndTime - StartTime)));
+                      (Int64)MaxInode * 1000 / (endTime - startTime).TotalMilliseconds));
             }
 
             using (m_msDefragLib.Data.Disk)

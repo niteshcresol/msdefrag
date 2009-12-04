@@ -14,7 +14,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         DOS = 0x02      // 8.3 name
     }
 
-    class FileNameAttribute : ISizeHelper
+    public class FileNameAttribute : ISizeHelper
     {
         public InodeReference m_parentDirectory;
         public UInt64 m_creationTime;
@@ -25,6 +25,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt64 m_dataSize;
         public UInt32 m_fileAttributes;
         public UInt32 m_alignmentOrReserved;
+       
         public String Name
         { get; private set; }
 
@@ -35,14 +36,16 @@ namespace MSDefragLib.FileSystem.Ntfs
         [Conditional("DEBUG")]
         public void AssertValid()
         {
-            Debug.Assert((m_nameType == 0x01) || (m_nameType == 0x02) || (m_nameType == 0x03));
+            Debug.Assert((_nameType == 0x01) || (_nameType == 0x02) || (_nameType == 0x03));
         }
 
-        // NTFS=0x01, DOS=0x02
-        private Byte m_nameType;
+        private Byte _nameType;
 
+        /// <summary>
+        /// NTFS or DOS name
+        /// </summary>
         public NameType NameType
-        { get { return (NameType)m_nameType; } }
+        { get { return (NameType)_nameType; } }
 
         public static FileNameAttribute Parse(BinaryReader reader)
         {
@@ -57,7 +60,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             filename.m_fileAttributes = reader.ReadUInt32();
             filename.m_alignmentOrReserved = reader.ReadUInt32();
             int nameLength = reader.ReadByte();
-            filename.m_nameType = reader.ReadByte();
+            filename._nameType = reader.ReadByte();
             filename.Name = Helper.ParseString(reader, nameLength);
             filename.AssertValid();
             return filename;
