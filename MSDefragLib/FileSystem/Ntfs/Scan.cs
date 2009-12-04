@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Diagnostics;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -797,7 +798,6 @@ namespace MSDefragLib.FileSystem.Ntfs
             if ((FileRecordHeader.Flags & 1) != 1)
             {
                 ShowDebug(6, String.Format("Inode {0:G} is not in use.", InodeNumber));
-
                 return false;
             }
 
@@ -811,7 +811,6 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (BaseInode != 0)
             {
                 ShowDebug(6, String.Format("Ignoring Inode {0:G}, it's an extension of Inode {1:G}", InodeNumber, BaseInode));
-
                 return true;
             }
 
@@ -829,6 +828,7 @@ namespace MSDefragLib.FileSystem.Ntfs
              * Note: why is the MFTRecordNumber only 32 bit? Inode numbers are 48 bit.*/
             if (FileRecordHeader.MFTRecordNumber != InodeNumber)
             {
+                throw new Exception("implementation error");
                 ShowDebug(6, String.Format("  Warning: m_iNode {0:G} contains a different MFTRecordNumber {1:G}",
                       InodeNumber, FileRecordHeader.MFTRecordNumber));
             }
@@ -1059,74 +1059,18 @@ namespace MSDefragLib.FileSystem.Ntfs
                 ref MftDataFragments, ref MftDataBytes, ref MftBitmapFragments, ref MftBitmapBytes,
                 Helper.BinaryReader(Buffer), diskInfo.BytesPerMftRecord);
 
-            if ((Result == false) ||
-                (MftDataFragments == null) || (MftDataBytes == 0) ||
-                (MftBitmapFragments == null) || (MftBitmapBytes == 0))
-            {
-                ShowDebug(2, "Fatal error, cannot process this disk.");
-
-                m_msDefragLib.DeleteItemTree(m_msDefragLib.m_data.ItemTree);
-
-                m_msDefragLib.m_data.ItemTree = null;
-
-                m_msDefragLib.m_data.Disk.Close();
-                return false;
-            }
-
             ShowDebug(6, String.Format("MftDataBytes = {0:G}, MftBitmapBytes = {0:G}", MftDataBytes, MftBitmapBytes));
 
-            /*
-                Read the complete $MFT::$BITMAP into memory.
-
-                NOTE:
-             
-                The allocated size of the bitmap is a multiple of the cluster size. This
-                is only to make it easier to read the fragments, the extra bytes are not used.
-            */
             ShowDebug(6, "Reading $MFT::$BITMAP into memory");
+            ByteArray MftBitmap = new ByteArray();
+            MftBitmap.m_bytes = m_msDefragLib.m_data.Disk.Load(diskInfo, MftBitmapFragments);
 
-            UInt64 MaxMftBitmapBytes = 0;
-
-            foreach (Fragment fragment in MftBitmapFragments)
-            {
-                if (fragment.IsLogical)
-                    MaxMftBitmapBytes += fragment.Length;
-            }
-
-            // transform clusters into bytes
-            MaxMftBitmapBytes *= diskInfo.BytesPerCluster;
-
-            MaxMftBitmapBytes = Math.Max(MaxMftBitmapBytes, MftBitmapBytes);
-
-            ByteArray MftBitmap = new ByteArray((Int64)MaxMftBitmapBytes);
-
-            UInt64 RealVcn = 0;
-
-            ShowDebug(6, "Reading $MFT::$BITMAP into memory");
-
-            foreach (Fragment fragment in MftBitmapFragments)
-            {
-                if (fragment.IsLogical)
-                {
-                    tempLcn = fragment.Lcn * diskInfo.BytesPerCluster;
-
-                    UInt64 numClusters = fragment.Length;
-                    Int32 numBytes = (Int32)(numClusters * diskInfo.BytesPerCluster);
-                    Int32 startIndex = (Int32)(RealVcn * diskInfo.BytesPerCluster);
-
-                    m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn, MftBitmap.m_bytes,
-                        startIndex, numBytes);
-
-                    RealVcn += fragment.Length;
-                }
-            }
 
             //////////////////////////////////////////////////////////////////////////
             //
             //    Construct an array of all the items in memory, indexed by m_iNode.
             //
             //    NOTE:
-            //     
             //    The maximum number of Inodes is primarily determined by the size of the
             //    bitmap. But that is rounded up to 8 Inodes, and the MFT can be shorter. 
             //
@@ -1137,56 +1081,35 @@ namespace MSDefragLib.FileSystem.Ntfs
             InodeArray.SetValue(m_msDefragLib.m_data.ItemTree, 0);
             ItemStruct Item = null;
 
-            UInt64 BlockStart = 0;
-            UInt64 InodeNumber = 0;
-            for (InodeNumber = 1; InodeNumber < MaxInode; InodeNumber++)
-            {
-                InodeArray.SetValue(null, (Int64)InodeNumber);
-            }
-
-            /*
-                Read and process all the records in the MFT. The records are read into a
-                buffer and then given one by one to the InterpretMftRecord() subroutine.
-            */
-            UInt64 BlockEnd = 0;
-            RealVcn = 0;
-
             m_msDefragLib.m_data.PhaseDone = 0;
             m_msDefragLib.m_data.PhaseTodo = 0;
 
             DateTime Time = DateTime.Now;
             Int64 StartTime = Time.ToFileTime();
 
-            Byte[] BitmapMasks = { 1, 2, 4, 8, 16, 32, 64, 128 };
-            for (InodeNumber = 1; InodeNumber < MaxInode; InodeNumber++)
+            BitArray bits = new BitArray(MftBitmap.m_bytes);
+            foreach (bool bit in bits)
             {
-                Byte val = MftBitmap.GetValue((Int64)(InodeNumber >> 3));
-                Boolean mask = ((val & BitmapMasks[InodeNumber % 8]) == 0);
-
-                if (mask == false)
-                    continue;
-
-                m_msDefragLib.m_data.PhaseTodo++;
+                if (bit)
+                    m_msDefragLib.m_data.PhaseTodo++;
             }
 
-            for (InodeNumber = 1; InodeNumber < MaxInode; InodeNumber++)
+            // Read and process all the records in the MFT. The records are read into a
+            // buffer and then given one by one to the InterpretMftRecord() subroutine.
+            UInt64 BlockStart = 0;
+            UInt64 BlockEnd = 0;
+            UInt64 InodeNumber = 0;
+            foreach (bool bit in bits)
             {
-                //if (Data.Running != true) break;
-
-                Int64 tempOffset = (Int64)(InodeNumber >> 3);
-
-                /*  Ignore the m_iNode if the bitmap says it's not in use. */
-                if ((MftBitmap.ToByte(ref tempOffset) & BitmapMasks[InodeNumber % 8]) == 0)
+                // Ignore the m_iNode if the bitmap says it's not in use.
+                if (!bit)
                 {
-                    ShowDebug(6, String.Format("m_iNode {0:G} is not in use.", InodeNumber));
-
+                    InodeNumber++;
                     continue;
                 }
 
-                /* Update the progress counter. */
+                // Update the progress counter
                 m_msDefragLib.m_data.PhaseDone++;
-
-                UInt64 u1 = 0;
 
                 /* Read a block of inode's into memory. */
                 if (InodeNumber >= BlockEnd)
@@ -1195,56 +1118,23 @@ namespace MSDefragLib.FileSystem.Ntfs
                     m_msDefragLib.SlowDown();
 
                     BlockStart = InodeNumber;
-                    BlockEnd = BlockStart + MFTBUFFERSIZE / diskInfo.BytesPerMftRecord;
+                    BlockEnd = BlockStart + diskInfo.BytesToInode(MFTBUFFERSIZE);
 
-                    if (BlockEnd > MftBitmapBytes * 8) BlockEnd = MftBitmapBytes * 8;
+                    if (BlockEnd > MftBitmapBytes * 8)
+                        BlockEnd = MftBitmapBytes * 8;
 
-                    Fragment foundFragment = null;
-                    foreach (Fragment fragment in MftDataFragments)
-                    {
-                        /* Calculate m_iNode at the end of the fragment. */
-                        u1 = diskInfo.ClusterToInode(RealVcn + fragment.Length);
-                        if (u1 > InodeNumber)
-                        {
-                            foundFragment = fragment;
-                            break;
-                        }
-
-                        do
-                        {
-                            ShowDebug(6, "Skipping to next extent");
-
-                            if (fragment.IsLogical)
-                                RealVcn += fragment.Length;
-
-                            //Vcn = fragment.NextVcn;
-                            //fragment = fragment.Next;
-
-                            throw new NotImplementedException();
-                            if (fragment == null)
-                                break;
-                        } while (fragment.IsVirtual);
-
-                        //if (fragment != null)
-                        //{
-                        //    ShowDebug(6, String.Format("  Extent Lcn={0:G}, RealVcn={1:G}, Size={2:G}",
-                        //          fragment.Lcn, RealVcn, fragment.NextVcn - Vcn));
-                        //}
-                    }
+                    Fragment foundFragment = MftDataFragments.FindContaining(diskInfo.InodeToCluster(InodeNumber));
 
                     if (foundFragment == null)
-                        break;
-                    if (BlockEnd >= u1)
+                        throw new Exception("implementation error");
+
+                    UInt64 u1 = diskInfo.ClusterToInode(foundFragment.NextVcn);
+                    if (BlockEnd > u1)
                         BlockEnd = u1;
 
-                    tempLcn = (foundFragment.Lcn - RealVcn) * diskInfo.BytesPerCluster +
-                        BlockStart * diskInfo.BytesPerMftRecord;
+                    UInt64 lcn = diskInfo.ClusterToBytes(foundFragment.Lcn);
 
-                    ShowDebug(6, String.Format("Reading block of {0:G} Inodes from MFT into memory, {1:G} bytes from LCN={2:G}",
-                          BlockEnd - BlockStart, diskInfo.InodeToBytes(BlockEnd - BlockStart),
-                          tempLcn / diskInfo.BytesPerCluster));
-
-                    m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn,
+                    m_msDefragLib.m_data.Disk.ReadFromCluster(lcn,
                         Buffer.m_bytes, 0, (Int32)diskInfo.InodeToBytes(BlockEnd - BlockStart));
                 }
 
@@ -1254,8 +1144,10 @@ namespace MSDefragLib.FileSystem.Ntfs
                         Buffer.ToByteArray((Int64)lengthInBytes, Buffer.GetLength() - (Int64)(lengthInBytes)),
                         diskInfo.BytesPerMftRecord) == false)
                 {
+                    throw new Exception("implementation error");
                     ShowDebug(2, String.Format("The error occurred while processing m_iNode {0:G} (max {0:G})",
                             InodeNumber, MaxInode));
+                    InodeNumber++;
                     continue;
                 }
 
@@ -1267,6 +1159,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 if (m_msDefragLib.m_data.PhaseDone % 50 == 0)
                     ShowDebug(1, "Done: " + m_msDefragLib.m_data.PhaseDone + "/" + m_msDefragLib.m_data.PhaseTodo);
+                InodeNumber++;
             }
 
             Time = DateTime.Now;

@@ -50,7 +50,7 @@ namespace MSDefragLib
         { get; private set; }
 
         /// <summary>
-        /// Length of this fragment
+        /// Length of this fragment in clusters
         /// </summary>
         public UInt64 Length
         { get; private set; }

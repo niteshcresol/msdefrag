@@ -21,6 +21,20 @@ namespace MSDefragLib
             _fragments.Add(new Fragment((UInt64)lcn, vcn, length, isVirtual));
         }
 
+        public Fragment FindContaining(UInt64 vcn)
+        {
+            foreach (Fragment fragment in _fragments)
+            {
+                if (fragment.IsLogical)
+                {
+                    if (fragment.Vcn >= vcn)
+                        return fragment;
+                }
+            }
+            return null;
+        }
+
+
         public UInt64 Lcn
         {
             get
@@ -53,6 +67,20 @@ namespace MSDefragLib
                     count++;
 
                 return count;
+            }
+        }
+
+        public UInt64 TotalLength
+        {
+            get 
+            {
+                UInt64 sum = 0;
+                foreach (Fragment fragment in _fragments)
+                {
+                    if (fragment.IsLogical)
+                        sum += fragment.Length;
+                }
+                return sum;
             }
         }
 

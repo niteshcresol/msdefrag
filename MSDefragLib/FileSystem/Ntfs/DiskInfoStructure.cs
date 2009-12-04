@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class DiskInfoStructure
+    public class DiskInfoStructure
     {
         public DiskInfoStructure(FS.IBootSector bootSector)
         {
@@ -35,9 +35,29 @@ namespace MSDefragLib.FileSystem.Ntfs
             return cluster * BytesPerCluster / BytesPerMftRecord;
         }
 
+        public UInt64 InodeToCluster(UInt64 inode)
+        {
+            return inode * BytesPerMftRecord / BytesPerCluster;
+        }
+
+        public UInt64 ClusterToBytes(UInt64 cluster)
+        {
+            return cluster * BytesPerCluster;
+        }
+
+        public UInt64 BytesToCluster(UInt64 bytes)
+        {
+            return bytes / BytesPerCluster;
+        }
+
         public UInt64 InodeToBytes(UInt64 inode)
         {
             return inode * BytesPerMftRecord;
+        }
+
+        public UInt64 BytesToInode(UInt64 bytes)
+        {
+            return bytes / BytesPerMftRecord;
         }
 
         public UInt64 BytesPerCluster

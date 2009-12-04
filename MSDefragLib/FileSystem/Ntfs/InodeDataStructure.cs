@@ -5,6 +5,10 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
+    /// <summary>
+    /// An inode is the filesystems representation of a file, directory, device,
+    /// etc. In NTFS every inode it represented by an MFT FILE record
+    /// </summary>
     class InodeDataStructure
     {
         public UInt64 m_iNode;                          /* The m_iNode number. */

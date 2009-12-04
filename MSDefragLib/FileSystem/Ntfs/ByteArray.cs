@@ -9,6 +9,10 @@ namespace MSDefragLib.FileSystem.Ntfs
     {
         public Byte[] m_bytes;
 
+        public ByteArray()
+        {
+        }
+
         public ByteArray(Int64 size)
         {
             Initialize(size);

@@ -95,6 +95,30 @@ namespace MSDefragLib
             }
         }
 
+        public byte[] Load(FileSystem.Ntfs.DiskInfoStructure diskInfo, FragmentList fragments)
+        {
+            UInt64 totalSize = fragments.TotalLength;
+
+            // transform clusters into bytes
+            totalSize *= diskInfo.BytesPerCluster;
+
+            Byte[] bytes = new Byte[totalSize];
+
+            foreach (Fragment fragment in fragments)
+            {
+                if (fragment.IsLogical)
+                {
+                    UInt64 lcnPosition = diskInfo.ClusterToBytes(fragment.Lcn);
+
+                    UInt64 numClusters = fragment.Length;
+                    Int32 numBytes = (Int32)diskInfo.ClusterToBytes(numClusters);
+                    Int32 startIndex = (Int32)diskInfo.ClusterToBytes(fragment.Vcn);
+
+                    ReadFromCluster(lcnPosition, bytes, startIndex, numBytes);
+                }
+            }
+            return bytes;
+        }
 
         private FS.IBootSector _bootSector;
 
