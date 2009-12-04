@@ -45,6 +45,10 @@ namespace MSDefragLib
 
         /// <summary>
         /// Virtual cluster number, offset from beginning of file.
+        /// When representing the data runs of a file, the clusters are given
+        /// virtual cluster numbers. Cluster zero refers to the first cluster
+        /// of the file. The data runs map the VCNs to LCNs so that the file
+        /// can be located on the volume. 
         /// </summary>
         public UInt64 Vcn
         { get; private set; }

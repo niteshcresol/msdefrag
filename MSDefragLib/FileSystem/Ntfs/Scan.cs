@@ -1093,6 +1093,10 @@ namespace MSDefragLib.FileSystem.Ntfs
                         BlockEnd = u1;
 
                     UInt64 lcn = diskInfo.ClusterToBytes(foundFragment.Lcn)+diskInfo.InodeToBytes(BlockStart);
+                    
+                    Console.WriteLine("Reading block of {0} Inodes from MFT into memory, {1} bytes from LCN={2}",
+                        BlockEnd - BlockStart, diskInfo.InodeToBytes(BlockEnd - BlockStart),
+                        diskInfo.BytesToCluster(lcn));
 
                     m_msDefragLib.Data.Disk.ReadFromCluster(lcn,
                         Buffer.m_bytes, 0, (Int32)diskInfo.InodeToBytes(BlockEnd - BlockStart));

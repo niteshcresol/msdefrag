@@ -75,6 +75,7 @@
     <Compile Include="FileSystem\Ntfs\StreamList.cs" />
     <Compile Include="FileSystem\Ntfs\UInt16Array.cs" />
     <Compile Include="FileSystem\Ntfs\LongBytes.cs" />
+    <Compile Include="FileSystem\Ntfs\Volume.cs" />
     <Compile Include="FS\KnownBootSector\BaseBootSector.cs" />
     <Compile Include="FS\KnownBootSector\FatBootSector.cs" />
     <Compile Include="FS\KnownBootSector\MasterBootSector.cs" />
