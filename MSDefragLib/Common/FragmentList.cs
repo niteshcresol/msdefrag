@@ -27,7 +27,7 @@ namespace MSDefragLib
             {
                 if (fragment.IsLogical)
                 {
-                    if (fragment.Vcn >= vcn)
+                    if (fragment.NextVcn >= vcn)
                         return fragment;
                 }
             }
