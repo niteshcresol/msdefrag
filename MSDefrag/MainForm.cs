@@ -395,6 +395,20 @@ namespace MSDefrag
             }
         }
 
+        private void OnResizeBegin(object sender, EventArgs e)
+        {
+            ignoreEvent = true;
+
+            defragThread.Suspend();
+        }
+
+        private void OnResizeEnd(object sender, EventArgs e)
+        {
+            ignoreEvent = false;
+
+            defragThread.Resume();
+        }
+
         #region Unused
 
         private static void OnTimedEvent(object source, ElapsedEventArgs e)
@@ -456,20 +470,6 @@ namespace MSDefrag
         MSDefragLib.MSDefragLib m_msDefragLib = null;
 
         #endregion
-
-        private void OnResizeBegin(object sender, EventArgs e)
-        {
-            ignoreEvent = true;
-
-            defragThread.Suspend();
-        }
-
-        private void OnResizeEnd(object sender, EventArgs e)
-        {
-            ignoreEvent = false;
-
-            defragThread.Resume();
-        }
 
     }
 }
