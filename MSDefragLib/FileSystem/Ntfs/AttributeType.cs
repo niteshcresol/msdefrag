@@ -61,6 +61,60 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
         }
 
+        public Boolean IsInvalid
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeInvalid; } }
+
+        public Boolean IsStandardInformation
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeStandardInformation; } }
+
+        public Boolean IsAttributeList
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeAttributeList; } }
+
+        public Boolean IsFileName
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeFileName; } }
+
+        public Boolean IsObjectId
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeObjectId; } }
+
+        public Boolean IsSecurityDescriptor
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeSecurityDescriptor; } }
+
+        public Boolean IsVolumeName
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeVolumeName; } }
+
+        public Boolean IsVolumeInformation
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeVolumeInformation; } }
+
+        public Boolean IsData
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeData; } }
+
+        public Boolean IsIndexRoot
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeIndexRoot; } }
+
+        public Boolean IsIndexAllocation
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeIndexAllocation; } }
+
+        public Boolean IsBitmap
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeBitmap; } }
+
+        public Boolean IsReparsePoint
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeReparsePoint; } }
+
+        public Boolean IsEAInformation
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeEAInformation; } }
+
+        public Boolean IsEA
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeEA; } }
+
+        public Boolean IsPropertySet
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributePropertySet; } }
+
+        public Boolean IsLoggedUtilityStream
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeLoggedUtilityStream; } }
+
+        public Boolean IsEndOfList
+        { private set { } get { return m_attributeType == AttributeTypeEnum.AttributeEndOfList; } }
+
         public override string ToString()
         {
             return m_attributeType.ToString();

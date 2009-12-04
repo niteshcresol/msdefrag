@@ -12,6 +12,19 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt32 m_iNodeNumberLowPart;
         public UInt16 m_iNodeNumberHighPart;
 
+        public UInt64 BaseInodeNumber
+        {
+            private set { }
+            get
+            {
+                UInt64 retValue = 0;
+
+                retValue = (UInt64) m_iNodeNumberLowPart + ((UInt64)m_iNodeNumberHighPart << 32);
+
+                return retValue;
+            }
+        }
+
         public UInt16 m_sequenceNumber;
 
         private InodeReference()

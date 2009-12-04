@@ -186,7 +186,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             //Buffer.Initialize();
 
             /* Walk through the RunData and read the requested data from disk. */
-            UInt64 Lcn = 0;
+            Int64 Lcn = 0;
             UInt64 Vcn = 0;
 
             while (runData.PeekChar() != 0)
@@ -200,8 +200,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 UInt64 runLength = RunData.ReadLength(runData, runLengthSize);
                 Int64 runOffset = RunData.ReadOffset(runData, runOffsetSize);
 
-                Lcn = (UInt64) ((Int64)Lcn + runOffset);
-                Vcn += runLength;
+                Lcn += runOffset;
 
                 /* Ignore virtual extents. */
                 if (runOffset == 0)
@@ -213,8 +212,8 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 /* Determine how many and which bytes we want to read. If we don't need
                  * any bytes from this extent then loop. */
-                ExtentVcn = (Vcn - runLength) * DiskInfo.BytesPerCluster;
-                ExtentLcn = Lcn * DiskInfo.BytesPerCluster;
+                ExtentVcn = Vcn * DiskInfo.BytesPerCluster;
+                ExtentLcn = (UInt64)((UInt64)Lcn * DiskInfo.BytesPerCluster);
 
                 ExtentLength = runLength * DiskInfo.BytesPerCluster;
 
@@ -244,6 +243,8 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 m_msDefragLib.m_data.Disk.ReadFromCluster(ExtentLcn, Buffer.m_bytes,
                     (Int32)(ExtentVcn - Offset), (Int32)ExtentLength);
+
+                Vcn += runLength;
             }
 
             /* Return the buffer. */
@@ -329,16 +330,16 @@ namespace MSDefragLib.FileSystem.Ntfs
         /* Construct the full stream name from the filename, the stream name, and the stream type. */
         String ConstructStreamName(String FileName1, String FileName2, Stream Stream)
         {
-            AttributeType StreamType = new AttributeType();
-
             String FileName = FileName1;
+
             if (String.IsNullOrEmpty(FileName))
                 FileName = FileName2;
             if (String.IsNullOrEmpty(FileName))
                 FileName = null;
 
             String StreamName = null;
-            StreamType = new AttributeType();
+
+            AttributeType StreamType = new AttributeType();
 
             if (Stream != null)
             {
@@ -350,34 +351,29 @@ namespace MSDefragLib.FileSystem.Ntfs
                 StreamType = Stream.Type;
             }
 
-            /*  
-                If the StreamName is empty and the StreamType is Data then return only the
-                FileName. The Data stream is the default stream of regular files.
-            */
-            if ((String.IsNullOrEmpty(StreamName)) && (StreamType == AttributeTypeEnum.AttributeData))
+            //  If the StreamName is empty and the StreamType is Data then return only the
+            //  FileName. The Data stream is the default stream of regular files. */
+            if ((String.IsNullOrEmpty(StreamName)) && StreamType.IsData)
             {
                 if (String.IsNullOrEmpty(FileName))
                     return null;
+
                 return FileName;
             }
 
-            /*  
-                If the StreamName is "$I30" and the StreamType is AttributeIndexAllocation then
-                return only the FileName. This must be a directory, and the Microsoft defragmentation
-                API will automatically select this stream.
-            */
-            if ((StreamName == "$I30") &&
-                (StreamType == AttributeTypeEnum.AttributeIndexAllocation))
+            //  If the StreamName is "$I30" and the StreamType is AttributeIndexAllocation then
+            //  return only the FileName. This must be a directory, and the Microsoft 
+            //  defragmentation API will automatically select this stream. */
+            if ((StreamName == "$I30") && StreamType.IsIndexAllocation)
             {
                 if (String.IsNullOrEmpty(FileName))
                     return null;
+
                 return FileName;
             }
 
-            /*  
-                If the StreamName is empty and the StreamType is Data then return only the
-                FileName. The Data stream is the default stream of regular files. 
-            */
+            //  If the StreamName is empty and the StreamType is Data then return only the
+            //  FileName. The Data stream is the default stream of regular files. */
             if ((String.IsNullOrEmpty(StreamName)) &&
                 (StreamType.GetStreamTypeName().Length == 0))
             {
@@ -393,7 +389,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (StreamName != null)
                 Length += StreamName.Length;
 
-            Length = Length + StreamType.GetStreamTypeName().Length;
+            Length += StreamType.GetStreamTypeName().Length;
 
             if (Length == 3) return (null);
 
@@ -410,10 +406,15 @@ namespace MSDefragLib.FileSystem.Ntfs
             return p1.ToString();
         }
 
-        /*
-            Process a list of attributes and store the gathered information in the Item
-            struct. Return FALSE if an error occurred.
-        */
+        /// <summary>
+        /// Process a list of attributes and store the gathered information in the Item
+        /// struct. Return FALSE if an error occurred.
+        /// </summary>
+        /// <param name="DiskInfo"></param>
+        /// <param name="inodeData"></param>
+        /// <param name="reader"></param>
+        /// <param name="BufLength"></param>
+        /// <param name="Depth"></param>
         void ProcessAttributeList(
                 DiskInfoStructure DiskInfo,
                 InodeDataStructure inodeData,
@@ -460,22 +461,23 @@ namespace MSDefragLib.FileSystem.Ntfs
                  * 0xFFFFFFFF endmarker. Reaching the end of the buffer is therefore normal and
                  * not an error.*/
                 if (AttributeOffset + 3 > (Int64)BufLength) break;
-                if (attributeList.Type == AttributeTypeEnum.AttributeEndOfList) break;
+                if (attributeList.Type.IsEndOfList) break;
                 if (attributeList.Length < 3) break;
                 if (AttributeOffset + attributeList.Length > (Int64)BufLength) break;
 
                 /* Extract the referenced m_iNode. If it's the same as the calling m_iNode then 
                  * ignore (if we don't ignore then the program will loop forever, because for 
                  * some reason the info in the calling m_iNode is duplicated here...). */
-                RefInode = (UInt64)attributeList.m_fileReferenceNumber.m_iNodeNumberLowPart +
-                        ((UInt64)attributeList.m_fileReferenceNumber.m_iNodeNumberHighPart << 32);
+                RefInode = attributeList.m_fileReferenceNumber.BaseInodeNumber;
+                    //(UInt64)attributeList.m_fileReferenceNumber.m_iNodeNumberLowPart +
+                    //    ((UInt64)attributeList.m_fileReferenceNumber.m_iNodeNumberHighPart << 32);
 
                 if (RefInode == inodeData.m_iNode) continue;
 
                 /* Show debug message. */
-                ShowDebug(6, "    List attribute: " + attributeList.Type.GetStreamTypeName());
-                ShowDebug(6, String.Format("      m_lowestVcn = {0:G}, RefInode = {1:G}, InodeSequence = {2:G}, m_instance = {3:G}",
-                      attributeList.m_lowestVcn, RefInode, attributeList.m_fileReferenceNumber.m_sequenceNumber, attributeList.m_instance));
+                //ShowDebug(6, "    List attribute: " + attributeList.Type.GetStreamTypeName());
+                //ShowDebug(6, String.Format("      m_lowestVcn = {0:G}, RefInode = {1:G}, InodeSequence = {2:G}, m_instance = {3:G}",
+                //      attributeList.m_lowestVcn, RefInode, attributeList.m_fileReferenceNumber.m_sequenceNumber, attributeList.m_instance));
 
                 /* Extract the streamname. I don't know why AttributeLists can have names, and
                  * the name is not used further down. It is only extracted for debugging 
@@ -533,15 +535,16 @@ namespace MSDefragLib.FileSystem.Ntfs
                 /* If the Inode is not in use then skip. */
                 FileRecordHeader = FileRecordHeader.Parse(Helper.BinaryReader(Buffer2));
 
-                if ((FileRecordHeader.Flags & 1) != 1)
+                if (!FileRecordHeader.IsInUse)
                 {
                     ShowDebug(6, String.Format("      Referenced m_iNode {0:G} is not in use.", RefInode));
                     continue;
                 }
 
                 /* If the BaseInode inside the m_iNode is not the same as the calling m_iNode then skip. */
-                BaseInode = (UInt64)FileRecordHeader.BaseFileRecord.m_iNodeNumberLowPart +
-                        ((UInt64)FileRecordHeader.BaseFileRecord.m_iNodeNumberHighPart << 32);
+                BaseInode = FileRecordHeader.BaseFileRecord.BaseInodeNumber;
+                //BaseInode = (UInt64)FileRecordHeader.BaseFileRecord.m_iNodeNumberLowPart +
+                //        ((UInt64)FileRecordHeader.BaseFileRecord.m_iNodeNumberHighPart << 32);
 
                 if (inodeData.m_iNode != BaseInode)
                 {
@@ -603,14 +606,13 @@ namespace MSDefragLib.FileSystem.Ntfs
                 reader.BaseStream.Seek(position + AttributeOffset, SeekOrigin.Begin);
                 attribute = Attribute.Parse(reader);
 
-                if (attribute.Type == AttributeTypeEnum.AttributeEndOfList)
+                if (attribute.Type.IsEndOfList)
                 {
                     break;
                 }
 
                 /* Exit the loop if end-marker. */
-                if ((AttributeOffset + 4 <= BufLength) &&
-                    (attribute.Type == AttributeTypeEnum.AttributeInvalid))
+                if ((AttributeOffset + 4 <= BufLength) && attribute.Type.IsInvalid)
                 {
                     break;
                 }
@@ -631,7 +633,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 /* Skip AttributeList's for now. */
-                if (attribute.Type == AttributeTypeEnum.AttributeAttributeList)
+                if (attribute.Type.IsAttributeList)
                 {
                     continue;
                 }
@@ -655,21 +657,20 @@ namespace MSDefragLib.FileSystem.Ntfs
                     reader.BaseStream.Seek(position + tempOffset, SeekOrigin.Begin);
 
                     /* The AttributeFileName (0x30) contains the filename and the link to the parent directory. */
-                    if (attribute.Type == AttributeTypeEnum.AttributeFileName)
+                    if (attribute.Type.IsFileName)
                     {
                         fileNameAttribute = FileNameAttribute.Parse(reader);
 
-                        inodeData.m_parentInode = fileNameAttribute.m_parentDirectory.m_iNodeNumberLowPart +
-                            (((UInt32)fileNameAttribute.m_parentDirectory.m_iNodeNumberHighPart) << 32);
+                        inodeData.m_parentInode = fileNameAttribute.m_parentDirectory.BaseInodeNumber;
 
+                        //inodeData.m_parentInode = fileNameAttribute.m_parentDirectory.m_iNodeNumberLowPart +
+                        //    (((UInt32)fileNameAttribute.m_parentDirectory.m_iNodeNumberHighPart) << 32);
                         inodeData.AddName(fileNameAttribute);
                     }
 
-                    /*  
-                        The AttributeStandardInformation (0x10) contains the m_creationTime, m_lastAccessTime,
-                        the m_mftChangeTime, and the file attributes.
-                    */
-                    if (attribute.Type == AttributeTypeEnum.AttributeStandardInformation)
+                    //  The AttributeStandardInformation (0x10) contains the m_creationTime,
+                    //  m_lastAccessTime, the m_mftChangeTime, and the file attributes. */
+                    if (attribute.Type.IsStandardInformation)
                     {
                         standardInformation = StandardInformation.Parse(reader);
 
@@ -679,7 +680,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     }
 
                     /* The value of the AttributeData (0x80) is the actual data of the file. */
-                    if (attribute.Type == AttributeTypeEnum.AttributeData)
+                    if (attribute.Type.IsData)
                     {
                         inodeData.m_totalBytes = residentAttribute.ValueLength;
                     }
@@ -689,18 +690,19 @@ namespace MSDefragLib.FileSystem.Ntfs
                     nonResidentAttribute = NonResidentAttribute.Parse(reader);
 
                     /* Save the length (number of bytes) of the data. */
-                    if ((attribute.Type == AttributeTypeEnum.AttributeData) &&
-                        (inodeData.m_totalBytes == 0))
+                    if (attribute.Type.IsData && (inodeData.m_totalBytes == 0))
                     {
                         inodeData.m_totalBytes = nonResidentAttribute.m_dataSize;
                     }
 
                     /* Extract the streamname. */
                     reader.BaseStream.Seek(position + AttributeOffset + attribute.NameOffset, SeekOrigin.Begin);
+
                     p1 = Helper.ParseString(reader, attribute.NameLength);
 
                     /* Create a new stream with a list of fragments for this data. */
                     reader.BaseStream.Seek(position + AttributeOffset + nonResidentAttribute.m_runArrayOffset, SeekOrigin.Begin);
+
                     TranslateRundataToFragmentlist(inodeData, p1, attribute.Type,
                         reader, attribute.Length - nonResidentAttribute.m_runArrayOffset,
                         nonResidentAttribute.m_startingVcn, nonResidentAttribute.m_dataSize);
@@ -708,15 +710,13 @@ namespace MSDefragLib.FileSystem.Ntfs
                     /* Special case: If this is the $MFT then save data. */
                     if (inodeData.m_iNode == 0)
                     {
-                        if ((attribute.Type == AttributeTypeEnum.AttributeData) &&
-                            (inodeData.MftDataFragments == null))
+                        if (attribute.Type.IsData && (inodeData.MftDataFragments == null))
                         {
                             inodeData.MftDataFragments = inodeData.Streams.First().Fragments;
                             inodeData.m_mftDataLength = nonResidentAttribute.m_dataSize;
                         }
 
-                        if ((attribute.Type== AttributeTypeEnum.AttributeBitmap) &&
-                            (inodeData.MftBitmapFragments == null))
+                        if (attribute.Type.IsBitmap && (inodeData.MftBitmapFragments == null))
                         {
                             inodeData.MftBitmapFragments = inodeData.Streams.First().Fragments;
                             inodeData.m_mftBitmapLength = nonResidentAttribute.m_dataSize;
@@ -736,17 +736,12 @@ namespace MSDefragLib.FileSystem.Ntfs
                 //HACK: temporary hack to demonstrate the usage of the binary reader
                 attribute = Attribute.Parse(reader);
 
-                if (attribute.Type == AttributeTypeEnum.AttributeEndOfList)
+                if (attribute.Type.IsEndOfList || attribute.Type.IsInvalid)
                 {
                     break;
                 }
 
-                if (attribute.Type == AttributeTypeEnum.AttributeInvalid)
-                {
-                    break;
-                }
-
-                if (attribute.Type != AttributeTypeEnum.AttributeAttributeList)
+                if (!attribute.Type.IsAttributeList)
                 {
                     continue;
                 }
@@ -770,7 +765,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                     reader.BaseStream.Seek(position + AttributeOffset + nonResidentAttribute.m_runArrayOffset, SeekOrigin.Begin);
                     ByteArray Buffer2 = ReadNonResidentData(DiskInfo, reader,
-                            attribute.Length - nonResidentAttribute.m_runArrayOffset, 0, Buffer2Length);
+                        attribute.Length - nonResidentAttribute.m_runArrayOffset, 0, Buffer2Length);
 
                     ProcessAttributeList(DiskInfo, inodeData, Helper.BinaryReader(Buffer2), Buffer2Length, Depth);
                 }
@@ -793,9 +788,9 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             /* If the record is not in use then quietly exit. */
             Int64 position = reader.BaseStream.Position;
-            FileRecordHeader FileRecordHeader = FileRecordHeader.Parse(reader);
+            FileRecordHeader fileRecordHeader = FileRecordHeader.Parse(reader);
 
-            if ((FileRecordHeader.Flags & 1) != 1)
+            if (!fileRecordHeader.IsInUse)
             {
                 ShowDebug(6, String.Format("Inode {0:G} is not in use.", InodeNumber));
                 return false;
@@ -804,9 +799,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             /* If the record has a BaseFileRecord then ignore it. It is used by an
              * AttributeAttributeList as an extension of another m_iNode, it's not an
              * Inode by itself. */
-            UInt64 BaseInode = 
-                (UInt64)FileRecordHeader.BaseFileRecord.m_iNodeNumberLowPart +
-                ((UInt64)FileRecordHeader.BaseFileRecord.m_iNodeNumberHighPart << 32);
+            UInt64 BaseInode = fileRecordHeader.BaseFileRecord.BaseInodeNumber;
 
             if (BaseInode != 0)
             {
@@ -814,38 +807,40 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return true;
             }
 
-            ShowDebug(6, String.Format("Processing Inode {0:G}...", InodeNumber));
+            // ShowDebug(6, String.Format("Processing Inode {0:G}...", InodeNumber));
 
             /* Show a warning if the Flags have an unknown value. */
-            if ((FileRecordHeader.Flags & 252) != 0)
+            if (fileRecordHeader.IsUnknown)
             {
-                ShowDebug(6, String.Format("  Inode {0:G} has Flags = {1:G}", InodeNumber, FileRecordHeader.Flags));
+                // ShowDebug(6, String.Format("  Inode {0:G} has Flags = {1:G}", InodeNumber, fileRecordHeader.Flags));
             }
 
             /* I think the MFTRecordNumber should always be the InodeNumber, but it's an XP
              * extension and I'm not sure about Win2K.
              * 
              * Note: why is the MFTRecordNumber only 32 bit? Inode numbers are 48 bit.*/
-            if (FileRecordHeader.MFTRecordNumber != InodeNumber)
+            if (fileRecordHeader.MFTRecordNumber != InodeNumber)
             {
                 throw new Exception("implementation error");
                 ShowDebug(6, String.Format("  Warning: m_iNode {0:G} contains a different MFTRecordNumber {1:G}",
-                      InodeNumber, FileRecordHeader.MFTRecordNumber));
+                      InodeNumber, fileRecordHeader.MFTRecordNumber));
             }
 
             /* Sanity check. */
-            if (FileRecordHeader.AttributeOffset >= BufLength)
+            if (fileRecordHeader.AttributeOffset >= BufLength)
             {
                 throw new Exception("implementation error");
+
                 ShowDebug(0, String.Format("Error: attributes in m_iNode {0:G} are outside the FILE record, the MFT may be corrupt.",
                       InodeNumber));
 
                 return false;
             }
 
-            if (FileRecordHeader.BytesInUse > BufLength)
+            if (fileRecordHeader.BytesInUse > BufLength)
             {
                 throw new Exception("implementation error");
+
                 ShowDebug(0, String.Format("Error: in m_iNode {0:G} the record is bigger than the size of the buffer, the MFT may be corrupt.",
                       InodeNumber));
 
@@ -853,7 +848,8 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             InodeDataStructure inodeData = new InodeDataStructure(InodeNumber);
-            inodeData.IsDirectory = ((FileRecordHeader.Flags & 2) == 2);
+
+            inodeData.IsDirectory = fileRecordHeader.IsDirectory;
             inodeData.MftDataFragments = mftDataFragments;
             inodeData.m_mftDataLength = mftDataBytes;
 
@@ -865,9 +861,10 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             /* Interpret the attributes. */
-            reader.BaseStream.Seek(position + FileRecordHeader.AttributeOffset, SeekOrigin.Begin);
+            reader.BaseStream.Seek(position + fileRecordHeader.AttributeOffset, SeekOrigin.Begin);
+
             ProcessAttributes(DiskInfo, inodeData,
-                reader, BufLength - FileRecordHeader.AttributeOffset, UInt16.MaxValue, 0);
+                reader, BufLength - fileRecordHeader.AttributeOffset, UInt16.MaxValue, 0);
 
             /* Save the MftDataFragments, MftDataBytes, MftBitmapFragments, and MftBitmapBytes. */
             if (InodeNumber == 0)
@@ -915,7 +912,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 m_msDefragLib.m_data.CountAllFiles++;
 
-                if (stream.Type == AttributeTypeEnum.AttributeData)
+                if (stream.Type.IsData)
                 {
                     m_msDefragLib.m_data.CountAllBytes += inodeData.m_totalBytes;
                 }
@@ -933,15 +930,12 @@ namespace MSDefragLib.FileSystem.Ntfs
                 /* Add the item record to the sorted item tree in memory. */
                 m_msDefragLib.TreeInsert(Item);
 
-                /*
-                    Also add the item to the array that is used to construct the full pathnames.
-
-                    NOTE:
-                    If the array already contains an entry, and the new item has a shorter
-                    filename, then the entry is replaced. This is needed to make sure that
-                    the shortest form of the name of directories is used. 
-                */
-
+                //  Also add the item to the array that is used to construct the full pathnames.
+                //
+                //  NOTE:
+                //  If the array already contains an entry, and the new item has a shorter
+                //  filename, then the entry is replaced. This is needed to make sure that
+                //  the shortest form of the name of directories is used. */
                 ItemStruct InodeItem = null;
 
                 if (InodeArray != null && InodeNumber < MaxInode)
@@ -1022,16 +1016,12 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ShowDebug(2, String.Format("  VolumeSerialNumber: {0:X}", bootSector.Serial));
 
-            /* 
-                Calculate the size of first 16 Inodes in the MFT. The Microsoft defragmentation
-                API cannot move these inodes.
-            */
+            // Calculate the size of first 16 Inodes in the MFT. The Microsoft defragmentation
+            // API cannot move these inodes.
             m_msDefragLib.m_data.Disk.MftLockedClusters = diskInfo.BytesPerCluster / diskInfo.BytesPerMftRecord;
 
-            /*
-                Read the $MFT record from disk into memory, which is always the first record in
-                the MFT.
-            */
+            // Read the $MFT record from disk into memory, which is always the first record in
+            // the MFT.
             UInt64 tempLcn = diskInfo.MftStartLcn * diskInfo.BytesPerCluster;
 
             ByteArray Buffer = new ByteArray((Int64)MFTBUFFERSIZE);
@@ -1045,10 +1035,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return false;
             }
 
-            /*
-                Extract data from the MFT record and put into an Item struct in memory. If
-                there was an error then exit. 
-            */
+            // Extract data from the MFT record and put into an Item struct in memory. If
+            // there was an error then exit.
             FragmentList MftDataFragments = null;
             FragmentList MftBitmapFragments = null;
 
@@ -1091,7 +1079,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             foreach (bool bit in bits)
             {
                 if (bit)
-                    m_msDefragLib.m_data.PhaseTodo++;
+                m_msDefragLib.m_data.PhaseTodo++;
             }
 
             // Read and process all the records in the MFT. The records are read into a

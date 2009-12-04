@@ -9,29 +9,53 @@ namespace MSDefragLib.FileSystem.Ntfs
 {
     class FileRecordHeader : ISizeHelper
     {
-        public RecordHeader RecHdr;
+        public RecordHeader RecHdr
+        { get; private set; }
 
-        public UInt16 SequenceNumber;           /* Sequence number */
-        public UInt16 LinkCount;                /* Hard link count */
+        public UInt16 SequenceNumber            /* Sequence number */
+        { get; private set; }
 
-        public UInt16 AttributeOffset;          /* Offset to the first Attribute */
-        public UInt16 Flags;                    /* Flags. bit 1 = in use, bit 2 = directory, bit 4 & 8 = unknown. */
+        public UInt16 LinkCount                 /* Hard link count */
+        { get; private set; }
 
-        public UInt32 BytesInUse;               /* Real size of the FILE record */
-        public UInt32 BytesAllocated;           /* Allocated size of the FILE record */
+        public UInt16 AttributeOffset           /* Offset to the first Attribute */
+        { get; private set; }
 
-        public InodeReference BaseFileRecord;  /* File reference to the base FILE record */
+        public UInt16 Flags                     /* Flags. bit 1 = in use, bit 2 = directory, bit 4 & 8 = unknown. */
+        { get; private set; }
 
-        public UInt16 NextAttributeNumber;      /* Next Attribute Id */
-        public UInt16 Padding;                  /* Align to 4 UCHAR boundary (XP) */
+        public Boolean IsInUse
+        { private set{} get { return ((Flags & 1) == 1); } }
 
-        public UInt32 MFTRecordNumber;          /* Number of this MFT Record (XP) */
+        public Boolean IsDirectory
+        { private set{} get { return ((Flags & 2) == 2); } }
 
-        public UInt16 UpdateSeqNum;             /*  */
+        public Boolean IsUnknown
+        { private set { } get { return ((Flags & 252) != 0); } }
+
+        public UInt32 BytesInUse                /* Real size of the FILE record */
+        { get; private set; }
+
+        public UInt32 BytesAllocated            /* Allocated size of the FILE record */
+        { get; private set; }
+
+        public InodeReference BaseFileRecord    /* File reference to the base FILE record */
+        { get; private set; }
+
+        public UInt16 NextAttributeNumber       /* Next Attribute Id */
+        { get; private set; }
+
+        public UInt16 Padding                   /* Align to 4 UCHAR boundary (XP) */
+        { get; private set; }
+
+        public UInt32 MFTRecordNumber           /* Number of this MFT Record (XP) */
+        { get; private set; }
+
+        public UInt16 UpdateSeqNum              /*  */
+        { get; private set; }
 
         private FileRecordHeader()
-        {
-        }
+        { }
 
         public static FileRecordHeader Parse(BinaryReader reader)
         {
