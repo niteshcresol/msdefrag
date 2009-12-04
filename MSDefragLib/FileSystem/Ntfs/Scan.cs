@@ -1063,10 +1063,10 @@ namespace MSDefragLib.FileSystem.Ntfs
             //    bitmap. But that is rounded up to 8 Inodes, and the MFT can be shorter. 
             //
             //////////////////////////////////////////////////////////////////////////
-            UInt64 MaxInode = Math.Max(MftBitmapBytes * 8, MftDataBytes / diskInfo.BytesPerMftRecord);
+            UInt64 MaxInode = Math.Min(MftBitmapBytes * 8, MftDataBytes / diskInfo.BytesPerMftRecord);
 
             ItemStruct[] InodeArray = new ItemStruct[MaxInode];
-            InodeArray.SetValue(m_msDefragLib.m_data.ItemTree, 0);
+            InodeArray[0] = m_msDefragLib.m_data.ItemTree;
             ItemStruct Item = null;
 
             m_msDefragLib.m_data.PhaseDone = 0;
@@ -1076,8 +1076,11 @@ namespace MSDefragLib.FileSystem.Ntfs
             Int64 StartTime = Time.ToFileTime();
 
             BitArray bits = new BitArray(MftBitmap.m_bytes);
+            UInt64 c = 0;
             foreach (bool bit in bits)
             {
+                if (++c > MaxInode)
+                    break;
                 if (bit)
                 m_msDefragLib.m_data.PhaseTodo++;
             }
@@ -1090,7 +1093,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             foreach (bool bit in bits)
             {
                 // Ignore the m_iNode if the bitmap says it's not in use.
-                if (!bit)
+                if (!bit || (InodeNumber == 0))
                 {
                     InodeNumber++;
                     continue;
@@ -1120,7 +1123,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     if (BlockEnd > u1)
                         BlockEnd = u1;
 
-                    UInt64 lcn = diskInfo.ClusterToBytes(foundFragment.Lcn);
+                    UInt64 lcn = diskInfo.ClusterToBytes(foundFragment.Lcn)+diskInfo.InodeToBytes(BlockStart);
 
                     m_msDefragLib.m_data.Disk.ReadFromCluster(lcn,
                         Buffer.m_bytes, 0, (Int32)diskInfo.InodeToBytes(BlockEnd - BlockStart));

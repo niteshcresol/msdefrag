@@ -5638,7 +5638,7 @@ namespace MSDefragLib
 
             /* If a Path is specified then call DefragOnePath() for that path. Otherwise call
              * DefragMountpoints() for every disk in the system. */
-            if (!Path.Equals(""))
+            if (!String.IsNullOrEmpty(Path))
             {
                 DefragOnePath(Path, Mode);
             }
