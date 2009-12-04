@@ -92,7 +92,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <param name="DiskInfo"></param>
         /// <param name="Buffer"></param>
         /// <param name="BufLength"></param>
-        private void FixupRawMftdata(DiskInfoStructure DiskInfo, ByteArray buffer, UInt64 BufLength)
+        private void FixupRawMftdata(DiskInformation DiskInfo, ByteArray buffer, UInt64 BufLength)
         {
             Int64 ind = 0;
             UInt32 record = buffer.ToUInt32(ref ind);
@@ -152,7 +152,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <param name="WantedLength">Number of bytes to read.</param>
         /// <returns></returns>
         ByteArray ReadNonResidentData(
-                    DiskInfoStructure DiskInfo,
+                    DiskInformation DiskInfo,
                     BinaryReader runData,
                     UInt64 runDataLength,
                     UInt64 Offset,
@@ -189,17 +189,10 @@ namespace MSDefragLib.FileSystem.Ntfs
             Int64 Lcn = 0;
             UInt64 Vcn = 0;
 
-            while (runData.PeekChar() != 0)
+            UInt64 runLength;
+            Int64 runOffset;
+            while (RunData.Parse(runData, out runLength, out runOffset))
             {
-                Byte runDataValue = runData.ReadByte();
-
-                // Decode the RunData and calculate the next Lcn.
-                int runLengthSize = (runDataValue & 0x0F);
-                int runOffsetSize = ((runDataValue & 0xF0) >> 4);
-
-                UInt64 runLength = RunData.ReadLength(runData, runLengthSize);
-                Int64 runOffset = RunData.ReadOffset(runData, runOffsetSize);
-
                 Lcn += runOffset;
 
                 // Ignore virtual extents.
@@ -311,17 +304,10 @@ namespace MSDefragLib.FileSystem.Ntfs
             /* Walk through the RunData and add the extents. */
             Int64 Lcn = 0;
             UInt64 Vcn = startingVcn;
-
-            Byte runDataValue = 0;
-            while ((runDataValue = runData.ReadByte())!= 0)
+            UInt64 runLength;
+            Int64 runOffset;
+            while (RunData.Parse(runData, out runLength, out runOffset))
             {
-                /* Decode the RunData and calculate the next Lcn. */
-                int runLengthSize = (runDataValue & 0x0F);
-                int runOffsetSize = ((runDataValue & 0xF0) >> 4);
-
-                UInt64 runLength = RunData.ReadLength(runData, runLengthSize);
-                Int64 runOffset = RunData.ReadOffset(runData, runOffsetSize);
-
                 Lcn += runOffset;
 
                 if (runOffset != 0)
@@ -408,7 +394,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <param name="BufLength"></param>
         /// <param name="Depth"></param>
         void ProcessAttributeList(
-                DiskInfoStructure DiskInfo,
+                DiskInformation DiskInfo,
                 InodeDataStructure inodeData,
                 BinaryReader reader,
                 UInt64 BufLength,
@@ -563,7 +549,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <param name="Depth"></param>
         /// <returns></returns>
         Boolean ProcessAttributes(
-            DiskInfoStructure DiskInfo,
+            DiskInformation DiskInfo,
             InodeDataStructure inodeData,
             BinaryReader reader,
             UInt64 BufLength,
@@ -765,7 +751,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <param name="BufLength"></param>
         /// <returns></returns>
         Boolean InterpretMftRecord(
-            DiskInfoStructure DiskInfo, Array InodeArray,
+            DiskInformation DiskInfo, Array InodeArray,
             UInt64 InodeNumber, UInt64 MaxInode,
             ref FragmentList mftDataFragments, ref UInt64 mftDataBytes,
             ref FragmentList mftBitmapFragments, ref UInt64 mftBitmapBytes,
@@ -963,7 +949,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 return false;
             }
 
-            DiskInfoStructure diskInfo = new DiskInfoStructure(bootSector);
+            DiskInformation diskInfo = new DiskInformation(bootSector);
 
             m_msDefragLib.Data.BytesPerCluster = diskInfo.BytesPerCluster;
 

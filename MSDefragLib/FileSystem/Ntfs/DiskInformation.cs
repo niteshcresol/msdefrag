@@ -5,9 +5,17 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    public class DiskInfoStructure
+    /// <summary>
+    /// In NTFS, the Cluster is the fundamental unit of disk usage. The 
+    /// number of sectors that make up a cluster is always a power of 2,
+    /// and the number is fixed when the volume is formatted. This number
+    /// is called the Cluster Factor and is usually quoted in bytes,
+    /// e.g. 8KB, 2KB. NTFS addresses everything by its Logical Cluster
+    /// Number. 
+    /// </summary>
+    public class DiskInformation
     {
-        public DiskInfoStructure(FS.IBootSector bootSector)
+        public DiskInformation(FS.IBootSector bootSector)
         {
             /* Extract data from the bootblock. */
             BytesPerSector = bootSector.BytesPerSector;

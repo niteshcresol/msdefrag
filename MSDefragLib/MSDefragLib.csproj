@@ -90,7 +90,7 @@
     <Compile Include="FileSystem\Ntfs\InodeDataStructure.cs" />
     <Compile Include="FileSystem\Ntfs\InodeReference.cs" />
     <Compile Include="FileSystem\Ntfs\NonResidentAttribute.cs" />
-    <Compile Include="FileSystem\Ntfs\DiskInfoStructure.cs" />
+    <Compile Include="FileSystem\Ntfs\DiskInformation.cs" />
     <Compile Include="FileSystem\Ntfs\FileRecordHeader.cs" />
     <Compile Include="FileSystem\Ntfs\RecordHeader.cs" />
     <Compile Include="FileSystem\Ntfs\ResidentAttribute.cs" />

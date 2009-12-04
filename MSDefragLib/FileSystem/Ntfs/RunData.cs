@@ -7,9 +7,41 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
+    /// <summary>
+    /// Non-resident attributes are stored in intervals of clusters 
+    /// called runs. Each run is represented by its starting cluster
+    /// and its length. The starting cluster of a run is coded as an
+    /// offset to the starting cluster of the previous run.
+    ///  
+    /// Normal, compressed and sparse files are all defined by runs.
+    /// 
+    /// The examples start simple, then quickly get complicated.
+    /// 
+    /// This is a table written in the content part of a non-resident
+    /// file attribute, which allows to have access to its stream. 
+    /// </summary>
     public class RunData
     {
-        public static UInt64 ReadLength(BinaryReader runData, int length)
+        public static Boolean Parse(BinaryReader reader, out UInt64 length, out Int64 offset)
+        {
+            Byte runDataValue = reader.ReadByte();
+            if (runDataValue == 0)
+            {
+                length = 0;
+                offset = 0;
+                return false;
+            }
+
+            /* Decode the RunData and calculate the next Lcn. */
+            int runLengthSize = (runDataValue & 0x0F);
+            int runOffsetSize = ((runDataValue & 0xF0) >> 4);
+
+            length = ReadLength(reader, runLengthSize);
+            offset = ReadOffset(reader, runOffsetSize);
+            return true;
+        }
+
+        private static UInt64 ReadLength(BinaryReader runData, int length)
         {
             Debug.Assert(length <= 8);
             UlongBytes runLength = new UlongBytes();
@@ -21,7 +53,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             return runLength.Value;
         }
 
-        public static Int64 ReadOffset(BinaryReader runData, int length)
+        private static Int64 ReadOffset(BinaryReader runData, int length)
         {
             if (length == 0) return 0;
             Debug.Assert(length <= 8);

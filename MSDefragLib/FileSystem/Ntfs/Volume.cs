@@ -62,6 +62,8 @@ namespace MSDefragLib.FileSystem.Ntfs
     /// </summary>
     public class Volume
     {
+        public DiskInformation DiskInformation
+        { get; set; }
 
         public MasterFileTable Mft
         { get; set; }

@@ -95,7 +95,7 @@ namespace MSDefragLib
             }
         }
 
-        public byte[] Load(FileSystem.Ntfs.DiskInfoStructure diskInfo, FragmentList fragments)
+        public byte[] Load(FileSystem.Ntfs.DiskInformation diskInfo, FragmentList fragments)
         {
             UInt64 totalSize = fragments.TotalLength;
 
