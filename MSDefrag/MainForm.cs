@@ -372,7 +372,7 @@ namespace MSDefrag
 
         private void OnGuiClosing(object sender, FormClosingEventArgs e)
         {
-            if ((m_msDefragLib.m_data != null) && (m_msDefragLib.m_data.Running == RunningState.RUNNING))
+            if ((m_msDefragLib.Data != null) && (m_msDefragLib.Data.Running == RunningState.RUNNING))
             {
                 m_msDefragLib.StopJkDefrag(5000);
             }

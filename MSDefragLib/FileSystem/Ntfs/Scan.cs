@@ -71,19 +71,14 @@ namespace MSDefragLib.FileSystem.Ntfs
         ///   array.
         ///
         /// - The number of bytes per sector is defined in the $Boot record.
+        /// 
+        /// Throws InvalidDataException on parse problems.
         /// </summary>
         /// <param name="DiskInfo"></param>
         /// <param name="Buffer"></param>
         /// <param name="BufLength"></param>
-        /// <returns></returns>
-        Boolean FixupRawMftdata(
-                    DiskInfoStructure DiskInfo,
-                    ByteArray buffer,
-                    UInt64 BufLength)
+        private void FixupRawMftdata(DiskInfoStructure DiskInfo, ByteArray buffer, UInt64 BufLength)
         {
-            /* Sanity check. */
-            Debug.Assert(buffer != null);
-
             Int64 ind = 0;
             UInt32 record = buffer.ToUInt32(ref ind);
             /* If this is not a FILE record then return FALSE. */
@@ -91,7 +86,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 ShowDebug(2, "This is not a valid MFT record, it does not begin with FILE (maybe trying to read past the end?).");
                 //m_msDefragLib.ShowHex(Data, Buffer.m_bytes, BufLength);
-                return false;
+                throw new InvalidDataException();
             }
 
             /*
@@ -112,7 +107,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (index * sizeof(UInt16) >= (Int64)BufLength)
                 {
                     ShowDebug(0, "Warning: USA data indicates that data is missing, the MFT may be corrupt.");
-                    return false;
+                    throw new InvalidDataException();
                 }
 
                 /* Check if the last 2 bytes of the sector contain the Update Sequence Number.
@@ -120,7 +115,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (BufferW.GetValue(index) != UpdateSequenceArray.GetValue(0))
                 {
                     ShowDebug(0, "Error: USA fixup word is not equal to the Update Sequence Number, the MFT may be corrupt.");
-                    return false;
+                    throw new InvalidDataException();
                 }
 
                 /* Replace the last 2 bytes in the sector with the value from the Usa array. */
@@ -130,7 +125,6 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             buffer = BufferW.ToByteArray(0, BufferW.GetLength());
-            return true;
         }
 
         /// <summary>
@@ -241,7 +235,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     ExtentLength, ExtentLcn / DiskInfo.BytesPerCluster,
                     ExtentVcn - Offset));
 
-                m_msDefragLib.m_data.Disk.ReadFromCluster(ExtentLcn, Buffer.m_bytes,
+                m_msDefragLib.Data.Disk.ReadFromCluster(ExtentLcn, Buffer.m_bytes,
                     (Int32)(ExtentVcn - Offset), (Int32)ExtentLength);
 
                 Vcn += runLength;
@@ -262,7 +256,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     UInt64 Bytes)
         {
             /* Sanity check. */
-            if ((m_msDefragLib.m_data == null) || (InodeData == null))
+            if ((m_msDefragLib.Data == null) || (InodeData == null))
                 throw new Exception("Sanity check failed");
 
             /* Find the stream in the list of streams. If not found then create a new stream. */
@@ -522,15 +516,10 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 Byte[] tempBuffer = new Byte[DiskInfo.BytesPerMftRecord];
 
-                m_msDefragLib.m_data.Disk.ReadFromCluster(tempVcn, Buffer2.m_bytes, 0,
+                m_msDefragLib.Data.Disk.ReadFromCluster(tempVcn, Buffer2.m_bytes, 0,
                     (Int32)DiskInfo.BytesPerMftRecord);
 
-                /* Fixup the raw data. */
-                if (FixupRawMftdata(DiskInfo, Buffer2, DiskInfo.BytesPerMftRecord) == false)
-                {
-                    ShowDebug(2, String.Format("The error occurred while processing m_iNode {0:G}", RefInode));
-                    continue;
-                }
+                FixupRawMftdata(DiskInfo, Buffer2, DiskInfo.BytesPerMftRecord);
 
                 /* If the Inode is not in use then skip. */
                 FileRecordHeader = FileRecordHeader.Parse(Helper.BinaryReader(Buffer2));
@@ -907,24 +896,24 @@ namespace MSDefragLib.FileSystem.Ntfs
                 /* Increment counters. */
                 if (Item.Directory == true)
                 {
-                    m_msDefragLib.m_data.CountDirectories++;
+                    m_msDefragLib.Data.CountDirectories++;
                 }
 
-                m_msDefragLib.m_data.CountAllFiles++;
+                m_msDefragLib.Data.CountAllFiles++;
 
                 if (stream.Type.IsData)
                 {
-                    m_msDefragLib.m_data.CountAllBytes += inodeData.m_totalBytes;
+                    m_msDefragLib.Data.CountAllBytes += inodeData.m_totalBytes;
                 }
 
-                m_msDefragLib.m_data.CountAllClusters += stream.Clusters;
+                m_msDefragLib.Data.CountAllClusters += stream.Clusters;
 
                 if (Item.FragmentCount > 1)
                 {
-                    m_msDefragLib.m_data.CountFragmentedItems++;
-                    m_msDefragLib.m_data.CountFragmentedBytes += inodeData.m_totalBytes;
+                    m_msDefragLib.Data.CountFragmentedItems++;
+                    m_msDefragLib.Data.CountFragmentedBytes += inodeData.m_totalBytes;
 
-                    if (stream != null) m_msDefragLib.m_data.CountFragmentedClusters += stream.Clusters;
+                    if (stream != null) m_msDefragLib.Data.CountFragmentedClusters += stream.Clusters;
                 }
 
                 /* Add the item record to the sorted item tree in memory. */
@@ -958,7 +947,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 /* Draw the item on the screen. */
                 //jkGui->ShowAnalyze(Data,Item);
 
-                if (m_msDefragLib.m_data.RedrawScreen == 0)
+                if (m_msDefragLib.Data.RedrawScreen == 0)
                 {
                     m_msDefragLib.ColorizeItem(Item, 0, 0, false);
                 }
@@ -979,7 +968,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         public Boolean AnalyzeNtfsVolume()
         {
             // Read the boot block from the disk.
-            FS.IBootSector bootSector = m_msDefragLib.m_data.Disk.BootSector;
+            FS.IBootSector bootSector = m_msDefragLib.Data.Disk.BootSector;
 
             // Test if the boot block is an NTFS boot block.
             if (bootSector.Filesystem != FS.Filesystem.NTFS)
@@ -991,11 +980,11 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             DiskInfoStructure diskInfo = new DiskInfoStructure(bootSector);
 
-            m_msDefragLib.m_data.BytesPerCluster = diskInfo.BytesPerCluster;
+            m_msDefragLib.Data.BytesPerCluster = diskInfo.BytesPerCluster;
 
             if (diskInfo.SectorsPerCluster > 0)
             {
-                m_msDefragLib.m_data.TotalClusters = diskInfo.TotalSectors / diskInfo.SectorsPerCluster;
+                m_msDefragLib.Data.TotalClusters = diskInfo.TotalSectors / diskInfo.SectorsPerCluster;
             }
 
             ShowDebug(0, "This is an NTFS disk.");
@@ -1018,7 +1007,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             // Calculate the size of first 16 Inodes in the MFT. The Microsoft defragmentation
             // API cannot move these inodes.
-            m_msDefragLib.m_data.Disk.MftLockedClusters = diskInfo.BytesPerCluster / diskInfo.BytesPerMftRecord;
+            m_msDefragLib.Data.Disk.MftLockedClusters = diskInfo.BytesPerCluster / diskInfo.BytesPerMftRecord;
 
             // Read the $MFT record from disk into memory, which is always the first record in
             // the MFT.
@@ -1026,14 +1015,10 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ByteArray Buffer = new ByteArray((Int64)MFTBUFFERSIZE);
 
-            m_msDefragLib.m_data.Disk.ReadFromCluster(tempLcn, Buffer.m_bytes, 0,
+            m_msDefragLib.Data.Disk.ReadFromCluster(tempLcn, Buffer.m_bytes, 0,
                 (Int32)diskInfo.BytesPerMftRecord);
 
-            /* Fixup the raw data from disk. This will also test if it's a valid $MFT record. */
-            if (FixupRawMftdata(diskInfo, Buffer, diskInfo.BytesPerMftRecord) == false)
-            {
-                return false;
-            }
+            FixupRawMftdata(diskInfo, Buffer, diskInfo.BytesPerMftRecord);
 
             // Extract data from the MFT record and put into an Item struct in memory. If
             // there was an error then exit.
@@ -1051,26 +1036,21 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ShowDebug(6, "Reading $MFT::$BITMAP into memory");
             ByteArray MftBitmap = new ByteArray();
-            MftBitmap.m_bytes = m_msDefragLib.m_data.Disk.Load(diskInfo, MftBitmapFragments);
+            MftBitmap.m_bytes = m_msDefragLib.Data.Disk.Load(diskInfo, MftBitmapFragments);
 
 
-            //////////////////////////////////////////////////////////////////////////
-            //
-            //    Construct an array of all the items in memory, indexed by m_iNode.
-            //
-            //    NOTE:
-            //    The maximum number of Inodes is primarily determined by the size of the
-            //    bitmap. But that is rounded up to 8 Inodes, and the MFT can be shorter. 
-            //
-            //////////////////////////////////////////////////////////////////////////
+            // Construct an array of all the items in memory, indexed by m_iNode.
+            // NOTE:
+            // The maximum number of Inodes is primarily determined by the size of the
+            // bitmap. But that is rounded up to 8 Inodes, and the MFT can be shorter. 
             UInt64 MaxInode = Math.Min(MftBitmapBytes * 8, MftDataBytes / diskInfo.BytesPerMftRecord);
 
             ItemStruct[] InodeArray = new ItemStruct[MaxInode];
-            InodeArray[0] = m_msDefragLib.m_data.ItemTree;
+            InodeArray[0] = m_msDefragLib.Data.ItemTree;
             ItemStruct Item = null;
 
-            m_msDefragLib.m_data.PhaseDone = 0;
-            m_msDefragLib.m_data.PhaseTodo = 0;
+            m_msDefragLib.Data.PhaseDone = 0;
+            m_msDefragLib.Data.PhaseTodo = 0;
 
             DateTime Time = DateTime.Now;
             Int64 StartTime = Time.ToFileTime();
@@ -1082,7 +1062,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (++c > MaxInode)
                     break;
                 if (bit)
-                m_msDefragLib.m_data.PhaseTodo++;
+                m_msDefragLib.Data.PhaseTodo++;
             }
 
             // Read and process all the records in the MFT. The records are read into a
@@ -1100,7 +1080,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 // Update the progress counter
-                m_msDefragLib.m_data.PhaseDone++;
+                m_msDefragLib.Data.PhaseDone++;
 
                 /* Read a block of inode's into memory. */
                 if (InodeNumber >= BlockEnd)
@@ -1125,22 +1105,15 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                     UInt64 lcn = diskInfo.ClusterToBytes(foundFragment.Lcn)+diskInfo.InodeToBytes(BlockStart);
 
-                    m_msDefragLib.m_data.Disk.ReadFromCluster(lcn,
+                    m_msDefragLib.Data.Disk.ReadFromCluster(lcn,
                         Buffer.m_bytes, 0, (Int32)diskInfo.InodeToBytes(BlockEnd - BlockStart));
                 }
 
                 /* Fixup the raw data of this m_iNode. */
-                UInt64 lengthInBytes = diskInfo.InodeToBytes(InodeNumber - BlockStart);
-                if (FixupRawMftdata(diskInfo,
-                        Buffer.ToByteArray((Int64)lengthInBytes, Buffer.GetLength() - (Int64)(lengthInBytes)),
-                        diskInfo.BytesPerMftRecord) == false)
-                {
-                    throw new Exception("implementation error");
-                    ShowDebug(2, String.Format("The error occurred while processing m_iNode {0:G} (max {0:G})",
-                            InodeNumber, MaxInode));
-                    InodeNumber++;
-                    continue;
-                }
+                UInt64 position = diskInfo.InodeToBytes(InodeNumber - BlockStart);
+                FixupRawMftdata(diskInfo,
+                        Buffer.ToByteArray((Int64)position, Buffer.GetLength() - (Int64)(position)),
+                        diskInfo.BytesPerMftRecord);
 
                 /* Interpret the m_iNode's attributes. */
                 Result = InterpretMftRecord(diskInfo, InodeArray, InodeNumber, MaxInode,
@@ -1148,8 +1121,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                         Helper.BinaryReader(Buffer, (Int64)diskInfo.InodeToBytes(InodeNumber - BlockStart)),
                         diskInfo.BytesPerMftRecord);
 
-                if (m_msDefragLib.m_data.PhaseDone % 50 == 0)
-                    ShowDebug(1, "Done: " + m_msDefragLib.m_data.PhaseDone + "/" + m_msDefragLib.m_data.PhaseTodo);
+                if (m_msDefragLib.Data.PhaseDone % 50 == 0)
+                    ShowDebug(1, "Done: " + m_msDefragLib.Data.PhaseDone + "/" + m_msDefragLib.Data.PhaseTodo);
                 InodeNumber++;
             }
 
@@ -1163,17 +1136,17 @@ namespace MSDefragLib.FileSystem.Ntfs
                       (Int64)MaxInode * 1000 / (EndTime - StartTime)));
             }
 
-            using (m_msDefragLib.m_data.Disk)
+            using (m_msDefragLib.Data.Disk)
             {
-                if (m_msDefragLib.m_data.Running != RunningState.RUNNING)
+                if (m_msDefragLib.Data.Running != RunningState.RUNNING)
                 {
-                    m_msDefragLib.DeleteItemTree(m_msDefragLib.m_data.ItemTree);
-                    m_msDefragLib.m_data.ItemTree = null;
+                    m_msDefragLib.DeleteItemTree(m_msDefragLib.Data.ItemTree);
+                    m_msDefragLib.Data.ItemTree = null;
                     return false;
                 }
 
                 /* Setup the ParentDirectory in all the items with the info in the InodeArray. */
-                for (Item = ItemTree.TreeSmallest(m_msDefragLib.m_data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
+                for (Item = ItemTree.TreeSmallest(m_msDefragLib.Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
                 {
                     Item.ParentDirectory = (ItemStruct)InodeArray.GetValue((Int64)Item.ParentInode);
                     if (Item.ParentInode == 5)
