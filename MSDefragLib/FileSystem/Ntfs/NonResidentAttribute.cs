@@ -7,7 +7,7 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    public class NonResidentAttribute : Attribute, ISizeHelper
+    public class NonResidentAttribute : Attribute
     {
         public UInt64 m_startingVcn;
         public UInt64 m_lastVcn;
@@ -38,14 +38,5 @@ namespace MSDefragLib.FileSystem.Ntfs
             a.m_compressedSize = reader.ReadUInt64();
             return a;
         }
-
-        #region ISizeHelper Members
-
-        public override long Size
-        {
-            get { return base.Size + 8 + 8 + 2 + 1 + 5 + 8 + 8 + 8 + 8; }
-        }
-
-        #endregion
     }
 }

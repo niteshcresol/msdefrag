@@ -7,15 +7,8 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class RecordHeader : ISizeHelper
+    public class RecordHeader
     {
-        public UInt32 Type;                     /* File type, for example 'FILE' */
-
-        public UInt16 UsaOffset;                /* Offset to the Update Sequence Array */
-        public UInt16 UsaCount;                 /* Size in words of Update Sequence Array */
-
-        public UInt64 Lsn;                      /* $LogFile Sequence Number (LSN) */
-
         private RecordHeader()
         {
         }
@@ -30,13 +23,12 @@ namespace MSDefragLib.FileSystem.Ntfs
             return r;
         }
 
-        #region ISizeHelper Members
+        public UInt32 Type;                     /* File type, for example 'FILE' */
 
-        public long Size
-        {
-            get { return 4 + 2 + 2 + 8; }
-        }
+        public UInt16 UsaOffset;                /* Offset to the Update Sequence Array */
+        public UInt16 UsaCount;                 /* Size in words of Update Sequence Array */
 
-        #endregion
+        public UInt64 Lsn;                      /* $LogFile Sequence Number (LSN) */
+
     }
 }

@@ -31,7 +31,8 @@ namespace MSDefragLib
                         return fragment;
                 }
             }
-            return null;
+
+            throw new Exception("Vcn not found for this fragment list, shall never occur");
         }
 
 

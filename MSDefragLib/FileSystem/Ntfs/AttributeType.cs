@@ -34,7 +34,7 @@ namespace MSDefragLib.FileSystem.Ntfs
     };
 
     [DebuggerDisplay("{Type}")]
-    public class AttributeType : ISizeHelper
+    public class AttributeType
     {
         private AttributeTypeEnum m_attributeType;
 
@@ -260,15 +260,6 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             return at.m_attributeType != at2.m_attributeType;
         }
-
-        #region ISizeHelper Members
-
-        public long Size
-        {
-            get { return 4; }
-        }
-
-        #endregion
 
         public override int GetHashCode()
         {

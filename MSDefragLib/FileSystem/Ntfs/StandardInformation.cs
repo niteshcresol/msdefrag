@@ -7,7 +7,7 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class StandardInformation : ISizeHelper
+    public class StandardInformation
     {
         public UInt64 CreationTime;
         public UInt64 FileChangeTime;
@@ -43,14 +43,5 @@ namespace MSDefragLib.FileSystem.Ntfs
             s.Usn = reader.ReadUInt64();
             return s;
         }
-
-        #region ISizeHelper Members
-
-        public long Size
-        {
-            get { return 8 + 8 + 8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 8; }
-        }
-
-        #endregion
     }
 }

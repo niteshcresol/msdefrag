@@ -14,8 +14,12 @@ namespace MSDefragLib.FileSystem.Ntfs
         DOS = 0x02      // 8.3 name
     }
 
-    public class FileNameAttribute : ISizeHelper
+    public class FileNameAttribute
     {
+        private FileNameAttribute()
+        {
+        }
+
         public InodeReference m_parentDirectory;
         public UInt64 m_creationTime;
         public UInt64 m_changeTime;
@@ -28,10 +32,6 @@ namespace MSDefragLib.FileSystem.Ntfs
        
         public String Name
         { get; private set; }
-
-        private FileNameAttribute()
-        {
-        }
 
         [Conditional("DEBUG")]
         public void AssertValid()
@@ -65,14 +65,5 @@ namespace MSDefragLib.FileSystem.Ntfs
             filename.AssertValid();
             return filename;
         }
-
-        #region ISizeHelper Members
-
-        public long Size
-        {
-            get { return m_parentDirectory.Size + 8 + 8 + 8 + 8 + 8 + 8 + 4 + 4 + 1 + 1 + Name.Length*2; }
-        }
-
-        #endregion
     }
 }

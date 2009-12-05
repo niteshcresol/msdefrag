@@ -7,8 +7,12 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class ResidentAttribute : Attribute, ISizeHelper
+    public class ResidentAttribute : Attribute
     {
+        private ResidentAttribute()
+        {
+        }
+
         public UInt32 ValueLength
         { get; private set; }
 
@@ -19,10 +23,6 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt16 Flags
         { get; private set; }
 
-        private ResidentAttribute()
-        {
-        }
-
         public static new ResidentAttribute Parse(BinaryReader reader)
         {
             ResidentAttribute a = new ResidentAttribute();
@@ -32,14 +32,5 @@ namespace MSDefragLib.FileSystem.Ntfs
             a.Flags = reader.ReadUInt16();
             return a;
         }
-
-        #region ISizeHelper Members
-
-        public override long Size
-        {
-            get { return base.Size + 4 + 2 + 2; }
-        }
-
-        #endregion
     }
 }

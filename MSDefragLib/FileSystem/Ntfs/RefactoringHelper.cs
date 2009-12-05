@@ -7,16 +7,6 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    /// <summary>
-    /// Helper during the propagation of changes in the way
-    /// Parse() is working, to compute the size of blocks
-    /// dynamically. This can very likely be removed after
-    /// successful refactoring.
-    /// </summary>
-    interface ISizeHelper
-    {
-        Int64 Size { get; }
-    }
 
     class Helper
     {

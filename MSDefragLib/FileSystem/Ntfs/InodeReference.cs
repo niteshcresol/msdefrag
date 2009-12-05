@@ -7,7 +7,7 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    public class InodeReference : ISizeHelper
+    public class InodeReference
     {
         public UInt32 m_iNodeNumberLowPart;
         public UInt16 m_iNodeNumberHighPart;
@@ -39,14 +39,5 @@ namespace MSDefragLib.FileSystem.Ntfs
             r.m_sequenceNumber = reader.ReadUInt16();
             return r;
         }
-
-        #region ISizeHelper Members
-
-        public long Size
-        {
-            get { return 4 + 2 + 2; }
-        }
-
-        #endregion
     }
 }

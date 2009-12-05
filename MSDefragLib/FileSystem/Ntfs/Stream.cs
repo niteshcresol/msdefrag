@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,6 +48,35 @@ namespace MSDefragLib.FileSystem.Ntfs
     [DebuggerDisplay("'{Name}':{Type},{Bytes}b")]
     public class Stream
     {
+        public Stream(String name, AttributeType type)
+        {
+            Name = name;
+            Type = type;
+            Fragments = new FragmentList();
+            Clusters = 0;
+        }
+
+        public void ParseRunData(BinaryReader runData, UInt64 startingVcn)
+        {
+            /* Walk through the RunData and add the extents. */
+            Int64 Lcn = 0;
+            UInt64 Vcn = startingVcn;
+            UInt64 runLength;
+            Int64 runOffset;
+            while (RunData.Parse(runData, out runLength, out runOffset))
+            {
+                Lcn += runOffset;
+
+                if (runOffset != 0)
+                {
+                    Clusters += runLength;
+                }
+
+                Fragments.Add(Lcn, Vcn, runLength, runOffset == 0);
+                Vcn += runLength;
+            }
+        }
+
         /* "stream name" */
         public String Name
         { get; private set; }
@@ -61,17 +91,11 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         /* Total number of clusters. */
         public UInt64 Clusters
-        { get; set; }
+        { get; private set; }
 
         /* Total number of bytes. */
         public UInt64 Bytes
         { get; set; }
 
-        public Stream(String name, AttributeType type)
-        {
-            Name = name;
-            Type = type;
-            Fragments = new FragmentList();
-        }
     }
 }

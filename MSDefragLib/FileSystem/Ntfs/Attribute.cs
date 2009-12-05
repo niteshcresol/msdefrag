@@ -15,8 +15,12 @@ namespace MSDefragLib.FileSystem.Ntfs
         Sparse = 0x8000
     }
 
-    public class Attribute : IAttribute, ISizeHelper
+    public class Attribute : IAttribute
     {
+        protected Attribute()
+        {
+        }
+
         public AttributeType Type
         { get; private set; }
 
@@ -37,10 +41,6 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public UInt16 Number
         { get; private set; }
-
-        protected Attribute()
-        {
-        }
 
         protected void InternalParse(BinaryReader reader)
         {
@@ -63,18 +63,5 @@ namespace MSDefragLib.FileSystem.Ntfs
             return attribute;
         }
 
-        #region ISizeHelper Members
-
-        public virtual long Size
-        {
-            get 
-            {
-                if (Type.Type == AttributeTypeEnum.AttributeEndOfList)
-                    return Type.Size;
-                return Type.Size + 4 + 1 + 1 + 2 + 2 + 2;
-            }
-        }
-
-        #endregion
     }
 }

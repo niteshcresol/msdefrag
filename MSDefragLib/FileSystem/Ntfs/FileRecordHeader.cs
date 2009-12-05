@@ -7,7 +7,7 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class FileRecordHeader : ISizeHelper
+    class FileRecordHeader
     {
         public RecordHeader RecHdr
         { get; private set; }
@@ -74,14 +74,5 @@ namespace MSDefragLib.FileSystem.Ntfs
             r.UpdateSeqNum = reader.ReadUInt16();
             return r;
         }
-
-        #region ISizeHelper Members
-
-        public long Size
-        {
-            get { return RecHdr.Size + 2 + 2 + 2 + 2 + 4 + 4 + BaseFileRecord.Size + 2 + 2 + 4 + 2; }
-        }
-
-        #endregion
     }
 }

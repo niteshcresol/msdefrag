@@ -262,7 +262,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     BinaryReader runData,
                     UInt64 runDataLength,
                     UInt64 startingVcn,
-                    UInt64 Bytes)
+                    UInt64 byteCount)
         {
             ErrorCheck((m_msDefragLib.Data == null) || (InodeData == null), "Sanity check failed", true);
 
@@ -272,8 +272,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 ShowDebug(6, "    Creating new stream: '" + StreamName + ":" + StreamType.GetStreamTypeName() + "'");
                 Stream newStream = new Stream(StreamName, StreamType);
-                newStream.Clusters = 0;
-                newStream.Bytes = Bytes;
+                newStream.Bytes = byteCount;
 
                 InodeData.Streams.Add(newStream);
                 foundStream = newStream;
@@ -282,42 +281,13 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 ShowDebug(6, "    Appending rundata to existing stream: '" + StreamName + ":" + StreamType.GetStreamTypeName());
                 if (foundStream.Bytes == 0)
-                    foundStream.Bytes = Bytes;
-            }
-
-            /* If the stream already has a list of fragments then find the last fragment. */
-            Fragment lastFragment = foundStream.Fragments.LastOrDefault();
-            if (lastFragment != null)
-            {
-                throw new NotImplementedException();
-                //if (StartingVcn != lastFragment.NextVcn)
-                //{
-                //    ShowDebug(2, String.Format("Error: m_iNode {0:G} already has a list of fragments. LastVcn={1:G}, StartingVCN={2:G}",
-                //      InodeData.m_iNode, lastFragment.NextVcn, StartingVcn));
-                //    return false;
-                //}
+                    foundStream.Bytes = byteCount;
             }
 
             if (runData == null)
                 return true;
 
-            /* Walk through the RunData and add the extents. */
-            Int64 Lcn = 0;
-            UInt64 Vcn = startingVcn;
-            UInt64 runLength;
-            Int64 runOffset;
-            while (RunData.Parse(runData, out runLength, out runOffset))
-            {
-                Lcn += runOffset;
-
-                if (runOffset != 0)
-                {
-                    foundStream.Clusters += runLength;
-                }
-
-                foundStream.Fragments.Add(Lcn, Vcn, runLength, runOffset == 0);
-                Vcn += runLength;
-            }
+            foundStream.ParseRunData(runData, startingVcn);
             return true;
         }
 
@@ -353,7 +323,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
 
             //  If the StreamName is empty and the StreamType is Data then return only the
-            //  FileName. The Data stream is the default stream of regular files. */
+            //  FileName. The Data stream is the default stream of regular files.
             if (String.IsNullOrEmpty(streamName) &&
                 String.IsNullOrEmpty(type.GetStreamTypeName()))
             {
@@ -394,7 +364,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <param name="BufLength"></param>
         /// <param name="Depth"></param>
         void ProcessAttributeList(
-                DiskInformation DiskInfo,
+                DiskInformation diskInfo,
                 InodeDataStructure inodeData,
                 BinaryReader reader,
                 UInt64 BufLength,
@@ -403,14 +373,12 @@ namespace MSDefragLib.FileSystem.Ntfs
             Debug.Assert(inodeData.MftDataFragments != null);
 
             Int64 position = reader.BaseStream.Position;
-            ByteArray Buffer2 = new ByteArray((Int64)DiskInfo.BytesPerMftRecord);
+            ByteArray Buffer2 = new ByteArray((Int64)diskInfo.BytesPerMftRecord);
 
             FileRecordHeader FileRecordHeader;
 
-            UInt64 RefInode;
             UInt64 BaseInode;
             UInt64 RealVcn;
-            UInt64 RefInodeVcn;
 
             String p1;
 
@@ -441,7 +409,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 // ignore (if we don't ignore then the program will loop forever, because for 
                 // some reason the info in the calling m_iNode is duplicated here...).
                 //
-                RefInode = attributeList.m_fileReferenceNumber.BaseInodeNumber;
+                UInt64 RefInode = attributeList.m_fileReferenceNumber.BaseInodeNumber;
                     //(UInt64)attributeList.m_fileReferenceNumber.m_iNodeNumberLowPart +
                     //    ((UInt64)attributeList.m_fileReferenceNumber.m_iNodeNumberHighPart << 32);
 
@@ -464,42 +432,16 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 // Find the fragment in the MFT that contains the referenced m_iNode.
-                RealVcn = 0;
-                RefInodeVcn = RefInode * DiskInfo.BytesPerMftRecord / (DiskInfo.BytesPerSector * DiskInfo.SectorsPerCluster);
-
-                Fragment foundFragment = null;
-                foreach (Fragment fragment in inodeData.MftDataFragments)
-                {
-                    if (fragment.IsLogical)
-                    {
-                        if ((RefInodeVcn >= RealVcn) && (RefInodeVcn < RealVcn + fragment.Length))
-                        {
-                            foundFragment = fragment;
-                            break;
-                        }
-
-                        RealVcn += fragment.Length;
-                    }
-                }
-
-                if (foundFragment == null)
-                {
-                    ShowDebug(6, String.Format("      Error: m_iNode {0:G} is an extension of m_iNode {1:G}, but does not exist (outside the MFT).",
-                            RefInode, inodeData.m_iNode));
-
-                    continue;
-                }
+                Fragment foundFragment = inodeData.MftDataFragments.FindContaining(
+                    diskInfo.InodeToCluster(RefInode));
 
                 // Fetch the record of the referenced m_iNode from disk.
-                UInt64 tempVcn = (foundFragment.Lcn - RealVcn) * DiskInfo.BytesPerCluster +
-                    RefInode * DiskInfo.BytesPerMftRecord;
-
-                Byte[] tempBuffer = new Byte[DiskInfo.BytesPerMftRecord];
+                UInt64 tempVcn = diskInfo.ClusterToBytes(foundFragment.Lcn) + diskInfo.InodeToBytes(RefInode);
 
                 m_msDefragLib.Data.Disk.ReadFromCluster(tempVcn, Buffer2.m_bytes, 0,
-                    (Int32)DiskInfo.BytesPerMftRecord);
+                    (Int32)diskInfo.BytesPerMftRecord);
 
-                FixupRawMftdata(DiskInfo, Buffer2, DiskInfo.BytesPerMftRecord);
+                FixupRawMftdata(diskInfo, Buffer2, diskInfo.BytesPerMftRecord);
 
                 // If the Inode is not in use then skip.
                 FileRecordHeader = FileRecordHeader.Parse(Helper.BinaryReader(Buffer2));
@@ -526,11 +468,9 @@ namespace MSDefragLib.FileSystem.Ntfs
                 // Process the list of attributes in the m_iNode, by recursively calling the ProcessAttributes() subroutine.
                 ShowDebug(6, String.Format("      Processing m_iNode {0:G} m_instance {1:G}", RefInode, attributeList.m_instance));
 
-                ProcessAttributes(
-                    DiskInfo,
-                    inodeData,
+                ProcessAttributes(diskInfo, inodeData,
                     Helper.BinaryReader(Buffer2, FileRecordHeader.AttributeOffset),
-                    DiskInfo.BytesPerMftRecord - FileRecordHeader.AttributeOffset,
+                    diskInfo.BytesPerMftRecord - FileRecordHeader.AttributeOffset,
                     attributeList.m_instance, Depth + 1);
 
                 ShowDebug(6, String.Format("      Finished processing m_iNode {0:G} m_instance {1:G}", RefInode, attributeList.m_instance));
@@ -551,10 +491,8 @@ namespace MSDefragLib.FileSystem.Ntfs
         Boolean ProcessAttributes(
             DiskInformation DiskInfo,
             InodeDataStructure inodeData,
-            BinaryReader reader,
-            UInt64 BufLength,
-            UInt32 Instance,
-            int Depth)
+            BinaryReader reader, UInt64 BufLength,
+            UInt32 Instance, int Depth)
         {
             UInt64 Buffer2Length;
             UInt32 AttributeOffset;
@@ -1069,10 +1007,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                     if (BlockEnd > MftBitmapBytes * 8)
                         BlockEnd = MftBitmapBytes * 8;
 
-                    Fragment foundFragment = MftDataFragments.FindContaining(diskInfo.InodeToCluster(InodeNumber));
-
-                    if (foundFragment == null)
-                        throw new Exception("implementation error");
+                    Fragment foundFragment = MftDataFragments.FindContaining(
+                        diskInfo.InodeToCluster(InodeNumber));
 
                     UInt64 u1 = diskInfo.ClusterToInode(foundFragment.NextVcn);
                     if (BlockEnd > u1)
@@ -1080,9 +1016,9 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                     UInt64 lcn = diskInfo.ClusterToBytes(foundFragment.Lcn)+diskInfo.InodeToBytes(BlockStart);
                     
-                    Console.WriteLine("Reading block of {0} Inodes from MFT into memory, {1} bytes from LCN={2}",
-                        BlockEnd - BlockStart, diskInfo.InodeToBytes(BlockEnd - BlockStart),
-                        diskInfo.BytesToCluster(lcn));
+                    //Console.WriteLine("Reading block of {0} Inodes from MFT into memory, {1} bytes from LCN={2}",
+                    //    BlockEnd - BlockStart, diskInfo.InodeToBytes(BlockEnd - BlockStart),
+                    //    diskInfo.BytesToCluster(lcn));
 
                     m_msDefragLib.Data.Disk.ReadFromCluster(lcn,
                         Buffer.m_bytes, 0, (Int32)diskInfo.InodeToBytes(BlockEnd - BlockStart));

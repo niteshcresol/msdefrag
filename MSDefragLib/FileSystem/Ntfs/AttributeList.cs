@@ -8,7 +8,7 @@ using System.Text;
 namespace MSDefragLib.FileSystem.Ntfs
 {
     [DebuggerDisplay("Length = {m_length}")]
-    class AttributeList : IAttribute, ISizeHelper
+    class AttributeList : IAttribute
     {
         public AttributeType Type
         { get; private set; }
@@ -56,19 +56,5 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
             return list;
         }
-
-        #region ISizeHelper Members
-
-        public long Size
-        {
-            get
-            {
-                if (Type.Type == AttributeTypeEnum.AttributeEndOfList)
-                    return Type.Size;
-                return Type.Size + 2 + 1 + 1 + 8 + m_fileReferenceNumber.Size + 2 + 3 * 2;
-            }
-        }
-
-        #endregion
     }
 }
