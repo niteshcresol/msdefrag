@@ -7,6 +7,11 @@ namespace MSDefragLib.FileSystem.Ntfs
 {
     public class UInt16Array
     {
+        public UInt16Array(Int64 length)
+        {
+            m_words = new UInt16[length];
+        }
+
         private UInt16[] m_words;
 
         public ByteArray ToByteArray(Int64 index, Int64 length)
@@ -42,11 +47,6 @@ namespace MSDefragLib.FileSystem.Ntfs
         public void SetValue(Int64 index, UInt16 value)
         {
             m_words[index] = value;
-        }
-
-        public void Initialize(Int64 length)
-        {
-            m_words = new UInt16[length];
         }
     }
 

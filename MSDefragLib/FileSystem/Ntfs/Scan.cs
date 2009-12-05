@@ -94,8 +94,8 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <param name="BufLength"></param>
         private void FixupRawMftdata(DiskInformation DiskInfo, ByteArray buffer, UInt64 BufLength)
         {
-            Int64 ind = 0;
-            UInt32 record = buffer.ToUInt32(ref ind);
+            UInt32 record = BitConverter.ToUInt32(buffer.m_bytes, 0);
+
             /* If this is not a FILE record then return FALSE. */
             if (record != 0x454c4946)
             {
@@ -946,18 +946,10 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ShowDebug(6, String.Format("MftDataBytes = {0:G}, MftBitmapBytes = {0:G}", MftDataBytes, MftBitmapBytes));
 
-            ShowDebug(6, "Reading $MFT::$BITMAP into memory");
-            ByteArray MftBitmap = new ByteArray();
-            MftBitmap.m_bytes = m_msDefragLib.Data.Disk.Load(diskInfo, MftBitmapFragments);
+            BitmapFile bitmapFile = new BitmapFile(m_msDefragLib.Data.Disk,
+                diskInfo, MftBitmapFragments, MftBitmapBytes, MftDataBytes);
 
-
-            // Construct an array of all the items in memory, indexed by m_iNode.
-            //
-            // NOTE:
-            // The maximum number of Inodes is primarily determined by the size of the
-            // bitmap. But that is rounded up to 8 Inodes, and the MFT can be shorter. 
-            //
-            UInt64 MaxInode = Math.Min(MftBitmapBytes * 8, MftDataBytes / diskInfo.BytesPerMftRecord);
+            UInt64 MaxInode = bitmapFile.MaxInode;
 
             ItemStruct[] InodeArray = new ItemStruct[MaxInode];
             InodeArray[0] = m_msDefragLib.Data.ItemTree;
@@ -968,22 +960,14 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             DateTime startTime = DateTime.Now;
 
-            BitArray bits = new BitArray(MftBitmap.m_bytes);
-            UInt64 c = 0;
-            foreach (bool bit in bits)
-            {
-                if (++c > MaxInode)
-                    break;
-                if (bit)
-                m_msDefragLib.Data.PhaseTodo++;
-            }
+            m_msDefragLib.Data.PhaseTodo = bitmapFile.UsedInodes;
 
             // Read and process all the records in the MFT. The records are read into a
             // buffer and then given one by one to the InterpretMftRecord() subroutine.
             UInt64 BlockStart = 0;
             UInt64 BlockEnd = 0;
             UInt64 InodeNumber = 0;
-            foreach (bool bit in bits)
+            foreach (bool bit in bitmapFile.Bits)
             {
                 // Ignore the m_iNode if the bitmap says it's not in use.
                 if (!bit || (InodeNumber == 0))

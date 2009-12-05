@@ -66,6 +66,7 @@
     <Compile Include="Common\FragmentList.cs" />
     <Compile Include="Common\ItemStruct.cs" />
     <Compile Include="Common\ItemTree.cs" />
+    <Compile Include="FileSystem\Ntfs\BitmapFile.cs" />
     <Compile Include="FileSystem\Ntfs\ByteArray.cs" />
     <Compile Include="FileSystem\Ntfs\IAttribute.cs" />
     <Compile Include="FileSystem\Ntfs\MasterFileTable.cs" />
