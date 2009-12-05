@@ -31,46 +31,46 @@ namespace MSDefragLib.FileSystem.Ntfs
                 offset = 0;
                 return false;
             }
+            else
+            {
+                int runLengthSize = (runDataValue & 0x0F);
+                int runOffsetSize = ((runDataValue & 0xF0) >> 4);
 
-            /* Decode the RunData and calculate the next Lcn. */
-            int runLengthSize = (runDataValue & 0x0F);
-            int runOffsetSize = ((runDataValue & 0xF0) >> 4);
-
-            length = ReadLength(reader, runLengthSize);
-            offset = ReadOffset(reader, runOffsetSize);
-            return true;
+                length = ReadLength(reader, runLengthSize);
+                offset = ReadOffset(reader, runOffsetSize);
+                return true;
+            }
         }
 
         private static UInt64 ReadLength(BinaryReader runData, int length)
         {
             Debug.Assert(length <= 8);
-            UlongBytes runLength = new UlongBytes();
-            runLength.Value = 0;
-            for (int i = 0; i < length; i++)
+
+            Byte[] runLength = new Byte[8];
+            for (int i = 0; i < 8; i++)
             {
-                runLength.Bytes[i] = runData.ReadByte();
+                if (i < length)
+                    runLength[i] = runData.ReadByte();
+                else
+                    runLength[i] = 0;
             }
-            return runLength.Value;
+            return BitConverter.ToUInt64(runLength, 0);
         }
 
         private static Int64 ReadOffset(BinaryReader runData, int length)
         {
             if (length == 0) return 0;
             Debug.Assert(length <= 8);
-            UlongBytes runOffset = new UlongBytes();
-            runOffset.Value = 0;
-            for (int j = 0; j < length; j++)
+            
+            Byte[] runOffset = new Byte[8];
+            for (int i = 0; i < 8; i++)
             {
-                runOffset.Bytes[j] = runData.ReadByte();
+                if (i < length)
+                    runOffset[i] = runData.ReadByte();
+                else
+                    runOffset[i] = (Byte)((runOffset[length-1] >= 0x80) ? 0xFF : 0);
             }
-
-            if (runOffset.Bytes[length - 1] >= 0x80)
-            {
-                int i = length;
-                while (i < 8)
-                    runOffset.Bytes[i++] = 0xFF;
-            }
-            return (Int64)runOffset.Value;
+            return BitConverter.ToInt64(runOffset, 0);
         }
     }
 }

@@ -20,7 +20,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             for (int ii = 0; ii < length; ii++)
             {
-                UInt16 val = GetValue(index + ii);
+                UInt16 val = m_words[index + ii];
 
                 ba.SetValue(jj++, (Byte)(val & Byte.MaxValue));
                 ba.SetValue(jj++, (Byte)(val >> (1 >> 3)));
