@@ -7,9 +7,33 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    [DebuggerDisplay("Length = {m_length}")]
+    [DebuggerDisplay("Length = {Length}")]
     class AttributeList : IAttribute
     {
+        private AttributeList()
+        {
+        }
+
+        public static AttributeList Parse(BinaryReader reader)
+        {
+            AttributeList list = new AttributeList();
+            list.Type = AttributeType.Parse(reader);
+            if (list.Type.Type != AttributeTypeEnum.AttributeEndOfList)
+            {
+                list.Length = reader.ReadUInt16();
+                list.NameLength = reader.ReadByte();
+                list.NameOffset = reader.ReadByte();
+                list.LowestVcn = reader.ReadUInt64();
+                list.FileReferenceNumber = InodeReference.Parse(reader);
+                list.Instance = reader.ReadUInt16();
+                list.AlignmentOrReserved = new UInt16[3];
+                list.AlignmentOrReserved[0] = reader.ReadUInt16();
+                list.AlignmentOrReserved[1] = reader.ReadUInt16();
+                list.AlignmentOrReserved[2] = reader.ReadUInt16();
+            }
+            return list;
+        }
+
         public AttributeType Type
         { get; private set; }
 
@@ -28,33 +52,17 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt16 NameOffset
         { get; private set; }
 
-        public UInt64 m_lowestVcn;
-        public InodeReference m_fileReferenceNumber;
-        public UInt16 m_instance;
-        public UInt16[] m_alignmentOrReserved; // [3];
+        public UInt64 LowestVcn
+        { get; private set; }
 
-        private AttributeList()
-        {
-        }
+        public InodeReference FileReferenceNumber
+        { get; private set; }
 
-        public static AttributeList Parse(BinaryReader reader)
-        {
-            AttributeList list = new AttributeList();
-            list.Type = AttributeType.Parse(reader);
-            if (list.Type.Type != AttributeTypeEnum.AttributeEndOfList)
-            {
-                list.Length = reader.ReadUInt16();
-                list.NameLength = reader.ReadByte();
-                list.NameOffset = reader.ReadByte();
-                list.m_lowestVcn = reader.ReadUInt64();
-                list.m_fileReferenceNumber = InodeReference.Parse(reader);
-                list.m_instance = reader.ReadUInt16();
-                list.m_alignmentOrReserved = new UInt16[3];
-                list.m_alignmentOrReserved[0] = reader.ReadUInt16();
-                list.m_alignmentOrReserved[1] = reader.ReadUInt16();
-                list.m_alignmentOrReserved[2] = reader.ReadUInt16();
-            }
-            return list;
-        }
+        public UInt16 Instance
+        { get; private set; }
+
+        public UInt16[] AlignmentOrReserved // [3];
+        { get; private set; }
+
     }
 }

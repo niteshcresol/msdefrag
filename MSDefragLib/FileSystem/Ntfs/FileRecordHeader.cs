@@ -7,8 +7,29 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    class FileRecordHeader
+    public class FileRecordHeader
     {
+        private FileRecordHeader()
+        { }
+
+        public static FileRecordHeader Parse(BinaryReader reader)
+        {
+            FileRecordHeader r = new FileRecordHeader();
+            r.RecHdr = RecordHeader.Parse(reader);
+            r.SequenceNumber = reader.ReadUInt16();
+            r.LinkCount = reader.ReadUInt16();
+            r.AttributeOffset = reader.ReadUInt16();
+            r.Flags = reader.ReadUInt16();
+            r.BytesInUse = reader.ReadUInt32();
+            r.BytesAllocated = reader.ReadUInt32();
+            r.BaseFileRecord = InodeReference.Parse(reader);
+            r.NextAttributeNumber = reader.ReadUInt16();
+            r.Padding = reader.ReadUInt16();
+            r.MFTRecordNumber = reader.ReadUInt32();
+            r.UpdateSeqNum = reader.ReadUInt16();
+            return r;
+        }
+
         public RecordHeader RecHdr
         { get; private set; }
 
@@ -25,10 +46,10 @@ namespace MSDefragLib.FileSystem.Ntfs
         { get; private set; }
 
         public Boolean IsInUse
-        { private set{} get { return ((Flags & 1) == 1); } }
+        { private set { } get { return ((Flags & 1) == 1); } }
 
         public Boolean IsDirectory
-        { private set{} get { return ((Flags & 2) == 2); } }
+        { private set { } get { return ((Flags & 2) == 2); } }
 
         public Boolean IsUnknown
         { private set { } get { return ((Flags & 252) != 0); } }
@@ -54,25 +75,5 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt16 UpdateSeqNum              /*  */
         { get; private set; }
 
-        private FileRecordHeader()
-        { }
-
-        public static FileRecordHeader Parse(BinaryReader reader)
-        {
-            FileRecordHeader r = new FileRecordHeader();
-            r.RecHdr = RecordHeader.Parse(reader);
-            r.SequenceNumber = reader.ReadUInt16();
-            r.LinkCount = reader.ReadUInt16();
-            r.AttributeOffset = reader.ReadUInt16();
-            r.Flags = reader.ReadUInt16();
-            r.BytesInUse = reader.ReadUInt32();
-            r.BytesAllocated = reader.ReadUInt32();
-            r.BaseFileRecord = InodeReference.Parse(reader);
-            r.NextAttributeNumber = reader.ReadUInt16();
-            r.Padding = reader.ReadUInt16();
-            r.MFTRecordNumber = reader.ReadUInt32();
-            r.UpdateSeqNum = reader.ReadUInt16();
-            return r;
-        }
     }
 }

@@ -9,16 +9,6 @@ namespace MSDefragLib.FileSystem.Ntfs
 {
     public class NonResidentAttribute : Attribute
     {
-        public UInt64 m_startingVcn;
-        public UInt64 m_lastVcn;
-        public UInt16 m_runArrayOffset;
-        public Byte m_compressionUnit;
-        public Byte[] m_alignmentOrReserved/*[5]*/;
-        public UInt64 m_allocatedSize;
-        public UInt64 m_dataSize;
-        public UInt64 m_initializedSize;
-        public UInt64 m_compressedSize;                  // Only when compressed
-
         private NonResidentAttribute()
         {
         }
@@ -27,16 +17,44 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             NonResidentAttribute a = new NonResidentAttribute();
             a.InternalParse(reader);
-            a.m_startingVcn = reader.ReadUInt64();
-            a.m_lastVcn = reader.ReadUInt64();
-            a.m_runArrayOffset = reader.ReadUInt16();
-            a.m_compressionUnit = reader.ReadByte();
-            a.m_alignmentOrReserved = reader.ReadBytes(5);
-            a.m_allocatedSize = reader.ReadUInt64();
-            a.m_dataSize = reader.ReadUInt64();
-            a.m_initializedSize = reader.ReadUInt64();
-            a.m_compressedSize = reader.ReadUInt64();
+            a.StartingVcn = reader.ReadUInt64();
+            a.LastVcn = reader.ReadUInt64();
+            a.RunArrayOffset = reader.ReadUInt16();
+            a.CompressionUnit = reader.ReadByte();
+            a.AlignmentOrReserved = reader.ReadBytes(5);
+            a.AllocatedSize = reader.ReadUInt64();
+            a.DataSize = reader.ReadUInt64();
+            a.InitializedSize = reader.ReadUInt64();
+            a.CompressedSize = reader.ReadUInt64();
             return a;
         }
+
+        public UInt64 StartingVcn
+        { get; private set; }
+
+        public UInt64 LastVcn
+        { get; private set; }
+
+        public UInt16 RunArrayOffset
+        { get; private set; }
+
+        public Byte CompressionUnit
+        { get; private set; }
+
+        public Byte[] AlignmentOrReserved/*[5]*/
+        { get; private set; }
+
+        public UInt64 AllocatedSize
+        { get; private set; }
+
+        public UInt64 DataSize
+        { get; private set; }
+
+        public UInt64 InitializedSize
+        { get; private set; }
+
+        // Only when compressed
+        public UInt64 CompressedSize
+        { get; private set; }
     }
 }

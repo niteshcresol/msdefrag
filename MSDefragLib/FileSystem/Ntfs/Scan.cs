@@ -406,7 +406,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 // ignore (if we don't ignore then the program will loop forever, because for 
                 // some reason the info in the calling m_iNode is duplicated here...).
                 //
-                UInt64 RefInode = attributeList.m_fileReferenceNumber.BaseInodeNumber;
+                UInt64 RefInode = attributeList.FileReferenceNumber.BaseInodeNumber;
                     //(UInt64)attributeList.m_fileReferenceNumber.m_iNodeNumberLowPart +
                     //    ((UInt64)attributeList.m_fileReferenceNumber.m_iNodeNumberHighPart << 32);
 
@@ -462,14 +462,14 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 // Process the list of attributes in the m_iNode, by recursively calling the ProcessAttributes() subroutine.
-                ShowDebug(6, String.Format("      Processing m_iNode {0:G} m_instance {1:G}", RefInode, attributeList.m_instance));
+                ShowDebug(6, String.Format("      Processing m_iNode {0:G} m_instance {1:G}", RefInode, attributeList.Instance));
 
                 ProcessAttributes(diskInfo, inodeData,
                     Helper.BinaryReader(Buffer2, FileRecordHeader.AttributeOffset),
                     diskInfo.BytesPerMftRecord - FileRecordHeader.AttributeOffset,
-                    attributeList.m_instance, depth + 1);
+                    attributeList.Instance, depth + 1);
 
-                ShowDebug(6, String.Format("      Finished processing m_iNode {0:G} m_instance {1:G}", RefInode, attributeList.m_instance));
+                ShowDebug(6, String.Format("      Finished processing m_iNode {0:G} m_instance {1:G}", RefInode, attributeList.Instance));
             }
         }
 
@@ -609,11 +609,11 @@ namespace MSDefragLib.FileSystem.Ntfs
                 " ParseNonResidentAttributesFull Inode: {0:G}, depth: {1:G}", inodeData.Inode, depth));
             NonResidentAttribute nonResidentAttribute = NonResidentAttribute.Parse(reader);
 
-            UInt64 Buffer2Length = nonResidentAttribute.m_dataSize;
+            UInt64 Buffer2Length = nonResidentAttribute.DataSize;
 
-            reader.BaseStream.Seek(position + offset + nonResidentAttribute.m_runArrayOffset, SeekOrigin.Begin);
+            reader.BaseStream.Seek(position + offset + nonResidentAttribute.RunArrayOffset, SeekOrigin.Begin);
             ByteArray Buffer2 = ReadNonResidentData(diskInfo, reader,
-                attribute.Length - nonResidentAttribute.m_runArrayOffset, 0, Buffer2Length);
+                attribute.Length - nonResidentAttribute.RunArrayOffset, 0, Buffer2Length);
 
             ProcessAttributeList(diskInfo, inodeData, Helper.BinaryReader(Buffer2), Buffer2Length, depth);
         }
@@ -627,9 +627,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             NonResidentAttribute nonResidentAttribute = NonResidentAttribute.Parse(reader);
 
             // Save the length (number of bytes) of the data.
-            if (attribute.Type.IsData && (inodeData.m_totalBytes == 0))
+            if (attribute.Type.IsData && (inodeData.TotalBytes == 0))
             {
-                inodeData.m_totalBytes = nonResidentAttribute.m_dataSize;
+                inodeData.TotalBytes = nonResidentAttribute.DataSize;
             }
 
             // Extract the streamname.
@@ -638,11 +638,11 @@ namespace MSDefragLib.FileSystem.Ntfs
             String p1 = Helper.ParseString(reader, attribute.NameLength);
 
             // Create a new stream with a list of fragments for this data.
-            reader.BaseStream.Seek(position + offset + nonResidentAttribute.m_runArrayOffset, SeekOrigin.Begin);
+            reader.BaseStream.Seek(position + offset + nonResidentAttribute.RunArrayOffset, SeekOrigin.Begin);
 
             TranslateRundataToFragmentlist(inodeData, p1, attribute.Type,
-                reader, attribute.Length - nonResidentAttribute.m_runArrayOffset,
-                nonResidentAttribute.m_startingVcn, nonResidentAttribute.m_dataSize);
+                reader, attribute.Length - nonResidentAttribute.RunArrayOffset,
+                nonResidentAttribute.StartingVcn, nonResidentAttribute.DataSize);
 
             // Special case: If this is the $MFT then save data.
             if (inodeData.Inode == 0)
@@ -650,13 +650,13 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (attribute.Type.IsData && (inodeData.MftDataFragments == null))
                 {
                     inodeData.MftDataFragments = inodeData.Streams.First().Fragments;
-                    inodeData.MftDataLength = nonResidentAttribute.m_dataSize;
+                    inodeData.MftDataLength = nonResidentAttribute.DataSize;
                 }
 
                 if (attribute.Type.IsBitmap && (inodeData.MftBitmapFragments == null))
                 {
                     inodeData.MftBitmapFragments = inodeData.Streams.First().Fragments;
-                    inodeData.MftBitmapLength = nonResidentAttribute.m_dataSize;
+                    inodeData.MftBitmapLength = nonResidentAttribute.DataSize;
                 }
             }
         }
@@ -677,7 +677,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 fileNameAttribute = FileNameAttribute.Parse(reader);
 
-                inodeData.m_parentInode = fileNameAttribute.m_parentDirectory.BaseInodeNumber;
+                inodeData.ParentInode = fileNameAttribute.ParentDirectory.BaseInodeNumber;
 
                 //inodeData.m_parentInode = fileNameAttribute.m_parentDirectory.m_iNodeNumberLowPart +
                 //    (((UInt32)fileNameAttribute.m_parentDirectory.m_iNodeNumberHighPart) << 32);
@@ -690,15 +690,15 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 StandardInformation standardInformation = StandardInformation.Parse(reader);
 
-                inodeData.m_creationTime = standardInformation.CreationTime;
-                inodeData.m_mftChangeTime = standardInformation.MftChangeTime;
-                inodeData.m_lastAccessTime = standardInformation.LastAccessTime;
+                inodeData.CreationTime = standardInformation.CreationTime;
+                inodeData.MftChangeTime = standardInformation.MftChangeTime;
+                inodeData.LastAccessTime = standardInformation.LastAccessTime;
             }
 
             // The value of the AttributeData (0x80) is the actual data of the file.
             if (attribute.Type.IsData)
             {
-                inodeData.m_totalBytes = residentAttribute.ValueLength;
+                inodeData.TotalBytes = residentAttribute.ValueLength;
             }
         }
 
@@ -816,7 +816,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Item.ShortFilename = ConstructStreamName(inodeData.ShortFilename, inodeData.LongFilename, stream);
                 Item.ShortPath = null;
 
-                Item.Bytes = inodeData.m_totalBytes;
+                Item.Bytes = inodeData.TotalBytes;
 
                 Item.Bytes = stream.Bytes;
 
@@ -824,11 +824,11 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 Item.Clusters = stream.Clusters;
 
-                Item.CreationTime = inodeData.m_creationTime;
-                Item.MftChangeTime = inodeData.m_mftChangeTime;
-                Item.LastAccessTime = inodeData.m_lastAccessTime;
+                Item.CreationTime = inodeData.CreationTime;
+                Item.MftChangeTime = inodeData.MftChangeTime;
+                Item.LastAccessTime = inodeData.LastAccessTime;
 
-                Item.ParentInode = inodeData.m_parentInode;
+                Item.ParentInode = inodeData.ParentInode;
                 Item.Directory = inodeData.IsDirectory;
                 Item.Unmovable = false;
                 Item.Exclude = false;
@@ -844,7 +844,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 if (stream.Type.IsData)
                 {
-                    _lib.Data.CountAllBytes += inodeData.m_totalBytes;
+                    _lib.Data.CountAllBytes += inodeData.TotalBytes;
                 }
 
                 _lib.Data.CountAllClusters += stream.Clusters;
@@ -852,7 +852,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (Item.FragmentCount > 1)
                 {
                     _lib.Data.CountFragmentedItems++;
-                    _lib.Data.CountFragmentedBytes += inodeData.m_totalBytes;
+                    _lib.Data.CountFragmentedBytes += inodeData.TotalBytes;
 
                     if (stream != null) _lib.Data.CountFragmentedClusters += stream.Clusters;
                 }

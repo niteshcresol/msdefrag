@@ -9,24 +9,6 @@ namespace MSDefragLib.FileSystem.Ntfs
 {
     public class InodeReference
     {
-        public UInt32 m_iNodeNumberLowPart;
-        public UInt16 m_iNodeNumberHighPart;
-
-        public UInt64 BaseInodeNumber
-        {
-            private set { }
-            get
-            {
-                UInt64 retValue = 0;
-
-                retValue = (UInt64) m_iNodeNumberLowPart + ((UInt64)m_iNodeNumberHighPart << 32);
-
-                return retValue;
-            }
-        }
-
-        public UInt16 m_sequenceNumber;
-
         private InodeReference()
         {
         }
@@ -34,10 +16,21 @@ namespace MSDefragLib.FileSystem.Ntfs
         public static InodeReference Parse(BinaryReader reader)
         {
             InodeReference r = new InodeReference();
-            r.m_iNodeNumberLowPart = reader.ReadUInt32();
-            r.m_iNodeNumberHighPart = reader.ReadUInt16();
-            r.m_sequenceNumber = reader.ReadUInt16();
+            UInt32 lowPart = reader.ReadUInt32();
+            UInt16 highPart = reader.ReadUInt16();
+            r.BaseInodeNumber = (UInt64)lowPart + ((UInt64)highPart << 32);
+            r.SequenceNumber = reader.ReadUInt16();
             return r;
         }
+
+        /// <summary>
+        /// 48 bit inode number
+        /// </summary>
+        public UInt64 BaseInodeNumber
+        { get; private set; }
+
+        public UInt16 SequenceNumber
+        { get; private set; }
+
     }
 }

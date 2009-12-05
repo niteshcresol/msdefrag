@@ -20,7 +20,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         { get; private set; }
 
         // 0x0001 = Indexed
-        public UInt16 Flags
+        public UInt16 Flags2
         { get; private set; }
 
         public static new ResidentAttribute Parse(BinaryReader reader)
@@ -29,7 +29,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             a.InternalParse(reader);
             a.ValueLength = reader.ReadUInt32();
             a.ValueOffset = reader.ReadUInt16();
-            a.Flags = reader.ReadUInt16();
+            a.Flags2 = reader.ReadUInt16();
             return a;
         }
     }

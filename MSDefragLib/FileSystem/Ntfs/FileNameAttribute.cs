@@ -14,29 +14,36 @@ namespace MSDefragLib.FileSystem.Ntfs
         DOS = 0x02      // 8.3 name
     }
 
+    [DebuggerDisplay("Name = {Name}")]
     public class FileNameAttribute
     {
         private FileNameAttribute()
         {
         }
 
-        public InodeReference m_parentDirectory;
-        public UInt64 m_creationTime;
-        public UInt64 m_changeTime;
-        public UInt64 m_lastWriteTime;
-        public UInt64 m_lastAccessTime;
-        public UInt64 m_allocatedSize;
-        public UInt64 m_dataSize;
-        public UInt32 m_fileAttributes;
-        public UInt32 m_alignmentOrReserved;
-       
-        public String Name
-        { get; private set; }
-
         [Conditional("DEBUG")]
         public void AssertValid()
         {
             Debug.Assert((_nameType == 0x01) || (_nameType == 0x02) || (_nameType == 0x03));
+        }
+
+        public static FileNameAttribute Parse(BinaryReader reader)
+        {
+            FileNameAttribute filename = new FileNameAttribute();
+            filename.ParentDirectory = InodeReference.Parse(reader);
+            filename.CreationTime = reader.ReadUInt64();
+            filename.ChangeTime = reader.ReadUInt64();
+            filename.LastWriteTime = reader.ReadUInt64();
+            filename.LastAccessTime = reader.ReadUInt64();
+            filename.AllocatedSize = reader.ReadUInt64();
+            filename.DataSize = reader.ReadUInt64();
+            filename.FileAttributes = reader.ReadUInt32();
+            filename.AlignmentOrReserved = reader.ReadUInt32();
+            int nameLength = reader.ReadByte();
+            filename._nameType = reader.ReadByte();
+            filename.Name = Helper.ParseString(reader, nameLength);
+            filename.AssertValid();
+            return filename;
         }
 
         private Byte _nameType;
@@ -47,23 +54,34 @@ namespace MSDefragLib.FileSystem.Ntfs
         public NameType NameType
         { get { return (NameType)_nameType; } }
 
-        public static FileNameAttribute Parse(BinaryReader reader)
-        {
-            FileNameAttribute filename = new FileNameAttribute();
-            filename.m_parentDirectory = InodeReference.Parse(reader);
-            filename.m_creationTime = reader.ReadUInt64();
-            filename.m_changeTime = reader.ReadUInt64();
-            filename.m_lastWriteTime = reader.ReadUInt64();
-            filename.m_lastAccessTime = reader.ReadUInt64();
-            filename.m_allocatedSize = reader.ReadUInt64();
-            filename.m_dataSize = reader.ReadUInt64();
-            filename.m_fileAttributes = reader.ReadUInt32();
-            filename.m_alignmentOrReserved = reader.ReadUInt32();
-            int nameLength = reader.ReadByte();
-            filename._nameType = reader.ReadByte();
-            filename.Name = Helper.ParseString(reader, nameLength);
-            filename.AssertValid();
-            return filename;
-        }
+        public InodeReference ParentDirectory
+        { get; private set; }
+
+        public UInt64 CreationTime
+        { get; private set; }
+
+        public UInt64 ChangeTime
+        { get; private set; }
+
+        public UInt64 LastWriteTime
+        { get; private set; }
+
+        public UInt64 LastAccessTime
+        { get; private set; }
+
+        public UInt64 AllocatedSize
+        { get; private set; }
+
+        public UInt64 DataSize
+        { get; private set; }
+
+        public UInt32 FileAttributes
+        { get; private set; }
+
+        public UInt32 AlignmentOrReserved
+        { get; private set; }
+
+        public String Name
+        { get; private set; }
     }
 }
