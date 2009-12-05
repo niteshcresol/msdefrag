@@ -11,7 +11,7 @@ namespace MSDefragLib.FileSystem.Ntfs
     /// </summary>
     public class InodeDataStructure
     {
-        public UInt64 m_iNode;                          /* The m_iNode number. */
+        public UInt64 Inode;                          /* The m_iNode number. */
         public UInt64 m_parentInode;                    /* The m_iNode number of the parent directory. */
 
         /* true: it's a directory. */
@@ -65,7 +65,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <param name="inodeNumber"></param>
         public InodeDataStructure(UInt64 inodeNumber)
         {
-            m_iNode = inodeNumber;
+            Inode = inodeNumber;
             m_parentInode = 5;
             IsDirectory = false;
 
