@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,11 +9,16 @@ using System.Threading;
 
 namespace MSDefragLib
 {
-    public class DiskStruct : IDisposable
+    public class Disk : IDisposable
     {
-        public DiskStruct()
+        public Disk()
         {
             VolumeHandle = IntPtr.Zero;
+        }
+
+        public override string ToString()
+        {
+            return "Disk";
         }
 
         private IntPtr VolumeHandle
@@ -57,8 +63,9 @@ namespace MSDefragLib
             // Example: "c:\"
             get { return MountPoint + @"\"; }
         }
-        
-        private String VolumeName;          /* Example: "\\?\Volume{08439462-3004-11da-bbca-806d6172696f}" */
+
+        /* Example: "\\?\Volume{08439462-3004-11da-bbca-806d6172696f}" */
+        private String VolumeName;
 
         public String VolumeNameSlash
         {
@@ -74,7 +81,10 @@ namespace MSDefragLib
             get { return BootSector.Filesystem; }
         }
 
-        public UInt64 MftLockedClusters;    /* Number of clusters at begin of MFT that cannot be moved. */
+        /// <summary>
+        /// Number of clusters at begin of MFT that cannot be moved.
+        /// </summary>
+        public UInt64 MftLockedClusters;
 
         /// <summary>
         /// Read data from this disk starting at the given LCN
@@ -85,6 +95,8 @@ namespace MSDefragLib
         /// <param name="count">Number of bytes to read</param>
         public void ReadFromCluster(UInt64 lcn, Byte[] buffer, int start, int count)
         {
+            Trace.WriteLine(this, String.Format("Reading: LCN={0:X8}, {1} bytes", lcn, count));
+
             Overlapped overlapped = IO.OverlappedBuilder.Get(lcn);
             int bytesRead = IO.IOWrapper.Read(VolumeHandle, buffer, start, count, overlapped);
             if (bytesRead != count)

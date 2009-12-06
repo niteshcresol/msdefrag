@@ -202,11 +202,14 @@ namespace MSDefragLib
         }
 */
 
-        /* Return a string with the error message for GetLastError(). */
-        public String SystemErrorStr(Int32 ErrorCode)
+        /// <summary>
+        /// Return a string with the error message for GetLastError().
+        /// </summary>
+        /// <param name="ErrorCode"></param>
+        /// <returns></returns>
+        public static String SystemErrorStr(Int32 ErrorCode)
         {
-            String message = IO.IOWrapper.GetMessage(ErrorCode);
-            return message;
+            return IO.IOWrapper.GetMessage(ErrorCode);
         }
 
         /* Dump a block of data to standard output, for debugging purposes. */
@@ -4803,7 +4806,7 @@ namespace MSDefragLib
 	        /*  Initialize the data. Some items are inherited from the caller and are not initialized. */
 	        Data.Phase = 0;
 
-            Data.Disk = new DiskStruct();
+            Data.Disk = new Disk();
 
             Data.ItemTree = null;
 

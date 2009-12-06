@@ -30,7 +30,7 @@ namespace MSDefragLib
 	    public int CannotMoveDirs;                       /* If bigger than 20 then do not move dirs. */
 
 	    public String IncludeMask;                       /* Example: "c:\t1\*" */
-	    public DiskStruct Disk;
+	    public Disk Disk;
 
 	    public UInt16 FreeSpace;                          /* Percentage of total disk size 0..100. */
 

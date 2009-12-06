@@ -8,7 +8,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 {
     public class BitmapFile
     {
-        public BitmapFile(DiskStruct disk, DiskInformation diskInfo, FragmentList fragments,
+        public BitmapFile(Disk disk, DiskInformation diskInfo, FragmentList fragments,
             UInt64 bitmapBytes, UInt64 dataBytes)
         {
             _bitmapBytes = bitmapBytes;
