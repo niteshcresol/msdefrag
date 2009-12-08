@@ -5615,6 +5615,8 @@ namespace MSDefragLib
             #endregion
 
 
+            StartTimer();
+
             /* If a Path is specified then call DefragOnePath() for that path. Otherwise call
              * DefragMountpoints() for every disk in the system. */
             if (!String.IsNullOrEmpty(Path))
@@ -5700,21 +5702,19 @@ namespace MSDefragLib
 
         public static MSDefragLib me;
         public static Int64 testNumber2 = 0;
-        public static Int64 firstTimestamp = 0;
-        public static Int64 secondTimeStamp2;
+        public static DateTime firstTimestamp;
+        public static DateTime secondTimeStamp2;
 
         private static void OnTimedEvent(object source, ElapsedEventArgs e)
         {
-            if (firstTimestamp == 0)
+            if (firstTimestamp.Ticks == 0)
             {
-                firstTimestamp = e.SignalTime.Ticks;
+                firstTimestamp = e.SignalTime;
             }
 
-            secondTimeStamp2 = e.SignalTime.Ticks;
+            secondTimeStamp2 = e.SignalTime;
 
-            Int64 diff = secondTimeStamp2 - firstTimestamp;
-
-            Double diffMilli = diff / 10000;
+            Double diffMilli = ((TimeSpan)(secondTimeStamp2 - firstTimestamp)).Ticks / 10000;
 
             testNumber2 += me._dirtySquares.Count;
             me.ShowDebug(0, "Total number of squares: " + testNumber2);
@@ -5725,31 +5725,44 @@ namespace MSDefragLib
                 me.ShowDebug(2, String.Format("Average Performance: {0:F} squares / s", (testNumber2 * 1000 / diffMilli)));
             }
 
-            ClusterSquare ca = new ClusterSquare(0, 0, 0);
-            me.NotifyGui(ca);
+            me.ShowChangedClusters();
         }
 
-        public void Simulate()
+        private void StartTimer()
         {
+            aTimer = new System.Timers.Timer(300);
+
+            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+
+            aTimer.Enabled = true;
+        }
+
+        public void StartSimulation()
+        {
+            StartTimer();
+
             Data = new MSDefragDataStruct();
 
             Data.Running = RunningState.RUNNING;
 
+            Simulate();
+
+            //Thread defragThread = new Thread(Simulate);
+            //defragThread.Priority = ThreadPriority.Lowest;
+
+            //defragThread.Start();
+        }
+
+        private void Simulate()
+        {
             me = this;
 
             Random rnd = new Random();
 
-            aTimer = new System.Timers.Timer(500);
-
-            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-
-            aTimer.Interval = 1000;
-            aTimer.Enabled = true;
-
             for (int testNumber = 0; testNumber < 1000000; testNumber++)
             {
                 Int32 squareBegin = rnd.Next(NumSquares);
-                Int32 squareEnd = rnd.Next(squareBegin, squareBegin + 200);
+                Int32 squareEnd = rnd.Next(squareBegin, squareBegin + 10);
 
                 if (squareEnd > NumSquares)
                 {
@@ -5774,13 +5787,12 @@ namespace MSDefragLib
 
                         //if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
                         //{
-                        //    ShowDebug(4, "Notify: " + numNotify);
-                        //    numNotify++;
-
-                        //    NotifyGui(clusterSquare);
+                        //    ShowChangedClusters();
                         //}
                     }
                 }
+
+                if (testNumber % 100 == 0) ShowDebug(4, "Test: " + testNumber);
 
                 Thread.Sleep(1);
             }
@@ -5798,14 +5810,24 @@ namespace MSDefragLib
             }
         }
 
+        public delegate void ShowChangedClustersHandler(object sender, EventArgs e);
         public delegate void ShowDebugHandler(object sender, EventArgs e);
-        public delegate void DrawClusterHandler(object sender, EventArgs e);
-        public delegate void NotifyGuiHandler(object sender, EventArgs e);
 
-        public event DrawClusterHandler DrawClusterEvent;
-        public event NotifyGuiHandler NotifyGuiEvent;
+        //public delegate void DrawClusterHandler(object sender, EventArgs e);
+        //public delegate void NotifyGuiHandler(object sender, EventArgs e);
+
+        public event ShowChangedClustersHandler ShowChangedClustersEvent;
+        //public event DrawClusterHandler DrawClusterEvent;
+        //public event NotifyGuiHandler NotifyGuiEvent;
         public event ShowDebugHandler ShowDebugEvent;
 
+        protected virtual void OnShowChangedClusters(EventArgs e)
+        {
+            if (ShowChangedClustersEvent != null)
+            {
+                ShowChangedClustersEvent(this, e);
+            }
+        }
         protected virtual void OnShowDebug(EventArgs e)
         {
             if (ShowDebugEvent != null)
@@ -5813,28 +5835,38 @@ namespace MSDefragLib
                 ShowDebugEvent(this, e);
             }
         }
-        protected virtual void OnDrawCluster(EventArgs e)
+        //protected virtual void OnDrawCluster(EventArgs e)
+        //{
+        //    if (DrawClusterEvent != null)
+        //    {
+        //        if (e is DrawClusterEventArgs)
+        //        {
+        //            DrawClusterEvent(this, e);
+        //        }
+        //        if (e is DrawClusterEventArgs2)
+        //        {
+        //            DrawClusterEvent(this, e);
+        //        }
+        //    }
+        //}
+        //protected virtual void OnNotifyGui(EventArgs e)
+        //{
+        //    if (NotifyGuiEvent != null)
+        //    {
+        //        if (e is NotifyGuiEventArgs)
+        //        {
+        //            NotifyGuiEvent(this, e);
+        //        }
+        //    }
+        //}
+
+        public void ShowChangedClusters()
         {
-            if (DrawClusterEvent != null)
+            if (_dirtySquares.Count() >= MAX_DIRTY_SQUARES)
             {
-                if (e is DrawClusterEventArgs)
-                {
-                    DrawClusterEvent(this, e);
-                }
-                if (e is DrawClusterEventArgs2)
-                {
-                    DrawClusterEvent(this, e);
-                }
-            }
-        }
-        protected virtual void OnNotifyGui(EventArgs e)
-        {
-            if (NotifyGuiEvent != null)
-            {
-                if (e is NotifyGuiEventArgs)
-                {
-                    NotifyGuiEvent(this, e);
-                }
+                ChangedClusterEventArgs e = new ChangedClusterEventArgs(DirtySquares);
+
+                OnShowChangedClusters(e);
             }
         }
 
@@ -5846,13 +5878,11 @@ namespace MSDefragLib
                 OnShowDebug(e);
         }
 
-        private const Int32 MAX_DIRTY_SQUARES = 100;
-
-        private const Int32 MAX_DIRTY_SQUARES_2 = 50000;
+        private const Int32 MAX_DIRTY_SQUARES = 300;
 
         private IList<ClusterSquare> _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
 
-        public IList<ClusterSquare> DirtySquares
+        private IList<ClusterSquare> DirtySquares
         {
             get
             {
@@ -5927,20 +5957,20 @@ namespace MSDefragLib
 
                         if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
                         {
-                            ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
-                            NotifyGui(clusterSquare);
+                        //    ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
+                            ShowChangedClusters();
                         }
                     }
                 }
             }
         }
-        public void NotifyGui(ClusterSquare clusterSquare)
-        {
+        //public void NotifyGui(ClusterSquare clusterSquare)
+        //{
 
-            NotifyGuiEventArgs e = new NotifyGuiEventArgs(clusterSquare);
+        //    NotifyGuiEventArgs e = new NotifyGuiEventArgs(clusterSquare);
 
-            OnNotifyGui(e);
-        }
+        //    OnNotifyGui(e);
+        //}
 
         private static Boolean ggg = false;
 
@@ -6065,50 +6095,60 @@ namespace MSDefragLib
 
     #region Event classes
 
-    public class DrawClusterEventArgs : EventArgs 
+    public class ChangedClusterEventArgs : EventArgs
     {
-        public UInt64 m_clusterNumber;
-        public MSDefragLib.CLUSTER_COLORS m_color;
-        public MSDefragDataStruct m_data;
+        public IList<ClusterSquare> m_list;
 
-        public DrawClusterEventArgs(MSDefragDataStruct data, UInt64 clusterNum, MSDefragLib.CLUSTER_COLORS col)
+        public ChangedClusterEventArgs(IList<ClusterSquare> list)
         {
-            m_data = data;
-            m_clusterNumber = clusterNum;
-            m_color = col;
+            m_list = list;
         }
     }
-    public class DrawClusterEventArgs2 : EventArgs
-    {
-        public UInt64 m_startClusterNumber;
-        public UInt64 m_endClusterNumber;
-        public MSDefragDataStruct m_data;
 
-        public Int32 m_squareBegin;
-        public Int32 m_squareEnd;
+    //public class DrawClusterEventArgs : EventArgs 
+    //{
+    //    public UInt64 m_clusterNumber;
+    //    public MSDefragLib.CLUSTER_COLORS m_color;
+    //    public MSDefragDataStruct m_data;
 
-        public DrawClusterEventArgs2(MSDefragDataStruct data, UInt64 startClusterNum, UInt64 endClusterNum)
-        {
-            m_data = data;
-            m_startClusterNumber = startClusterNum;
-            m_endClusterNumber = endClusterNum;
-        }
+    //    public DrawClusterEventArgs(MSDefragDataStruct data, UInt64 clusterNum, MSDefragLib.CLUSTER_COLORS col)
+    //    {
+    //        m_data = data;
+    //        m_clusterNumber = clusterNum;
+    //        m_color = col;
+    //    }
+    //}
+    //public class DrawClusterEventArgs2 : EventArgs
+    //{
+    //    public UInt64 m_startClusterNumber;
+    //    public UInt64 m_endClusterNumber;
+    //    public MSDefragDataStruct m_data;
 
-        public DrawClusterEventArgs2(Int32 squareBegin, Int32 squareEnd)
-        {
-            m_squareBegin = squareBegin;
-            m_squareEnd = squareEnd;
-        }
-    }
-    public class NotifyGuiEventArgs : EventArgs
-    {
-        public ClusterSquare m_clusterSquare;
+    //    public Int32 m_squareBegin;
+    //    public Int32 m_squareEnd;
 
-        public NotifyGuiEventArgs(ClusterSquare clusterSquare)
-        {
-            m_clusterSquare = clusterSquare;
-        }
-    }
+    //    public DrawClusterEventArgs2(MSDefragDataStruct data, UInt64 startClusterNum, UInt64 endClusterNum)
+    //    {
+    //        m_data = data;
+    //        m_startClusterNumber = startClusterNum;
+    //        m_endClusterNumber = endClusterNum;
+    //    }
+
+    //    public DrawClusterEventArgs2(Int32 squareBegin, Int32 squareEnd)
+    //    {
+    //        m_squareBegin = squareBegin;
+    //        m_squareEnd = squareEnd;
+    //    }
+    //}
+    //public class NotifyGuiEventArgs : EventArgs
+    //{
+    //    public ClusterSquare m_clusterSquare;
+
+    //    public NotifyGuiEventArgs(ClusterSquare clusterSquare)
+    //    {
+    //        m_clusterSquare = clusterSquare;
+    //    }
+    //}
 
     #endregion
 
