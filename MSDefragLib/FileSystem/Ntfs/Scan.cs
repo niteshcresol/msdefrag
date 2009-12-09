@@ -762,7 +762,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             // Note: why is the MFTRecordNumber only 32 bit? Inode numbers are 48 bit.
             //
             ErrorCheck(fileRecordHeader.MFTRecordNumber != inodeNumber,
-                String.Format("Warning: m_iNode {0:G} contains a different MFTRecordNumber {1:G}",
+                String.Format("Warning: Inode {0:G} contains a different MFTRecordNumber {1:G}",
                       inodeNumber, fileRecordHeader.MFTRecordNumber), true);
 
             ErrorCheck(
@@ -999,7 +999,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             foreach (bool bit in bitmapFile.Bits)
             {
                 // Ignore the m_iNode if the bitmap says it's not in use.
-                if (!bit)
+                if (!bit || (InodeNumber == 0))
                 {
                     InodeNumber++;
                     continue;
