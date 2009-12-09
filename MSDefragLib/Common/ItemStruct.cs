@@ -65,7 +65,7 @@ namespace MSDefragLib
 
         public ItemStruct ParentDirectory;
 
-        public Boolean Directory;                    /* YES: it's a directory. */
+        public Boolean IsDirectory;                    /* YES: it's a directory. */
         public Boolean Unmovable;                    /* YES: file can't/couldn't be moved. */
         public Boolean Exclude;                      /* YES: file is not to be defragged/optimized. */
         public Boolean SpaceHog;                     /* YES: file to be moved to end of disk. */

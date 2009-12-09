@@ -276,7 +276,8 @@ namespace MSDefrag
         private void Defrag()
         {
             // m_msDefragLib.StartSimulation();
-            m_msDefragLib.RunJkDefrag("C:\\*", 2, 100, 10, null, null);
+            //m_msDefragLib.RunJkDefrag("C:\\*", 2, 100, 10, null, null);
+            m_msDefragLib.RunJkDefrag("T:\\*", 2, 100, 10, null, null);
         }
 
         #endregion

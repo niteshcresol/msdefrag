@@ -1731,11 +1731,11 @@ namespace MSDefragLib
 	        {
 		        if (Item.Unmovable == true) continue;
 		        if (Item.Exclude == true) continue;
-                if ((Item.Directory == true) && (Data.CannotMoveDirs > 20)) continue;
+                if ((Item.IsDirectory == true) && (Data.CannotMoveDirs > 20)) continue;
 
 		        int Zone = 1;
 		        if (Item.SpaceHog == true) Zone = 2;
-		        if (Item.Directory == true) Zone = 0;
+		        if (Item.IsDirectory == true) Zone = 0;
 
 		        SizeOfMovableFiles[Zone] = SizeOfMovableFiles[Zone] + Item.Clusters;
 	        }
@@ -1798,7 +1798,7 @@ namespace MSDefragLib
 		        {
 			        if ((Item.Unmovable == false) &&
 				        (Item.Exclude == false) &&
-                        ((Item.Directory == false) || (Data.CannotMoveDirs <= 20))) continue;
+                        ((Item.IsDirectory == false) || (Data.CannotMoveDirs <= 20))) continue;
 
 			        RealVcn = 0;
 
@@ -2666,7 +2666,7 @@ namespace MSDefragLib
                 Data.CountAllBytes += Item.Bytes;
                 Data.CountAllClusters += Item.Clusters;
 
-		        if (Item.Directory == true)
+		        if (Item.IsDirectory == true)
 		        {
                     Data.CountDirectories++;
 		        }
@@ -3449,7 +3449,7 @@ namespace MSDefragLib
 
 		        /* The item is a SpaceHog if it's larger than 50 megabytes, or last access time
 		        is more than 30 days ago, or if it's filename matches a SpaceHog mask. */
-		        if ((Item.Exclude == false) && (Item.Directory == false))
+		        if ((Item.Exclude == false) && (Item.IsDirectory == false))
 		        {
                     if ((Data.UseDefaultSpaceHogs == true) && (Item.Bytes > 50 * 1024 * 1024))
 			        {
@@ -5707,6 +5707,8 @@ namespace MSDefragLib
 
         private static void OnTimedEvent(object source, ElapsedEventArgs e)
         {
+            if (me == null)
+                return;
             if (firstTimestamp.Ticks == 0)
             {
                 firstTimestamp = e.SignalTime;

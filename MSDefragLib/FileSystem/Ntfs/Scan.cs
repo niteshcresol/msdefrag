@@ -816,12 +816,10 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Item.ShortFilename = ConstructStreamName(inodeData.ShortFilename, inodeData.LongFilename, stream);
                 Item.ShortPath = null;
 
-                Item.Bytes = inodeData.TotalBytes;
-
+                //Item.Bytes = inodeData.TotalBytes;
                 Item.Bytes = stream.Bytes;
 
-                Item.Clusters = 0;
-
+                //Item.Clusters = 0;
                 Item.Clusters = stream.Clusters;
 
                 Item.CreationTime = inodeData.CreationTime;
@@ -829,13 +827,13 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Item.LastAccessTime = inodeData.LastAccessTime;
 
                 Item.ParentInode = inodeData.ParentInode;
-                Item.Directory = inodeData.IsDirectory;
+                Item.IsDirectory = inodeData.IsDirectory;
                 Item.Unmovable = false;
                 Item.Exclude = false;
                 Item.SpaceHog = false;
 
                 // Increment counters
-                if (Item.Directory == true)
+                if (Item.IsDirectory)
                 {
                     _lib.Data.CountDirectories++;
                 }
@@ -1001,7 +999,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             foreach (bool bit in bitmapFile.Bits)
             {
                 // Ignore the m_iNode if the bitmap says it's not in use.
-                if (!bit || (InodeNumber == 0))
+                if (!bit)
                 {
                     InodeNumber++;
                     continue;
@@ -1029,7 +1027,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     if (BlockEnd > u1)
                         BlockEnd = u1;
 
-                    UInt64 lcn = diskInfo.ClusterToBytes(foundFragment.Lcn)+diskInfo.InodeToBytes(BlockStart);
+                    UInt64 lcn = diskInfo.ClusterToBytes(foundFragment.Lcn - foundFragment.Vcn) + diskInfo.InodeToBytes(BlockStart);
                     
                     //Console.WriteLine("Reading block of {0} Inodes from MFT into memory, {1} bytes from LCN={2}",
                     //    BlockEnd - BlockStart, diskInfo.InodeToBytes(BlockEnd - BlockStart),
