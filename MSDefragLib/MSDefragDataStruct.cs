@@ -76,10 +76,7 @@ namespace MSDefragLib
 
 	    /* Variables used to throttle the speed. */
 
-	    public int Speed;                            /* Speed as a percentage 1..100. */
         public Int64 StartTime;
-        public Int64 RunningTime;
-        public Int64 LastCheckpoint;
 
 	    /* The array with error messages. */
 	    List<String> DebugMsg;

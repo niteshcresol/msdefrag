@@ -389,47 +389,6 @@ namespace MSDefragLib
 	        return(Path);
         }
 
-        /* Slow the program down. */
-        public void SlowDown()
-        {
-	        /* Sanity check. */
-	        Debug.Assert((Data.Speed > 0) && (Data.Speed <= 100));
-
-	        /*
-                Calculate the time we have to sleep so that the wall time is 100% and the
-	            actual running time is the "-s" parameter percentage.
-            */
-            //_ftime64_s(&Time);
-            DateTime Time = DateTime.Now;
-
-            Int64 Now = Time.ToFileTime();
-            //Now = Time.time * 1000 + Time.millitm;
-
-            if (Now > Data.LastCheckpoint)
-	        {
-                Data.RunningTime += Now - Data.LastCheckpoint;
-	        }
-
-            if (Now < Data.StartTime) Data.StartTime = Now;    /* Should never happen. */
-
-	        /* Sleep. */
-            if (Data.RunningTime > 0)
-	        {
-                Int64 Delay = Data.RunningTime * 100 / Data.Speed - (Now - Data.StartTime);
-
-		        if (Delay > 30000) Delay = 30000;
-
-                if (Delay > 0) Thread.Sleep((Int32)Delay);
-	        }
-
-	        /* Save the current wall time, so next time we can calculate the time spent in	the program. */
-            //_ftime64_s(&Time);
-            Time = DateTime.Now;
-
-            Data.LastCheckpoint = Time.ToFileTime();
-            //Data.LastCheckpoint = Time.time * 1000 + Time.millitm;
-        }
-
 /*
         / *
 
@@ -2094,9 +2053,6 @@ namespace MSDefragLib
 
         //	JKDefragGui *jkGui = JKDefragGui::getInstance();
 
-	        / * Slow the program down if so selected. * /
-	        SlowDown(Data);
-
 	        / * Move the item, either in a single block or fragment by fragment. * /
 	        if (Strategy == 0)
 	        {
@@ -3027,10 +2983,6 @@ namespace MSDefragLib
 	        WCHAR *p1;
 
         //	JKDefragGui *jkGui = JKDefragGui::getInstance();
-
-	        / * Slow the program down to the percentage that was specified on the
-	        command line. * /
-	        SlowDown(Data);
 
 	        / * Determine the rootpath (base path of the directory) by stripping
 	        everything after the last backslash in the Mask. The FindFirstFile()
@@ -4848,9 +4800,6 @@ namespace MSDefragLib
 
             DateTime Time = System.DateTime.Now;
 
-            Data.LastCheckpoint = Data.StartTime;
-            Data.RunningTime = 0;
-
             #endregion
 
             #region Excludes
@@ -5464,7 +5413,7 @@ namespace MSDefragLib
 */
 
         /* Run the defragger/optimizer */
-        public void RunJkDefrag(String Path, UInt16 Mode, Int16 Speed,
+        public void RunJkDefrag(String Path, UInt16 Mode,
             UInt16 FreeSpace, List<String> Excludes, List<String> SpaceHogs)
         {
             Data = new MSDefragDataStruct();
@@ -5495,7 +5444,6 @@ namespace MSDefragLib
             #endregion
 
             /* Copy the input values to the data struct. */
-            Data.Speed = Speed;
             Data.FreeSpace = FreeSpace;
             Data.Excludes = Excludes;
             Data.Running = RunningState.RUNNING;

@@ -1016,9 +1016,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                 // Read a block of inode's into memory
                 if (InodeNumber >= BlockEnd)
                 {
-                    // Slow the program down to the percentage that was specified on the command line
-                    _lib.SlowDown();
-
                     BlockStart = InodeNumber;
                     BlockEnd = BlockStart + diskInfo.BytesToInode(MFTBUFFERSIZE);
 
