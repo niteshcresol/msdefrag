@@ -57,62 +57,6 @@ namespace MSDefragLib
             }
 
             return CLUSTER_COLORS.COLOREMPTY;
-
-            /*            foreach (Colors col in colors)
-                        {
-                            if (col.m_numColors == 0)
-                            {
-                                continue;
-                            }
-
-                            switch (col.m_color)
-                            {
-                                case MSDefragLib.CLUSTER_COLORS.COLORBUSY:
-                                    maxColor = MSDefragLib.CLUSTER_COLORS.COLORBUSY;
-                                    break;
-                                case MSDefragLib.CLUSTER_COLORS.COLORMFT:
-                                    if (maxColor != MSDefragLib.CLUSTER_COLORS.COLORBUSY)
-                                    {
-                                        maxColor = MSDefragLib.CLUSTER_COLORS.COLORMFT;
-                                    }
-                                    break;
-                                case MSDefragLib.CLUSTER_COLORS.COLORFRAGMENTED:
-                                    if ((maxColor != MSDefragLib.CLUSTER_COLORS.COLORBUSY) && (maxColor != MSDefragLib.CLUSTER_COLORS.COLORMFT))
-                                    {
-                                        maxColor = MSDefragLib.CLUSTER_COLORS.COLORFRAGMENTED;
-                                    }
-                                    break;
-                                case MSDefragLib.CLUSTER_COLORS.COLORSPACEHOG:
-                                    if ((maxColor != MSDefragLib.CLUSTER_COLORS.COLORBUSY) &&
-                                        (maxColor != MSDefragLib.CLUSTER_COLORS.COLORMFT) &&
-                                        (maxColor != MSDefragLib.CLUSTER_COLORS.COLORFRAGMENTED))
-                                    {
-                                        maxColor = MSDefragLib.CLUSTER_COLORS.COLORSPACEHOG;
-                                    }
-                                    break;
-                                case MSDefragLib.CLUSTER_COLORS.COLORUNFRAGMENTED:
-                                    if ((maxColor != MSDefragLib.CLUSTER_COLORS.COLORBUSY) &&
-                                        (maxColor != MSDefragLib.CLUSTER_COLORS.COLORMFT) &&
-                                        (maxColor != MSDefragLib.CLUSTER_COLORS.COLORFRAGMENTED) &&
-                                        (maxColor != MSDefragLib.CLUSTER_COLORS.COLORSPACEHOG))
-                                    {
-                                        maxColor = MSDefragLib.CLUSTER_COLORS.COLORUNFRAGMENTED;
-                                    }
-                                    break;
-                                case MSDefragLib.CLUSTER_COLORS.COLORUNMOVABLE:
-                                    if (maxColor != MSDefragLib.CLUSTER_COLORS.COLORBUSY)
-                                    {
-                                        maxColor = MSDefragLib.CLUSTER_COLORS.COLORUNMOVABLE;
-                                    }
-                                    break;
-                                case MSDefragLib.CLUSTER_COLORS.COLORALLOCATED:
-                                    if (maxColor == MSDefragLib.CLUSTER_COLORS.COLOREMPTY)
-                                    {
-                                        maxColor = MSDefragLib.CLUSTER_COLORS.COLORALLOCATED;
-                                    }
-                                    break;
-                            }
-                        }*/
         }
 
         public void SetMaxColor()

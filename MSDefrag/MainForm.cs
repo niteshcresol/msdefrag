@@ -20,14 +20,22 @@ namespace MSDefrag
         public MainForm()
         {
             m_defragmenter = DefragmenterFactory.CreateSimulation();
-            //m_defragmenter = DefragmenterFactory.Create();
+            // m_defragmenter = DefragmenterFactory.Create();
 
             Initialize();
 
             defragThread = new Thread(Defrag);
-            defragThread.Priority = ThreadPriority.Normal;
+            defragThread.Priority = ThreadPriority.BelowNormal;
 
             defragThread.Start();
+
+            m_this = this;
+
+            Timer = new System.Timers.Timer(100);
+
+            Timer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+
+            Timer.Enabled = true;
         }
 
         #endregion
@@ -74,7 +82,7 @@ namespace MSDefrag
             maxMessages = 7;
             messages = new String[maxMessages];
 
-            m_rectangleStatusBitmap = new Rectangle(40, 30, pictureBox1.Width - 80, 140);
+            m_rectangleStatusBitmap = new Rectangle(40, 30, pictureBox1.Width - 80, 170);
 
             m_bitmapStatus = new Bitmap(m_rectangleStatusBitmap.Width, m_rectangleStatusBitmap.Height);
 
@@ -225,41 +233,81 @@ namespace MSDefrag
 
         private void RefreshDisplay()
         {
-            m_graphicsDisplay.DrawImageUnscaled(m_bitmapClusters, 0, 0);
-            m_graphicsDisplay.DrawImageUnscaled(m_bitmapStatus, m_rectangleStatusBitmap);
+            inUse = true;
 
-            pictureBox1.Refresh();
+            lock (m_bitmapDisplay)
+            {
+                DrawChangedClusters();
+                PaintStatus();
+
+                m_graphicsDisplay.DrawImageUnscaled(m_bitmapClusters, 0, 0);
+                m_graphicsDisplay.DrawImageUnscaled(m_bitmapStatus, m_rectangleStatusBitmap);
+
+                pictureBox1.Invalidate();
+                pictureBox1.Refresh();
+            }
+
+            inUse = false;
         }
 
-        private void ShowChangedClusters(IList<MSDefragLib.ClusterSquare> squaresList)
+        Queue<IList<ClusterSquare>> queue = new Queue<IList<ClusterSquare>>();
+
+        private void AddChangedClustersToQueue(IList<MSDefragLib.ClusterSquare> squaresList)
         {
             if (squaresList == null)
                 return;
 
-            foreach (MSDefragLib.ClusterSquare square in squaresList)
+            lock (queue)
             {
-                Int32 squareIndex = square.m_squareIndex;
-
-                Int32 posX = (Int32)(squareIndex % m_numSquaresX);
-                Int32 posY = (Int32)(squareIndex / m_numSquaresX);
-
-                m_graphicsClusters.DrawImageUnscaled(squareBitmaps[(Int32)square.m_color], posX * m_squareSize + 1, posY * m_squareSize + 1);
+                queue.Enqueue(squaresList);
             }
+        }
 
-            RefreshDisplay();
+        private void DrawChangedClusters()
+        {
+            lock (m_bitmapDisplay)
+            {
+                Queue<IList<ClusterSquare>> list;
+
+                lock (queue)
+                {
+                    list = queue;
+
+                    queue = new Queue<IList<ClusterSquare>>();
+                }
+
+                foreach (IList<ClusterSquare> cs in list)
+                {
+                    foreach (MSDefragLib.ClusterSquare square in cs)
+                    {
+                        Int32 squareIndex = square.m_squareIndex;
+
+                        Int32 posX = (Int32)(squareIndex % m_numSquaresX);
+                        Int32 posY = (Int32)(squareIndex / m_numSquaresX);
+
+                        m_graphicsClusters.DrawImageUnscaled(squareBitmaps[(Int32)square.m_color], posX * m_squareSize + 1, posY * m_squareSize + 1);
+                    }
+                }
+            }
         }
 
         private void PaintStatus()
         {
-            m_graphicsStatus.Clear(Color.Transparent);
+            lock (m_bitmapDisplay)
+            {
+                m_graphicsStatus.Clear(Color.Transparent);
 
-            m_graphicsStatus.FillRectangle(m_brushStatusBackground, 0, 0, m_bitmapStatus.Width, m_bitmapStatus.Height);
-            m_graphicsStatus.DrawRectangle(Pens.Black, 0, 0, m_bitmapStatus.Width - 1, m_bitmapStatus.Height - 1);
+                m_graphicsStatus.FillRectangle(m_brushStatusBackground, 0, 0, m_bitmapStatus.Width, m_bitmapStatus.Height);
+                m_graphicsStatus.DrawRectangle(Pens.Black, 0, 0, m_bitmapStatus.Width - 1, m_bitmapStatus.Height - 1);
 
-            for (int ii = 0; ii < maxMessages; ii++)
-                m_graphicsStatus.DrawString(messages[ii], m_font, Brushes.Black, 25, 25 + 15 * ii);
+                lock (messages)
+                {
+                    for (int ii = 0; ii < maxMessages; ii++)
+                        m_graphicsStatus.DrawString(messages[ii], m_font, Brushes.Black, 25, 25 + 15 * ii);
 
-            RefreshDisplay();
+                    m_graphicsStatus.DrawString("Num skipped frames: " + NumSkippedFrames, m_font, Brushes.Black, 25, 25 + 15 * maxMessages);
+                }
+            }
         }
 
         #endregion
@@ -268,9 +316,10 @@ namespace MSDefrag
 
         private void AddStatusMessage(UInt32 level, String message)
         {
-            messages[level] = message;
-
-            PaintStatus();
+            lock (messages)
+            {
+                messages[level] = message;
+            }
         }
 
         private void Defrag()
@@ -291,7 +340,7 @@ namespace MSDefrag
             {
                 ChangedClusterEventArgs ea = (ChangedClusterEventArgs)e;
 
-                BeginInvoke(new MethodInvoker(delegate { ShowChangedClusters(ea.m_list); }));
+                AddChangedClustersToQueue(ea.m_list);
             }
         }
 
@@ -301,22 +350,18 @@ namespace MSDefrag
             if (ignoreEvent)
                 return;
 
-            String message = "";
-            UInt32 level = 0;
-
             if (e is MSDefragLib.FileSystem.Ntfs.MSScanNtfsEventArgs)
             {
                 MSDefragLib.FileSystem.Ntfs.MSScanNtfsEventArgs ev = (MSDefragLib.FileSystem.Ntfs.MSScanNtfsEventArgs)e;
-                message = ev.m_message;
-                level = ev.m_level;
-            }
 
-            BeginInvoke(new MethodInvoker(delegate { AddStatusMessage(level, message); }));
+                AddStatusMessage(ev.m_level, ev.m_message);
+            }
         }
 
         private void OnGuiClosing(object sender, FormClosingEventArgs e)
         {
             m_defragmenter.Stop(5000);
+
             if (defragThread.IsAlive)
             {
                 try
@@ -343,6 +388,26 @@ namespace MSDefrag
         private void OnResizeEnd(object sender, EventArgs e)
         {
             ignoreEvent = false;
+        }
+
+        bool inUse = false;
+        int NumSkippedFrames = 0;
+
+        private void OnTimedEvent(object source, ElapsedEventArgs e)
+        {
+            if (ignoreEvent)
+                return;
+
+            inUse = false;
+
+            if (inUse == false)
+            {
+                RefreshDisplay();
+            }
+            else
+            {
+                NumSkippedFrames++;
+            }
         }
 
         #endregion
@@ -388,6 +453,10 @@ namespace MSDefrag
         #endregion
 
         #region Other variables
+
+        System.Timers.Timer Timer;
+
+        public static MainForm m_this;
 
         private Thread defragThread = null;
 

@@ -892,8 +892,6 @@ namespace MSDefragLib
 	        DWORD i;
 	        DWORD w;
 
-        //	JKDefragGui *jkGui = JKDefragGui::getInstance();
-
 	        / * Initialize. If the item has an old list of fragments then delete it. * /
 	        Item->Clusters = 0;
 
@@ -5562,9 +5560,6 @@ namespace MSDefragLib
             }
             #endregion
 
-
-            StartTimer();
-
             /* If a Path is specified then call DefragOnePath() for that path. Otherwise call
              * DefragMountpoints() for every disk in the system. */
             if (!String.IsNullOrEmpty(Path))
@@ -5678,29 +5673,13 @@ namespace MSDefragLib
             me.ShowChangedClusters();
         }
 
-        private void StartTimer()
-        {
-            aTimer = new System.Timers.Timer(300);
-
-            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-
-            aTimer.Enabled = true;
-        }
-
         public void StartSimulation()
         {
-            StartTimer();
-
             Data = new DefragmenterState();
 
             Data.Running = RunningState.RUNNING;
 
             Simulate();
-
-            //Thread defragThread = new Thread(Simulate);
-            //defragThread.Priority = ThreadPriority.Lowest;
-
-            //defragThread.Start();
         }
 
         private void Simulate()
@@ -5709,7 +5688,9 @@ namespace MSDefragLib
 
             Random rnd = new Random();
 
-            for (int testNumber = 0; testNumber < 1000000; testNumber++)
+            Int32 maxNumTest = 4500213;
+
+            for (int testNumber = 0; testNumber < maxNumTest; testNumber++)
             {
                 Int32 squareBegin = rnd.Next(NumSquares);
                 Int32 squareEnd = rnd.Next(squareBegin, squareBegin + 10);
@@ -5735,14 +5716,15 @@ namespace MSDefragLib
                     {
                         _dirtySquares.Add(clusterSquare);
 
-                        if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
-                        {
-                            ShowChangedClusters();
-                        }
+                        ShowChangedClusters();
                     }
                 }
 
-                if (testNumber % 100 == 0) ShowDebug(4, "Test: " + testNumber);
+                if (testNumber % 313 == 0)
+                {
+                    ShowDebug(4, "Test: " + testNumber);
+                    ShowDebug(5, String.Format("Done: {0:P}", (Double)((Double) testNumber / (Double) maxNumTest)));
+                }
 
                 Thread.Sleep(1);
             }
@@ -5897,73 +5879,20 @@ namespace MSDefragLib
                 if (clusterSquare.m_isDirty)
                 {
                     clusterSquare.m_isDirty = false;
-//                    ShowDebug(0, "Done: " + m_data.PhaseDone + " / " + m_data.PhaseTodo);
+                    ShowDebug(0, "Done: " + Data.PhaseDone + " / " + Data.PhaseTodo);
+
                     lock (_dirtySquares)
                     {
                         _dirtySquares.Add(clusterSquare);
 
                         if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
                         {
-                        //    ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
+                            ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
                             ShowChangedClusters();
                         }
                     }
                 }
             }
-        }
-        //public void NotifyGui(ClusterSquare clusterSquare)
-        //{
-
-        //    NotifyGuiEventArgs e = new NotifyGuiEventArgs(clusterSquare);
-
-        //    OnNotifyGui(e);
-        //}
-
-        private static Boolean ggg = false;
-
-        /// <summary>
-        /// Function returns list of all "dirty" squares that need to be updated.
-        /// </summary>
-        /// <param name="squareBegin">First square number</param>
-        /// <param name="squareEnd">Last square number</param>
-        /// <returns>List of dirty squares</returns>
-        public List<ClusterSquare> GetSquareList()
-        {
-            if (m_clusterSquares.Count == 0)
-            {
-                return null;
-            }
-
-            if (ggg)
-            {
-                return null;
-            }
-
-            ggg = true;
-
-
-            var squareList =
-                from a in m_clusterSquares
-                where a.m_isDirty == true
-                select a;
-
-            //List<ClusterSquare> list = new List<ClusterSquare>();
-
-            //for (Int32 ii = 0; ii < m_clusterSquares.Count; ii++)
-            //{
-            //    ClusterSquare clusterSquare = m_clusterSquares[ii];
-
-            //    if (clusterSquare.m_isDirty)
-            //    {
-            //        list.Add(clusterSquare);
-
-            //        clusterSquare.m_isDirty = false;
-            //    }
-            //}
-
-            ggg = false;
-
-            return squareList.ToList();
         }
 
         /// <summary>
