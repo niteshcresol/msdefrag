@@ -10,7 +10,6 @@ using System.Windows.Forms;
 using MSDefragLib;
 using System.Threading;
 using System.Timers;
-using MSDefragLib.FileSystem.Ntfs;
 
 namespace MSDefrag
 {
@@ -20,7 +19,8 @@ namespace MSDefrag
 
         public MainForm()
         {
-            m_msDefragLib = new MSDefragLib.MSDefragLib();
+            m_defragmenter = DefragmenterFactory.CreateSimulation();
+            //m_defragmenter = DefragmenterFactory.Create();
 
             Initialize();
 
@@ -36,8 +36,8 @@ namespace MSDefrag
 
         public void Initialize()
         {
-            m_msDefragLib.ShowDebugEvent += new MSDefragLib.MSDefragLib.ShowDebugHandler(SetStatus);
-            m_msDefragLib.ShowChangedClustersEvent += new MSDefragLib.MSDefragLib.ShowChangedClustersHandler(ShowChangedClusters);
+            m_defragmenter.ShowDebugEvent += new MSDefragLib.ShowDebugHandler(SetStatus);
+            m_defragmenter.ShowChangedClustersEvent += new MSDefragLib.ShowChangedClustersHandler(ShowChangedClusters);
 
             InitializeComponent();
 
@@ -60,7 +60,7 @@ namespace MSDefrag
             m_bitmapClusters = new Bitmap(pictureBox1.Width, pictureBox1.Height);
 
             m_numSquares = m_numSquaresX * m_numSquaresY;
-            m_msDefragLib.NumSquares = m_numSquares;
+            m_defragmenter.NumSquares = m_numSquares;
 
             m_graphicsClusters = Graphics.FromImage(m_bitmapClusters);
 
@@ -96,19 +96,19 @@ namespace MSDefrag
             backBrush = new SolidBrush(Color.Blue);
             fontBrush = new SolidBrush(Color.Yellow);
 
-            colors = new Color[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORMAX];
+            colors = new Color[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMAX];
 
-            colors[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORUNMOVABLE] = Color.Yellow;
-            colors[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORALLOCATED] = Color.LightGray;
-            colors[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORBACK] = Color.White;
-            colors[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORBUSY] = Color.Blue;
-            colors[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLOREMPTY] = Color.White;
-            colors[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORFRAGMENTED] = Color.Orange;
-            colors[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORMFT] = Color.Pink;
-            colors[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORSPACEHOG] = Color.GreenYellow;
-            colors[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORUNFRAGMENTED] = Color.Green;
+            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORUNMOVABLE] = Color.Yellow;
+            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORALLOCATED] = Color.LightGray;
+            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORBACK] = Color.White;
+            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORBUSY] = Color.Blue;
+            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLOREMPTY] = Color.White;
+            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORFRAGMENTED] = Color.Orange;
+            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMFT] = Color.Pink;
+            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORSPACEHOG] = Color.GreenYellow;
+            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORUNFRAGMENTED] = Color.Green;
 
-            brushes = new SolidBrush[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORMAX];
+            brushes = new SolidBrush[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMAX];
 
             int ii = 0;
 
@@ -117,7 +117,7 @@ namespace MSDefrag
                 brushes[ii] = new SolidBrush(col);
             }
 
-            gradientBrushes = new LinearGradientBrush[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORMAX];
+            gradientBrushes = new LinearGradientBrush[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMAX];
 
             Byte brightnessFactor = 20;
             Byte darknessFactor = 70;
@@ -143,7 +143,7 @@ namespace MSDefrag
                 ii++;
             }
 
-            verticalBrushes = new LinearGradientBrush[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORMAX];
+            verticalBrushes = new LinearGradientBrush[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMAX];
 
             brightnessFactor = 0;
             darknessFactor = 100;
@@ -174,7 +174,7 @@ namespace MSDefrag
 
         private void InitSquareRectangles()
         {
-            squareBitmaps = new Bitmap[(Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLORMAX];
+            squareBitmaps = new Bitmap[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMAX];
 
             int ii = 0;
 
@@ -204,7 +204,7 @@ namespace MSDefrag
                         darkColor, LinearGradientMode.ForwardDiagonal))
                     {
 
-                        if (ii == (Int32)MSDefragLib.MSDefragLib.CLUSTER_COLORS.COLOREMPTY)
+                        if (ii == (Int32)MSDefragLib.CLUSTER_COLORS.COLOREMPTY)
                         {
                             g1.FillRectangle(verticalBrushes[(Int32)ii], rec);
                         }
@@ -275,9 +275,7 @@ namespace MSDefrag
 
         private void Defrag()
         {
-            // m_msDefragLib.StartSimulation();
-            m_msDefragLib.RunJkDefrag("C:\\*", 2, 100, 10, null, null);
-            //m_msDefragLib.RunJkDefrag("T:\\*", 2, 100, 10, null, null);
+            m_defragmenter.Start(@"C:\*");
         }
 
         #endregion
@@ -306,9 +304,9 @@ namespace MSDefrag
             String message = "";
             UInt32 level = 0;
 
-            if (e is MSScanNtfsEventArgs)
+            if (e is MSDefragLib.FileSystem.Ntfs.MSScanNtfsEventArgs)
             {
-                MSScanNtfsEventArgs ev = (MSScanNtfsEventArgs)e;
+                MSDefragLib.FileSystem.Ntfs.MSScanNtfsEventArgs ev = (MSDefragLib.FileSystem.Ntfs.MSScanNtfsEventArgs)e;
                 message = ev.m_message;
                 level = ev.m_level;
             }
@@ -318,11 +316,7 @@ namespace MSDefrag
 
         private void OnGuiClosing(object sender, FormClosingEventArgs e)
         {
-            if ((m_msDefragLib.Data != null) && (m_msDefragLib.Data.Running == RunningState.RUNNING))
-            {
-                m_msDefragLib.StopJkDefrag(5000);
-            }
-
+            m_defragmenter.Stop(5000);
             if (defragThread.IsAlive)
             {
                 try
@@ -344,15 +338,11 @@ namespace MSDefrag
         private void OnResizeBegin(object sender, EventArgs e)
         {
             ignoreEvent = true;
-
-            defragThread.Suspend();
         }
 
         private void OnResizeEnd(object sender, EventArgs e)
         {
             ignoreEvent = false;
-
-            defragThread.Resume();
         }
 
         #endregion
@@ -399,9 +389,9 @@ namespace MSDefrag
 
         #region Other variables
 
-        Thread defragThread = null;
+        private Thread defragThread = null;
 
-        MSDefragLib.MSDefragLib m_msDefragLib = null;
+        private IDefragmenter m_defragmenter = null;
 
         #endregion
     }

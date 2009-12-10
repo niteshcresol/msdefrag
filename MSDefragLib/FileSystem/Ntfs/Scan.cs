@@ -622,8 +622,8 @@ namespace MSDefragLib.FileSystem.Ntfs
             BinaryReader reader, UInt32 offset,
             Attribute attribute, Int64 position)
         {
-            Trace.WriteLine(this, String.Format(
-                "   ParseNonResidentAttribute Inode: {0:G}, pos: {1:G}", inodeData.Inode, position));
+            //Trace.WriteLine(this, String.Format(
+            //    "   ParseNonResidentAttribute Inode: {0:G}, pos: {1:G}", inodeData.Inode, position));
             NonResidentAttribute nonResidentAttribute = NonResidentAttribute.Parse(reader);
 
             // Save the length (number of bytes) of the data.
@@ -636,6 +636,8 @@ namespace MSDefragLib.FileSystem.Ntfs
             reader.BaseStream.Seek(position + offset + attribute.NameOffset, SeekOrigin.Begin);
 
             String p1 = Helper.ParseString(reader, attribute.NameLength);
+            Trace.WriteLine(this, String.Format(
+                "     Stream: {0}", p1));
 
             // Create a new stream with a list of fragments for this data.
             reader.BaseStream.Seek(position + offset + nonResidentAttribute.RunArrayOffset, SeekOrigin.Begin);
@@ -664,8 +666,8 @@ namespace MSDefragLib.FileSystem.Ntfs
         private void ParseResidentAttribute(InodeDataStructure inodeData,
             BinaryReader reader, UInt32 offset, Attribute attribute, Int64 position)
         {
-            Trace.WriteLine(this, String.Format(
-                "   ParseResidentAttribute Inode: {0:G}, pos: {1:G}", inodeData.Inode, position));
+            //Trace.WriteLine(this, String.Format(
+            //    "   ParseResidentAttribute Inode: {0:G}, pos: {1:G}", inodeData.Inode, position));
 
             ResidentAttribute residentAttribute = ResidentAttribute.Parse(reader);
             Int64 tempOffset = (Int64)(offset + residentAttribute.ValueOffset);
@@ -676,6 +678,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (attribute.Type.IsFileName)
             {
                 fileNameAttribute = FileNameAttribute.Parse(reader);
+
+                Trace.WriteLine(this, String.Format(
+                    "     File: {0}", fileNameAttribute.Name));
 
                 inodeData.ParentInode = fileNameAttribute.ParentDirectory.BaseInodeNumber;
 

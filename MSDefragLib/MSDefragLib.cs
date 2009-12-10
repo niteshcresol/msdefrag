@@ -38,7 +38,22 @@ using System.Timers;
 
 namespace MSDefragLib
 {
-    public class MSDefragLib
+    public enum CLUSTER_COLORS : int
+    {
+        COLOREMPTY = 0,
+        COLORALLOCATED,
+        COLORUNFRAGMENTED,
+        COLORUNMOVABLE,
+        COLORFRAGMENTED,
+        COLORBUSY,
+        COLORMFT,
+        COLORSPACEHOG,
+        COLORBACK,
+
+        COLORMAX
+    };
+
+    internal class MSDefragLib
     {
         public class STARTING_LCN_INPUT_BUFFER
         {
@@ -121,21 +136,6 @@ namespace MSDefragLib
 	        /* 55 */   "I am a regular file in zone 1.",
 	        /* 56 */   "I am a spacehog in zone 1 or 2.",
 	        /* 57 */   "Ignoring volume '%s' because it is not a harddisk."
-        };
-
-        public enum CLUSTER_COLORS:int
-        {
-            COLOREMPTY = 0,
-            COLORALLOCATED,
-            COLORUNFRAGMENTED,
-            COLORUNMOVABLE,
-            COLORFRAGMENTED,
-            COLORBUSY,
-            COLORMFT,
-            COLORSPACEHOG,
-            COLORBACK,
-
-            COLORMAX
         };
 
         /// <summary>
@@ -5787,10 +5787,10 @@ namespace MSDefragLib
                     {
                         _dirtySquares.Add(clusterSquare);
 
-                        //if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
-                        //{
-                        //    ShowChangedClusters();
-                        //}
+                        if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
+                        {
+                            ShowChangedClusters();
+                        }
                     }
                 }
 
@@ -5811,9 +5811,6 @@ namespace MSDefragLib
                 ShowDebugEvent(this, e);
             }
         }
-
-        public delegate void ShowChangedClustersHandler(object sender, EventArgs e);
-        public delegate void ShowDebugHandler(object sender, EventArgs e);
 
         //public delegate void DrawClusterHandler(object sender, EventArgs e);
         //public delegate void NotifyGuiHandler(object sender, EventArgs e);
@@ -6042,15 +6039,15 @@ namespace MSDefragLib
 
                 ClusterSquare square = new ClusterSquare(squareIndex, clusterIndex, lastClusterIndex);
 
-                square.m_colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORALLOCATED] = 0;
-                square.m_colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORBACK] = 0;
-                square.m_colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORBUSY] = 0;
-                square.m_colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLOREMPTY] = 0;
-                square.m_colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORFRAGMENTED] = 0;
-                square.m_colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMFT] = 0;
-                square.m_colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORSPACEHOG] = 0;
-                square.m_colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORUNFRAGMENTED] = 0;
-                square.m_colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORUNMOVABLE] = 0;
+                square.m_colors[(Int32)CLUSTER_COLORS.COLORALLOCATED] = 0;
+                square.m_colors[(Int32)CLUSTER_COLORS.COLORBACK] = 0;
+                square.m_colors[(Int32)CLUSTER_COLORS.COLORBUSY] = 0;
+                square.m_colors[(Int32)CLUSTER_COLORS.COLOREMPTY] = 0;
+                square.m_colors[(Int32)CLUSTER_COLORS.COLORFRAGMENTED] = 0;
+                square.m_colors[(Int32)CLUSTER_COLORS.COLORMFT] = 0;
+                square.m_colors[(Int32)CLUSTER_COLORS.COLORSPACEHOG] = 0;
+                square.m_colors[(Int32)CLUSTER_COLORS.COLORUNFRAGMENTED] = 0;
+                square.m_colors[(Int32)CLUSTER_COLORS.COLORUNMOVABLE] = 0;
 
                 for (UInt64 jj = clusterIndex; jj <= lastClusterIndex; jj++)
                 {
@@ -6072,7 +6069,7 @@ namespace MSDefragLib
         public MSDefragDataStruct Data
         { get; set; }
 
-        List<MSDefragLib.CLUSTER_COLORS> m_clusterData = null;
+        List<CLUSTER_COLORS> m_clusterData = null;
         List<ClusterSquare> m_clusterSquares = null;
 
         private Int32 m_numSquares = 0;
@@ -6161,14 +6158,14 @@ namespace MSDefragLib
     /// </summary>
     public class ClusterStructure
     {
-        public ClusterStructure(UInt64 clusterIndex, MSDefragLib.CLUSTER_COLORS color)
+        public ClusterStructure(UInt64 clusterIndex, CLUSTER_COLORS color)
         {
             m_clusterIndex = clusterIndex;
             m_color = color;
         }
 
         public UInt64 m_clusterIndex;
-        public MSDefragLib.CLUSTER_COLORS m_color;
+        public CLUSTER_COLORS m_color;
     }
 
     #endregion
