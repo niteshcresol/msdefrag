@@ -11,7 +11,7 @@ namespace MSDefragLib.Defragmenter
 
         #region IDefragmenter Members
 
-        public override event ShowChangedClustersHandler ShowChangedClustersEvent
+        public override event ClustersModifiedHandler ClustersModified
         {
             add
             {
@@ -23,7 +23,7 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public override event ShowDebugHandler ShowDebugEvent
+        public override event NewMessageHandler NewMessage
         {
             add
             {

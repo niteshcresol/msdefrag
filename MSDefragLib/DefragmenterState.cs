@@ -20,7 +20,7 @@ namespace MSDefragLib
         STOPPING
     }
 
-    public class MSDefragDataStruct
+    public class DefragmenterState
     {
 	    public UInt16 Phase;                             /* The current Phase (1...3). */
         public UInt16 Zone;                              /* The current Zone (0..2) for Phase 3. */

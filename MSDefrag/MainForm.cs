@@ -36,8 +36,8 @@ namespace MSDefrag
 
         public void Initialize()
         {
-            m_defragmenter.ShowDebugEvent += new MSDefragLib.ShowDebugHandler(SetStatus);
-            m_defragmenter.ShowChangedClustersEvent += new MSDefragLib.ShowChangedClustersHandler(ShowChangedClusters);
+            m_defragmenter.NewMessage += new MSDefragLib.NewMessageHandler(SetStatus);
+            m_defragmenter.ClustersModified += new MSDefragLib.ClustersModifiedHandler(ShowChangedClusters);
 
             InitializeComponent();
 

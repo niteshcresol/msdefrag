@@ -213,7 +213,7 @@ namespace MSDefragLib
         }
 
         /* Dump a block of data to standard output, for debugging purposes. */
-        public void ShowHex(MSDefragDataStruct Data, Array Buffer, UInt64 Count)
+        public void ShowHex(DefragmenterState Data, Array Buffer, UInt64 Count)
         {
             //JKDefragGui *jkGui = JKDefragGui::getInstance();
 
@@ -341,7 +341,7 @@ namespace MSDefragLib
         Return NULL if error. The caller must free() the new string.
 
         */
-        String GetShortPath(MSDefragDataStruct Data, ItemStruct Item)
+        String GetShortPath(DefragmenterState Data, ItemStruct Item)
         {
             Debug.Assert(Item != null);
 
@@ -377,7 +377,7 @@ namespace MSDefragLib
         Return NULL if error. The caller must free() the new string.
 
         */
-        String GetLongPath(MSDefragDataStruct Data, ItemStruct Item)
+        String GetLongPath(DefragmenterState Data, ItemStruct Item)
         {
 	        Debug.Assert(Item != null);
 
@@ -5416,7 +5416,7 @@ namespace MSDefragLib
         public void RunJkDefrag(String Path, UInt16 Mode,
             UInt16 FreeSpace, List<String> Excludes, List<String> SpaceHogs)
         {
-            Data = new MSDefragDataStruct();
+            Data = new DefragmenterState();
 
             #region old code
 
@@ -5691,7 +5691,7 @@ namespace MSDefragLib
         {
             StartTimer();
 
-            Data = new MSDefragDataStruct();
+            Data = new DefragmenterState();
 
             Data.Running = RunningState.RUNNING;
 
@@ -5763,10 +5763,10 @@ namespace MSDefragLib
         //public delegate void DrawClusterHandler(object sender, EventArgs e);
         //public delegate void NotifyGuiHandler(object sender, EventArgs e);
 
-        public event ShowChangedClustersHandler ShowChangedClustersEvent;
+        public event ClustersModifiedHandler ShowChangedClustersEvent;
         //public event DrawClusterHandler DrawClusterEvent;
         //public event NotifyGuiHandler NotifyGuiEvent;
-        public event ShowDebugHandler ShowDebugEvent;
+        public event NewMessageHandler ShowDebugEvent;
 
         protected virtual void OnShowChangedClusters(EventArgs e)
         {
@@ -6014,7 +6014,7 @@ namespace MSDefragLib
 
         #region Variables
 
-        public MSDefragDataStruct Data
+        public DefragmenterState Data
         { get; set; }
 
         List<CLUSTER_COLORS> m_clusterData = null;

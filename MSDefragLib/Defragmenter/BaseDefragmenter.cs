@@ -15,9 +15,9 @@ namespace MSDefragLib.Defragmenter
 
         public abstract int NumSquares { get; set; }
 
-        public abstract event ShowChangedClustersHandler ShowChangedClustersEvent;
+        public abstract event ClustersModifiedHandler ClustersModified;
 
-        public abstract event ShowDebugHandler ShowDebugEvent;
+        public abstract event NewMessageHandler NewMessage;
 
         #endregion
     }

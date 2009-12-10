@@ -5,8 +5,8 @@ using System.Text;
 
 namespace MSDefragLib
 {
-    public delegate void ShowChangedClustersHandler(object sender, EventArgs e);
-    public delegate void ShowDebugHandler(object sender, EventArgs e);
+    public delegate void ClustersModifiedHandler(object sender, EventArgs e);
+    public delegate void NewMessageHandler(object sender, EventArgs e);
 
     public interface IDefragmenter
     {
@@ -15,7 +15,7 @@ namespace MSDefragLib
 
         Int32 NumSquares { get; set; }
 
-        event ShowChangedClustersHandler ShowChangedClustersEvent;
-        event ShowDebugHandler ShowDebugEvent;
+        event ClustersModifiedHandler ClustersModified;
+        event NewMessageHandler NewMessage;
     }
 }
