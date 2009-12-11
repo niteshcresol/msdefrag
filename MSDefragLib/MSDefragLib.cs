@@ -5641,63 +5641,6 @@ namespace MSDefragLib
 
         #endregion
 
-        public void StartSimulation()
-        {
-            Data = new DefragmenterState();
-
-            Data.Running = RunningState.RUNNING;
-
-            Simulate();
-        }
-
-        private void Simulate()
-        {
-            Random rnd = new Random();
-
-            Int32 maxNumTest = 4500213;
-
-            for (int testNumber = 0; testNumber < maxNumTest; testNumber++)
-            {
-                Int32 squareBegin = rnd.Next(NumSquares);
-                Int32 squareEnd = rnd.Next(squareBegin, squareBegin + 10);
-
-                if (squareEnd > NumSquares)
-                {
-                    squareEnd = NumSquares;
-                }
-
-                if (Data.Running != RunningState.RUNNING)
-                {
-                    break;
-                }
-
-                CLUSTER_COLORS col = (CLUSTER_COLORS)rnd.Next((Int32)CLUSTER_COLORS.COLORMAX);
-
-                for (Int32 squareNum = squareBegin; (Data.Running == RunningState.RUNNING) && (squareNum < squareEnd); squareNum++)
-                {
-                    ClusterSquare clusterSquare = new ClusterSquare(squareNum, 0, 20000);
-                    clusterSquare.m_color = col;
-
-                    lock (_dirtySquares)
-                    {
-                        _dirtySquares.Add(clusterSquare);
-
-                        ShowChangedClusters();
-                    }
-                }
-
-                if (testNumber % 313 == 0)
-                {
-                    ShowDebug(4, "Test: " + testNumber);
-                    ShowDebug(5, String.Format("Done: {0:P}", (Double)((Double) testNumber / (Double) maxNumTest)));
-                }
-
-                Thread.Sleep(1);
-            }
-
-            Data.Running = RunningState.STOPPED;
-        }
-
         #region EventHandling
 
         public void ScanNtfsEventHandler(object sender, EventArgs e)
