@@ -233,21 +233,24 @@ namespace MSDefrag
 
         private void RefreshDisplay()
         {
-            inUse = true;
-
-            lock (m_bitmapDisplay)
+            _inUse = true;
+            try
             {
-                DrawChangedClusters();
-                PaintStatus();
+                lock (m_bitmapDisplay)
+                {
+                    DrawChangedClusters();
+                    PaintStatus();
 
-                m_graphicsDisplay.DrawImageUnscaled(m_bitmapClusters, 0, 0);
-                m_graphicsDisplay.DrawImageUnscaled(m_bitmapStatus, m_rectangleStatusBitmap);
+                    m_graphicsDisplay.DrawImageUnscaled(m_bitmapClusters, 0, 0);
+                    m_graphicsDisplay.DrawImageUnscaled(m_bitmapStatus, m_rectangleStatusBitmap);
 
-                pictureBox1.Invalidate();
-                pictureBox1.Refresh();
+                    pictureBox1.Invalidate();
+                }
             }
-
-            inUse = false;
+            finally
+            {
+                _inUse = false;
+            }
         }
 
         Queue<IList<ClusterSquare>> queue = new Queue<IList<ClusterSquare>>();
@@ -305,7 +308,7 @@ namespace MSDefrag
                     for (int ii = 0; ii < maxMessages; ii++)
                         m_graphicsStatus.DrawString(messages[ii], m_font, Brushes.Black, 25, 25 + 15 * ii);
 
-                    m_graphicsStatus.DrawString("Num skipped frames: " + NumSkippedFrames, m_font, Brushes.Black, 25, 25 + 15 * maxMessages);
+                    m_graphicsStatus.DrawString("Num skipped frames: " + _skippedFrames, m_font, Brushes.Black, 25, 25 + 15 * maxMessages);
                 }
             }
         }
@@ -390,23 +393,21 @@ namespace MSDefrag
             ignoreEvent = false;
         }
 
-        bool inUse = false;
-        int NumSkippedFrames = 0;
+        private bool _inUse = false;
+        private int _skippedFrames = 0;
 
         private void OnTimedEvent(object source, ElapsedEventArgs e)
         {
             if (ignoreEvent)
                 return;
 
-            inUse = false;
-
-            if (inUse == false)
+            if (_inUse == false)
             {
                 RefreshDisplay();
             }
             else
             {
-                NumSkippedFrames++;
+                _skippedFrames++;
             }
         }
 
