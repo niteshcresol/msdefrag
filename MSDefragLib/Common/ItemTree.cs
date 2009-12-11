@@ -7,6 +7,47 @@ namespace MSDefragLib
 {
     public class ItemTree
     {
+
+        /// <summary>
+        /// Delete the entire Item tree
+        /// </summary>
+        /// <param name="Top"></param>
+        public static void Delete(ItemStruct Top)
+        {
+            if (Top == null) return;
+            if (Top.Smaller != null)
+                Delete(Top.Smaller);
+            if (Top.Bigger != null)
+                Delete(Top.Bigger);
+
+            if ((Top.ShortPath != null) &&
+                ((Top.LongPath == null) ||
+                (Top.ShortPath != Top.LongPath)))
+            {
+                Top.ShortPath = null;
+            }
+
+            if ((Top.ShortFilename != null) &&
+                ((Top.LongFilename == null) ||
+                (Top.ShortFilename != Top.LongFilename)))
+            {
+                Top.ShortFilename = null;
+            }
+
+            Top.LongPath = null;
+            Top.LongFilename = null;
+
+            //while (Top.FirstFragmentInList != null)
+            //{
+            //    Fragment = Top.FragmentList._LIST.Next;
+
+            //    //TODO: ???? What is this for???
+            //    Top.FragmentList._LIST = Fragment;
+            //}
+
+            Top = null;
+        }
+
         /// <summary>
         /// Return pointer to the last item in the tree (the last file on the volume).
         /// </summary>

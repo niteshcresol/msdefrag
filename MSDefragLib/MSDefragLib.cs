@@ -38,20 +38,6 @@ using System.Timers;
 
 namespace MSDefragLib
 {
-    public enum CLUSTER_COLORS : int
-    {
-        COLOREMPTY = 0,
-        COLORALLOCATED,
-        COLORUNFRAGMENTED,
-        COLORUNMOVABLE,
-        COLORFRAGMENTED,
-        COLORBUSY,
-        COLORMFT,
-        COLORSPACEHOG,
-        COLORBACK,
-
-        COLORMAX
-    };
 
     internal class MSDefragLib
     {
@@ -691,42 +677,6 @@ namespace MSDefragLib
 		        if (B->Bigger != NULL) B->Bigger->Parent = B;
 	        }
         }
-*/
-        /* Delete the entire ItemTree. */
-        public void DeleteItemTree(ItemStruct Top)
-        {
-	        if (Top == null) return;
-            if (Top.Smaller != null) DeleteItemTree(Top.Smaller);
-            if (Top.Bigger != null) DeleteItemTree(Top.Bigger);
-
-            if ((Top.ShortPath != null) &&
-                ((Top.LongPath == null) ||
-		        (Top.ShortPath != Top.LongPath)))
-	        {
-                Top.ShortPath = null;
-	        }
-
-            if ((Top.ShortFilename != null) &&
-                ((Top.LongFilename == null) ||
-		        (Top.ShortFilename != Top.LongFilename)))
-	        {
-                Top.ShortFilename = null;
-	        }
-
-            Top.LongPath = null;
-	        Top.LongFilename = null;
-
-            //while (Top.FirstFragmentInList != null)
-            //{
-            //    Fragment = Top.FragmentList._LIST.Next;
-
-            //    //TODO: ???? What is this for???
-            //    Top.FragmentList._LIST = Fragment;
-            //}
-
-            Top = null;
-        }
-/*
         / *
 
         Return the LCN of the fragment that contains a cluster at the LCN. If the
@@ -1127,7 +1077,7 @@ namespace MSDefragLib
 	        UInt64 SegmentBegin;
 	        UInt64 SegmentEnd;
 
-	        CLUSTER_COLORS Color;
+	        ClusterColors Color;
 
             /* Determine if the item is fragmented. */
             Boolean Fragmented = IsFragmented(Item, 0, Item.Clusters);
@@ -1165,12 +1115,12 @@ namespace MSDefragLib
 			        /* Determine the color with which to draw this segment. */
 			        if (UnDraw == false)
 			        {
-                        Color = CLUSTER_COLORS.COLORUNFRAGMENTED;
+                        Color = ClusterColors.COLORUNFRAGMENTED;
 
-                        if (Item.SpaceHog) Color = CLUSTER_COLORS.COLORSPACEHOG;
-                        if (Fragmented) Color = CLUSTER_COLORS.COLORFRAGMENTED;
-                        if (Item.Unmovable) Color = CLUSTER_COLORS.COLORUNMOVABLE;
-                        if (Item.Exclude) Color = CLUSTER_COLORS.COLORUNMOVABLE;
+                        if (Item.SpaceHog) Color = ClusterColors.COLORSPACEHOG;
+                        if (Fragmented) Color = ClusterColors.COLORFRAGMENTED;
+                        if (Item.Unmovable) Color = ClusterColors.COLORUNMOVABLE;
+                        if (Item.Exclude) Color = ClusterColors.COLORUNMOVABLE;
 
 				        if ((Vcn + SegmentBegin - RealVcn < BusyOffset) &&
 					        (Vcn + SegmentEnd - RealVcn > BusyOffset))
@@ -1186,12 +1136,12 @@ namespace MSDefragLib
 						        SegmentEnd = RealVcn + BusyOffset + BusySize - Vcn;
 					        }
 
-                            Color = CLUSTER_COLORS.COLORBUSY;
+                            Color = ClusterColors.COLORBUSY;
 				        }
 			        }
 			        else
 			        {
-                        Color = CLUSTER_COLORS.COLOREMPTY;
+                        Color = ClusterColors.COLOREMPTY;
 
 				        for (int i = 0; i < 3; i++)
 				        {
@@ -1209,7 +1159,7 @@ namespace MSDefragLib
                                     SegmentEnd = RealVcn + Data.MftExcludes[i].End - fragment.Lcn;
 						        }
 
-                                Color = CLUSTER_COLORS.COLORMFT;
+                                Color = ClusterColors.COLORMFT;
 					        }
 				        }
 			        }
@@ -1268,11 +1218,11 @@ namespace MSDefragLib
 
             if (m_clusterData == null)
             {
-                m_clusterData = new List<CLUSTER_COLORS>(40000000);
+                m_clusterData = new List<ClusterColors>(40000000);
 
                 for (Int32 ii = 0; ii < 40000000; ii++)
                 {
-                    m_clusterData.Add(CLUSTER_COLORS.COLOREMPTY);
+                    m_clusterData.Add(ClusterColors.COLOREMPTY);
                 }
             }
 
@@ -1335,15 +1285,15 @@ namespace MSDefragLib
                             (Lcn == Data.MftExcludes[1].End) ||
                             (Lcn == Data.MftExcludes[2].End))
                         {
-                            DrawCluster(ClusterStart,Lcn,CLUSTER_COLORS.COLORUNMOVABLE);
+                            DrawCluster(ClusterStart,Lcn,ClusterColors.COLORUNMOVABLE);
                         }
                         else if (PrevInUse == false)
                         {
-                            DrawCluster(ClusterStart,Lcn,CLUSTER_COLORS.COLOREMPTY);
+                            DrawCluster(ClusterStart,Lcn,ClusterColors.COLOREMPTY);
                         }
                         else
                         {
-                            DrawCluster(ClusterStart,Lcn,CLUSTER_COLORS.COLORALLOCATED);
+                            DrawCluster(ClusterStart,Lcn,ClusterColors.COLORALLOCATED);
                         }
 
                         InUse = true;
@@ -1353,13 +1303,13 @@ namespace MSDefragLib
 
                     if ((PrevInUse == false) && (InUse != false))
                     {          /* Free */
-                        DrawCluster(ClusterStart, Lcn, CLUSTER_COLORS.COLOREMPTY);
+                        DrawCluster(ClusterStart, Lcn, ClusterColors.COLOREMPTY);
                         ClusterStart = Lcn;
                     }
 
                     if ((PrevInUse != false) && (InUse == false))
                     {          /* In use */
-                        DrawCluster(ClusterStart, Lcn, CLUSTER_COLORS.COLORALLOCATED);
+                        DrawCluster(ClusterStart, Lcn, ClusterColors.COLORALLOCATED);
                         ClusterStart = Lcn;
                     }
 
@@ -1375,12 +1325,12 @@ namespace MSDefragLib
             {
                 if (PrevInUse == false)
                 {          /* Free */
-                    DrawCluster(ClusterStart, Lcn, CLUSTER_COLORS.COLOREMPTY);
+                    DrawCluster(ClusterStart, Lcn, ClusterColors.COLOREMPTY);
                 }
 
                 if (PrevInUse != false)
                 {          /* In use */
-                    DrawCluster(ClusterStart, Lcn, CLUSTER_COLORS.COLORALLOCATED);
+                    DrawCluster(ClusterStart, Lcn, ClusterColors.COLORALLOCATED);
                 }
             }
 
@@ -1390,7 +1340,7 @@ namespace MSDefragLib
                 if (Data.RedrawScreen != 2) break;
                 if (Data.MftExcludes[i].Start <= 0) continue;
 
-                DrawCluster(Data.MftExcludes[i].Start, Data.MftExcludes[i].End, CLUSTER_COLORS.COLORMFT);
+                DrawCluster(Data.MftExcludes[i].Start, Data.MftExcludes[i].End, ClusterColors.COLORMFT);
             }
 
             /* Colorize all the files on the screen.
@@ -3315,7 +3265,7 @@ namespace MSDefragLib
 	        /* Update the diskmap with the CLUSTER_COLORS. */
             Data.PhaseDone = Data.PhaseTodo;
 
-            DrawCluster(0, Data.TotalClusters, CLUSTER_COLORS.COLOREMPTY);
+            DrawCluster(0, Data.TotalClusters, ClusterColors.COLOREMPTY);
 
 	        /* Setup the progress counter and the file/dir counters. */
             Data.PhaseDone = 0;
@@ -5704,7 +5654,7 @@ namespace MSDefragLib
             }
         }
 
-        private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, CLUSTER_COLORS color)
+        private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, ClusterColors color)
         {
             if ((clusterBegin < 0) || (clusterBegin > Data.TotalClusters) ||
                 (clusterEnd < 0) || (clusterEnd > Data.TotalClusters))
@@ -5794,15 +5744,15 @@ namespace MSDefragLib
 
                 ClusterSquare square = new ClusterSquare(squareIndex, clusterIndex, lastClusterIndex);
 
-                square.m_colors[(Int32)CLUSTER_COLORS.COLORALLOCATED] = 0;
-                square.m_colors[(Int32)CLUSTER_COLORS.COLORBACK] = 0;
-                square.m_colors[(Int32)CLUSTER_COLORS.COLORBUSY] = 0;
-                square.m_colors[(Int32)CLUSTER_COLORS.COLOREMPTY] = 0;
-                square.m_colors[(Int32)CLUSTER_COLORS.COLORFRAGMENTED] = 0;
-                square.m_colors[(Int32)CLUSTER_COLORS.COLORMFT] = 0;
-                square.m_colors[(Int32)CLUSTER_COLORS.COLORSPACEHOG] = 0;
-                square.m_colors[(Int32)CLUSTER_COLORS.COLORUNFRAGMENTED] = 0;
-                square.m_colors[(Int32)CLUSTER_COLORS.COLORUNMOVABLE] = 0;
+                square.m_colors[(Int32)ClusterColors.COLORALLOCATED] = 0;
+                square.m_colors[(Int32)ClusterColors.COLORBACK] = 0;
+                square.m_colors[(Int32)ClusterColors.COLORBUSY] = 0;
+                square.m_colors[(Int32)ClusterColors.COLOREMPTY] = 0;
+                square.m_colors[(Int32)ClusterColors.COLORFRAGMENTED] = 0;
+                square.m_colors[(Int32)ClusterColors.COLORMFT] = 0;
+                square.m_colors[(Int32)ClusterColors.COLORSPACEHOG] = 0;
+                square.m_colors[(Int32)ClusterColors.COLORUNFRAGMENTED] = 0;
+                square.m_colors[(Int32)ClusterColors.COLORUNMOVABLE] = 0;
 
                 for (UInt64 jj = clusterIndex; jj <= lastClusterIndex; jj++)
                 {
@@ -5824,7 +5774,7 @@ namespace MSDefragLib
         public DefragmenterState Data
         { get; set; }
 
-        List<CLUSTER_COLORS> m_clusterData = null;
+        List<ClusterColors> m_clusterData = null;
         List<ClusterSquare> m_clusterSquares = null;
 
         private Int32 m_numSquares = 0;
@@ -5913,14 +5863,14 @@ namespace MSDefragLib
     /// </summary>
     public class ClusterStructure
     {
-        public ClusterStructure(UInt64 clusterIndex, CLUSTER_COLORS color)
+        public ClusterStructure(UInt64 clusterIndex, ClusterColors color)
         {
             m_clusterIndex = clusterIndex;
             m_color = color;
         }
 
         public UInt64 m_clusterIndex;
-        public CLUSTER_COLORS m_color;
+        public ClusterColors m_color;
     }
 
     #endregion

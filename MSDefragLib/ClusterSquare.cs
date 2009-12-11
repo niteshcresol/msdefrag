@@ -10,53 +10,53 @@ namespace MSDefragLib
         public ClusterSquare(Int32 squareIndex, UInt64 clusterBegin, UInt64 clusterEnd)
         {
             m_squareIndex = squareIndex;
-            m_color = CLUSTER_COLORS.COLOREMPTY;
+            m_color = ClusterColors.COLOREMPTY;
             m_clusterBeginIndex = clusterBegin;
             m_clusterEndIndex = clusterEnd;
 
-            m_colors = new Int32[(Int32)CLUSTER_COLORS.COLORMAX];
+            m_colors = new Int32[(Int32)ClusterColors.COLORMAX];
 
             m_isDirty = true;
         }
 
-        private CLUSTER_COLORS GetMaxSquareColor()
+        private ClusterColors GetMaxSquareColor()
         {
-            if (m_colors[(Int32)CLUSTER_COLORS.COLORBUSY] > 0)
+            if (m_colors[(Int32)ClusterColors.COLORBUSY] > 0)
             {
-                return CLUSTER_COLORS.COLORBUSY;
+                return ClusterColors.COLORBUSY;
             }
 
-            if (m_colors[(Int32)CLUSTER_COLORS.COLORMFT] > 0)
+            if (m_colors[(Int32)ClusterColors.COLORMFT] > 0)
             {
-                return CLUSTER_COLORS.COLORMFT;
+                return ClusterColors.COLORMFT;
             }
 
-            if (m_colors[(Int32)CLUSTER_COLORS.COLORUNMOVABLE] > 0)
+            if (m_colors[(Int32)ClusterColors.COLORUNMOVABLE] > 0)
             {
-                return CLUSTER_COLORS.COLORUNMOVABLE;
+                return ClusterColors.COLORUNMOVABLE;
             }
 
-            if (m_colors[(Int32)CLUSTER_COLORS.COLORFRAGMENTED] > 0)
+            if (m_colors[(Int32)ClusterColors.COLORFRAGMENTED] > 0)
             {
-                return CLUSTER_COLORS.COLORFRAGMENTED;
+                return ClusterColors.COLORFRAGMENTED;
             }
 
-            if (m_colors[(Int32)CLUSTER_COLORS.COLORUNFRAGMENTED] > 0)
+            if (m_colors[(Int32)ClusterColors.COLORUNFRAGMENTED] > 0)
             {
-                return CLUSTER_COLORS.COLORUNFRAGMENTED;
+                return ClusterColors.COLORUNFRAGMENTED;
             }
 
-            if (m_colors[(Int32)CLUSTER_COLORS.COLORSPACEHOG] > 0)
+            if (m_colors[(Int32)ClusterColors.COLORSPACEHOG] > 0)
             {
-                return CLUSTER_COLORS.COLORSPACEHOG;
+                return ClusterColors.COLORSPACEHOG;
             }
 
-            if (m_colors[(Int32)CLUSTER_COLORS.COLORALLOCATED] > 0)
+            if (m_colors[(Int32)ClusterColors.COLORALLOCATED] > 0)
             {
-                return CLUSTER_COLORS.COLORALLOCATED;
+                return ClusterColors.COLORALLOCATED;
             }
 
-            return CLUSTER_COLORS.COLOREMPTY;
+            return ClusterColors.COLOREMPTY;
         }
 
         public void SetMaxColor()
@@ -73,7 +73,7 @@ namespace MSDefragLib
 
         public Boolean m_isDirty;
         public Int32 m_squareIndex;
-        public CLUSTER_COLORS m_color;
+        public ClusterColors m_color;
 
         public UInt64 m_clusterBeginIndex;
         public UInt64 m_clusterEndIndex;

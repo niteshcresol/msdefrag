@@ -60,6 +60,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClusterColors.cs" />
     <Compile Include="ClusterSquare.cs" />
     <Compile Include="Colors.cs" />
     <Compile Include="Common\Fragment.cs" />

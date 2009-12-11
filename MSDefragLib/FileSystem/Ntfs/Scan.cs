@@ -1068,7 +1068,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 if (_lib.Data.Running != RunningState.RUNNING)
                 {
-                    _lib.DeleteItemTree(_lib.Data.ItemTree);
+                    ItemTree.Delete(_lib.Data.ItemTree);
                     _lib.Data.ItemTree = null;
                     return false;
                 }

@@ -104,19 +104,19 @@ namespace MSDefrag
             backBrush = new SolidBrush(Color.Blue);
             fontBrush = new SolidBrush(Color.Yellow);
 
-            colors = new Color[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMAX];
+            colors = new Color[(Int32)MSDefragLib.ClusterColors.COLORMAX];
 
-            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORUNMOVABLE] = Color.Yellow;
-            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORALLOCATED] = Color.LightGray;
-            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORBACK] = Color.White;
-            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORBUSY] = Color.Blue;
-            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLOREMPTY] = Color.White;
-            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORFRAGMENTED] = Color.Orange;
-            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMFT] = Color.Pink;
-            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORSPACEHOG] = Color.GreenYellow;
-            colors[(Int32)MSDefragLib.CLUSTER_COLORS.COLORUNFRAGMENTED] = Color.Green;
+            colors[(Int32)MSDefragLib.ClusterColors.COLORUNMOVABLE] = Color.Yellow;
+            colors[(Int32)MSDefragLib.ClusterColors.COLORALLOCATED] = Color.LightGray;
+            colors[(Int32)MSDefragLib.ClusterColors.COLORBACK] = Color.White;
+            colors[(Int32)MSDefragLib.ClusterColors.COLORBUSY] = Color.Blue;
+            colors[(Int32)MSDefragLib.ClusterColors.COLOREMPTY] = Color.White;
+            colors[(Int32)MSDefragLib.ClusterColors.COLORFRAGMENTED] = Color.Orange;
+            colors[(Int32)MSDefragLib.ClusterColors.COLORMFT] = Color.Pink;
+            colors[(Int32)MSDefragLib.ClusterColors.COLORSPACEHOG] = Color.GreenYellow;
+            colors[(Int32)MSDefragLib.ClusterColors.COLORUNFRAGMENTED] = Color.Green;
 
-            brushes = new SolidBrush[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMAX];
+            brushes = new SolidBrush[(Int32)MSDefragLib.ClusterColors.COLORMAX];
 
             int ii = 0;
 
@@ -125,7 +125,7 @@ namespace MSDefrag
                 brushes[ii] = new SolidBrush(col);
             }
 
-            gradientBrushes = new LinearGradientBrush[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMAX];
+            gradientBrushes = new LinearGradientBrush[(Int32)MSDefragLib.ClusterColors.COLORMAX];
 
             Byte brightnessFactor = 20;
             Byte darknessFactor = 70;
@@ -151,7 +151,7 @@ namespace MSDefrag
                 ii++;
             }
 
-            verticalBrushes = new LinearGradientBrush[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMAX];
+            verticalBrushes = new LinearGradientBrush[(Int32)MSDefragLib.ClusterColors.COLORMAX];
 
             brightnessFactor = 0;
             darknessFactor = 100;
@@ -182,7 +182,7 @@ namespace MSDefrag
 
         private void InitSquareRectangles()
         {
-            squareBitmaps = new Bitmap[(Int32)MSDefragLib.CLUSTER_COLORS.COLORMAX];
+            squareBitmaps = new Bitmap[(Int32)MSDefragLib.ClusterColors.COLORMAX];
 
             int ii = 0;
 
@@ -212,7 +212,7 @@ namespace MSDefrag
                         darkColor, LinearGradientMode.ForwardDiagonal))
                     {
 
-                        if (ii == (Int32)MSDefragLib.CLUSTER_COLORS.COLOREMPTY)
+                        if (ii == (Int32)MSDefragLib.ClusterColors.COLOREMPTY)
                         {
                             g1.FillRectangle(verticalBrushes[(Int32)ii], rec);
                         }
