@@ -20,18 +20,18 @@ namespace MSDefrag
         public MainForm()
         {
             m_defragmenter = DefragmenterFactory.CreateSimulation();
-            // m_defragmenter = DefragmenterFactory.Create();
+            //m_defragmenter = DefragmenterFactory.Create();
 
             Initialize();
 
             defragThread = new Thread(Defrag);
-            defragThread.Priority = ThreadPriority.BelowNormal;
+            defragThread.Priority = ThreadPriority.Lowest;
 
             defragThread.Start();
 
             m_this = this;
 
-            Timer = new System.Timers.Timer(100);
+            Timer = new System.Timers.Timer(40);
 
             Timer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
 

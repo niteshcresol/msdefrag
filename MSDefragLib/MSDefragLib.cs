@@ -5641,38 +5641,6 @@ namespace MSDefragLib
 
         #endregion
 
-        System.Timers.Timer aTimer;
-
-        public static MSDefragLib me;
-        public static Int64 testNumber2 = 0;
-        public static DateTime firstTimestamp;
-        public static DateTime secondTimeStamp2;
-
-        private static void OnTimedEvent(object source, ElapsedEventArgs e)
-        {
-            if (me == null)
-                return;
-            if (firstTimestamp.Ticks == 0)
-            {
-                firstTimestamp = e.SignalTime;
-            }
-
-            secondTimeStamp2 = e.SignalTime;
-
-            Double diffMilli = ((TimeSpan)(secondTimeStamp2 - firstTimestamp)).Ticks / 10000;
-
-            testNumber2 += me._dirtySquares.Count;
-            me.ShowDebug(0, "Total number of squares: " + testNumber2);
-            me.ShowDebug(1, String.Format("Current Performance: {0:F} squares / s", (me._dirtySquares.Count * 1000 / me.aTimer.Interval)));
-
-            if (diffMilli != 0)
-            {
-                me.ShowDebug(2, String.Format("Average Performance: {0:F} squares / s", (testNumber2 * 1000 / diffMilli)));
-            }
-
-            me.ShowChangedClusters();
-        }
-
         public void StartSimulation()
         {
             Data = new DefragmenterState();
@@ -5684,8 +5652,6 @@ namespace MSDefragLib
 
         private void Simulate()
         {
-            me = this;
-
             Random rnd = new Random();
 
             Int32 maxNumTest = 4500213;
@@ -5742,12 +5708,7 @@ namespace MSDefragLib
             }
         }
 
-        //public delegate void DrawClusterHandler(object sender, EventArgs e);
-        //public delegate void NotifyGuiHandler(object sender, EventArgs e);
-
         public event ClustersModifiedHandler ShowChangedClustersEvent;
-        //public event DrawClusterHandler DrawClusterEvent;
-        //public event NotifyGuiHandler NotifyGuiEvent;
         public event NewMessageHandler ShowDebugEvent;
 
         protected virtual void OnShowChangedClusters(EventArgs e)
@@ -5764,30 +5725,6 @@ namespace MSDefragLib
                 ShowDebugEvent(this, e);
             }
         }
-        //protected virtual void OnDrawCluster(EventArgs e)
-        //{
-        //    if (DrawClusterEvent != null)
-        //    {
-        //        if (e is DrawClusterEventArgs)
-        //        {
-        //            DrawClusterEvent(this, e);
-        //        }
-        //        if (e is DrawClusterEventArgs2)
-        //        {
-        //            DrawClusterEvent(this, e);
-        //        }
-        //    }
-        //}
-        //protected virtual void OnNotifyGui(EventArgs e)
-        //{
-        //    if (NotifyGuiEvent != null)
-        //    {
-        //        if (e is NotifyGuiEventArgs)
-        //        {
-        //            NotifyGuiEvent(this, e);
-        //        }
-        //    }
-        //}
 
         public void ShowChangedClusters()
         {
@@ -5826,8 +5763,6 @@ namespace MSDefragLib
 
         private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, CLUSTER_COLORS color)
         {
-            //ShowDebug(3, "Cluster: " + clusterBegin);
-
             if ((clusterBegin < 0) || (clusterBegin > Data.TotalClusters) ||
                 (clusterEnd < 0) || (clusterEnd > Data.TotalClusters))
             {
@@ -5885,7 +5820,7 @@ namespace MSDefragLib
                     {
                         _dirtySquares.Add(clusterSquare);
 
-                        if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
+//                        if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
                         {
                             ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
                             ShowChangedClusters();
