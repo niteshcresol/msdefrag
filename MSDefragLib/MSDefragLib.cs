@@ -124,23 +124,6 @@ namespace MSDefragLib
 	        /* 57 */   "Ignoring volume '%s' because it is not a harddisk."
         };
 
-        /// <summary>
-        /// Compare a string with a mask, case-insensitive. If it matches then return
-        /// true, otherwise false. The mask may contain wildcard characters '?' (any
-        /// character) '*' (any characters).
-        /// </summary>
-        /// <param name="Filename"></param>
-        /// <param name="Mask"></param>
-        /// <returns></returns>
-        Boolean MatchMask(String Filename, String Mask)
-        {
-            Wildcard wildcard = new Wildcard(Mask, RegexOptions.IgnoreCase);
-
-            if (wildcard.IsMatch(Filename)) return true;
-
-            return false;
-
-        }
 
         /* Search case-insensitive for a substring. */
 /*
@@ -3311,8 +3294,8 @@ namespace MSDefragLib
 		        */
 
 		        /* Apply the Mask and set the Exclude flag of all items that do not match. */
-                if ((MatchMask(Item.LongPath, Data.IncludeMask) == false) &&
-                    (MatchMask(Item.ShortPath, Data.IncludeMask) == false))
+                if ((Wildcard.MatchMask(Item.LongPath, Data.IncludeMask) == false) &&
+                    (Wildcard.MatchMask(Item.ShortPath, Data.IncludeMask) == false))
 		        {
 			        Item.Exclude = true;
 
@@ -3324,8 +3307,8 @@ namespace MSDefragLib
 		        {
                     for (i = 0; Data.Excludes[i] != null; i++)
 			        {
-                        if ((MatchMask(Item.LongPath, Data.Excludes[i]) == true) ||
-                            (MatchMask(Item.ShortPath, Data.Excludes[i]) == true))
+                        if ((Wildcard.MatchMask(Item.LongPath, Data.Excludes[i]) == true) ||
+                            (Wildcard.MatchMask(Item.ShortPath, Data.Excludes[i]) == true))
 				        {
 					        Item.Exclude = true;
 
@@ -3365,8 +3348,8 @@ namespace MSDefragLib
 			        {
                         for (i = 0; Data.SpaceHogs[i] != null; i++)
 				        {
-                            if ((MatchMask(Item.LongPath, Data.SpaceHogs[i]) == true) ||
-                                (MatchMask(Item.ShortPath, Data.SpaceHogs[i]) == true))
+                            if ((Wildcard.MatchMask(Item.LongPath, Data.SpaceHogs[i]) == true) ||
+                                (Wildcard.MatchMask(Item.ShortPath, Data.SpaceHogs[i]) == true))
 					        {
 						        Item.SpaceHog = true;
 
@@ -3379,21 +3362,21 @@ namespace MSDefragLib
 		        }
 
 		        /* Special exception for "http://www.safeboot.com/". */
-		        if (MatchMask(Item.LongPath,"*\\safeboot.fs") == true)
+                if (Wildcard.MatchMask(Item.LongPath, "*\\safeboot.fs") == true)
                     Item.Unmovable = true;
 
 		        /* Special exception for Acronis OS Selector. */
-		        if (MatchMask(Item.LongPath,"?:\\bootwiz.sys") == true)
+                if (Wildcard.MatchMask(Item.LongPath, "?:\\bootwiz.sys") == true)
                     Item.Unmovable = true;
-		        if (MatchMask(Item.LongPath,"*\\BOOTWIZ\\*") == true)
+                if (Wildcard.MatchMask(Item.LongPath, "*\\BOOTWIZ\\*") == true)
                     Item.Unmovable = true;
 
 		        /* Special exception for DriveCrypt by "http://www.securstar.com/". */
-		        if (MatchMask(Item.LongPath,"?:\\BootAuth?.sys") == true)
+                if (Wildcard.MatchMask(Item.LongPath, "?:\\BootAuth?.sys") == true)
                     Item.Unmovable = true;
 
 		        /* Special exception for Symantec GoBack. */
-		        if (MatchMask(Item.LongPath,"*\\Gobackio.bin") == true)
+                if (Wildcard.MatchMask(Item.LongPath, "*\\Gobackio.bin") == true)
                     Item.Unmovable = true;
 
 		        /* The $BadClus file maps the entire disk and is always unmovable. */
@@ -4760,7 +4743,7 @@ namespace MSDefragLib
 
                 foreach (String exclude in Data.Excludes)
                 {
-                    if (MatchMask(Path,exclude) == true) break;
+                    if (Wildcard.MatchMask(Path, exclude) == true) break;
 
                     if ((exclude.Equals("*")) &&
                         (exclude.Length <= 3) &&

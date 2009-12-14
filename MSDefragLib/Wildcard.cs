@@ -18,6 +18,24 @@ namespace MSDefragLib
         }
 
         /// <summary>
+        /// Compare a string with a mask, case-insensitive. If it matches then return
+        /// true, otherwise false. The mask may contain wildcard characters '?' (any
+        /// character) '*' (any characters).
+        /// </summary>
+        /// <param name="Filename"></param>
+        /// <param name="Mask"></param>
+        /// <returns></returns>
+        public static Boolean MatchMask(String filename, String mask)
+        {
+            Wildcard wildcard = new Wildcard(mask, RegexOptions.IgnoreCase);
+
+            if (wildcard.IsMatch(filename)) return true;
+
+            return false;
+
+        }
+
+        /// <summary>
         /// Initializes a wildcard with the given search pattern and options.
         /// </summary>
         /// <param name="pattern">The wildcard pattern to match.</param>
