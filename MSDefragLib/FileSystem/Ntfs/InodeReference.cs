@@ -7,6 +7,7 @@ using System.Text;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
+    [DebuggerDisplay("inode:{BaseInodeNumber}, seq:{SequenceNumber}")]
     public class InodeReference
     {
         private InodeReference()
@@ -29,6 +30,9 @@ namespace MSDefragLib.FileSystem.Ntfs
         public UInt64 BaseInodeNumber
         { get; private set; }
 
+        /// <summary>
+        /// Sequence number
+        /// </summary>
         public UInt16 SequenceNumber
         { get; private set; }
 

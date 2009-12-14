@@ -38,7 +38,7 @@ namespace MSDefragLib.Defragmenter
         public override void Start(string parameter)
         {
             lib.RunJkDefrag(@"C:\*", 2, 10, null, null);
-            //m_msDefragLib.RunJkDefrag(@"T:\*", 2, 10, null, null);
+            //lib.RunJkDefrag(@"T:\*", 2, 10, null, null);
         }
 
         public override void Stop(Int32 timeoutMs)
