@@ -290,7 +290,15 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (runData == null)
                 return true;
 
-            foundStream.ParseRunData(runData, startingVcn);
+            try
+            {
+                foundStream.ParseRunData(runData, startingVcn);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(this, String.Format("RunData Parse Stream: {0}, error: {1}",
+                    foundStream, ex.Message));
+            }
             return true;
         }
 
@@ -619,8 +627,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         }
 
         private void ParseNonResidentAttribute(InodeDataStructure inodeData,
-            BinaryReader reader, UInt32 offset,
-            Attribute attribute, Int64 position)
+            BinaryReader reader, UInt32 offset, Attribute attribute, Int64 position)
         {
             //Trace.WriteLine(this, String.Format(
             //    "   ParseNonResidentAttribute Inode: {0:G}, pos: {1:G}", inodeData.Inode, position));

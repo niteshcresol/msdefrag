@@ -56,15 +56,21 @@ namespace MSDefragLib.FileSystem.Ntfs
             Clusters = 0;
         }
 
+        public override string ToString()
+        {
+            return String.Format("Stream:{0} [{1}]", Name, Type);
+        }
+
         public void ParseRunData(BinaryReader runData, UInt64 startingVcn)
         {
-            /* Walk through the RunData and add the extents. */
+            // Walk through the RunData and add the extents.
             Int64 Lcn = 0;
             UInt64 Vcn = startingVcn;
             UInt64 runLength;
             Int64 runOffset;
             while (RunData.Parse(runData, out runLength, out runOffset))
             {
+                // the offset is relative to the starting cluster of the previous run
                 Lcn += runOffset;
 
                 if (runOffset != 0)

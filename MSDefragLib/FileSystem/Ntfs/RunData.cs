@@ -15,8 +15,6 @@ namespace MSDefragLib.FileSystem.Ntfs
     ///  
     /// Normal, compressed and sparse files are all defined by runs.
     /// 
-    /// The examples start simple, then quickly get complicated.
-    /// 
     /// This is a table written in the content part of a non-resident
     /// file attribute, which allows to have access to its stream. 
     /// </summary>
@@ -44,7 +42,8 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         private static UInt64 ReadLength(BinaryReader runData, int length)
         {
-            Debug.Assert(length <= 8);
+            if (length > 8)
+                throw new InvalidDataException("The length shall never be more than 8 bytes");
 
             Byte[] runLength = new Byte[8];
             for (int i = 0; i < 8; i++)
@@ -60,7 +59,8 @@ namespace MSDefragLib.FileSystem.Ntfs
         private static Int64 ReadOffset(BinaryReader runData, int length)
         {
             if (length == 0) return 0;
-            Debug.Assert(length <= 8);
+            if (length > 8)
+                throw new InvalidDataException("The offset shall never be more than 8 bytes");
             
             Byte[] runOffset = new Byte[8];
             for (int i = 0; i < 8; i++)
