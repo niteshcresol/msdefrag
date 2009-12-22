@@ -14,8 +14,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             _bitmapBytes = bitmapBytes;
             _dataBytes = dataBytes;
             _diskInfo = diskInfo;
-            MftBitmap = new ByteArray();
-            MftBitmap.m_bytes = disk.Load(diskInfo, fragments);
+            MftBitmap = new ByteArray(disk.Load(diskInfo, fragments));
         }
 
         /// <summary>
@@ -38,7 +37,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             get
             {
                 UInt64 used = 0;
-                BitArray bits = new BitArray(MftBitmap.m_bytes);
+                BitArray bits = new BitArray(MftBitmap.Bytes);
                 UInt64 c = 0;
                 foreach (bool bit in bits)
                 {
@@ -55,7 +54,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             get
             {
-                return new BitArray(MftBitmap.m_bytes);
+                return new BitArray(MftBitmap.Bytes);
             }
         }
 

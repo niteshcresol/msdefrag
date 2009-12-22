@@ -17,9 +17,9 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         public static BinaryReader BinaryReader(ByteArray buffer, Int64 offset)
         {
-            Int64 count = buffer.m_bytes.Length - offset;
+            Int64 count = buffer.Bytes.Length - offset;
             Debug.Assert(count > 0);
-            System.IO.Stream stream = new MemoryStream(buffer.m_bytes, (int)offset, (int)count);
+            System.IO.Stream stream = new MemoryStream(buffer.Bytes, (int)offset, (int)count);
             BinaryReader reader = new BinaryReader(stream);
             return reader;
         }

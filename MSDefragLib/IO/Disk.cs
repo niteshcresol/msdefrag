@@ -95,7 +95,7 @@ namespace MSDefragLib
         /// <param name="count">Number of bytes to read</param>
         public void ReadFromCluster(UInt64 lcn, Byte[] buffer, int start, int count)
         {
-            Trace.WriteLine(this, String.Format("Reading: LCN={0:X8}, {1} bytes", lcn, count));
+            //Trace.WriteLine(this, String.Format("Reading: LCN={0:X8}, {1} bytes", lcn, count));
             Debug.Assert(buffer.Length >= count);
             Overlapped overlapped = IO.OverlappedBuilder.Get(lcn);
             int bytesRead = IO.IOWrapper.Read(VolumeHandle, buffer, start, count, overlapped);

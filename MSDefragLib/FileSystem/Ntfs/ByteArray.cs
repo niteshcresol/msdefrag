@@ -7,36 +7,38 @@ namespace MSDefragLib.FileSystem.Ntfs
 {
     public class ByteArray
     {
-        public Byte[] m_bytes;
+        public Byte[] Bytes
+        { get; private set; }
 
-        public ByteArray()
+        public ByteArray(Byte[] data)
         {
+            Bytes = data;
         }
 
         public ByteArray(Int64 size)
         {
-            m_bytes = new Byte[size];
+            Bytes = new Byte[size];
         }
 
         public Int64 GetLength()
         {
-            return m_bytes.Length;
+            return Bytes.Length;
         }
 
         public Byte GetValue(Int64 index)
         {
-            return m_bytes[index];
+            return Bytes[index];
         }
 
         public void SetValue(Int64 index, Byte value)
         {
-            m_bytes[index] = value;
+            Bytes[index] = value;
         }
 
         public ByteArray ToByteArray(Int64 index, Int64 length)
         {
             ByteArray ba = new ByteArray(length);
-            Array.Copy(m_bytes, index, ba.m_bytes, 0, length);
+            Array.Copy(Bytes, index, ba.Bytes, 0, length);
             return ba;
         }
 
@@ -47,7 +49,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             int jj = 0;
             for (int ii = 0; ii < length; ii += 2)
             {
-                ba.SetValue(jj++, BitConverter.ToUInt16(m_bytes, (int)index + ii));
+                ba.SetValue(jj++, BitConverter.ToUInt16(Bytes, (int)index + ii));
             }
             return ba;
         }
@@ -55,7 +57,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         //TODO: check if this matters: offset is truncated to 32 bits
         public Byte ToByte(ref Int64 offset)
         {
-            Byte retValue = m_bytes[(int)offset];
+            Byte retValue = Bytes[(int)offset];
             offset += sizeof(Byte);
             return retValue;
         }

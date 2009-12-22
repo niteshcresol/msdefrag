@@ -83,23 +83,33 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
         }
 
-        /* "stream name" */
+        /// <summary>
+        /// "stream name" 
+        /// </summary>
         public String Name
         { get; private set; }
 
-        /* "stream type" */
+        /// <summary>
+        /// "stream type"
+        /// </summary>
         public AttributeType Type
         { get; private set; }
 
-        /* The fragments of the stream. */
+        /// <summary>
+        /// The fragments of the stream.
+        /// </summary>
         public FragmentList Fragments
         { get; private set; }
 
-        /* Total number of clusters. */
+        /// <summary>
+        /// Total number of clusters.
+        /// </summary>
         public UInt64 Clusters
         { get; private set; }
 
-        /* Total number of bytes. */
+        /// <summary>
+        ///  Total number of bytes.
+        /// </summary>
         public UInt64 Bytes
         { get; set; }
 
