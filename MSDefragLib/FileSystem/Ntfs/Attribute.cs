@@ -15,6 +15,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         Sparse = 0x8000
     }
 
+    [DebuggerDisplay("{Type}: LEN={Length} ")]
     public class Attribute : IAttribute
     {
         protected Attribute()
