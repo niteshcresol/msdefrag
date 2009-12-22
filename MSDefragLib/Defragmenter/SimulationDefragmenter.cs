@@ -19,7 +19,7 @@ namespace MSDefragLib.Defragmenter
 
         private IList<ClusterSquare> _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
 
-        private IList<ClusterSquare> DirtySquares
+        public override IList<ClusterSquare> DirtySquares
         {
             get
             {
@@ -68,17 +68,17 @@ namespace MSDefragLib.Defragmenter
                     {
                         _dirtySquares.Add(clusterSquare);
 
-                        ShowChangedClusters();
+//                        ShowChangedClusters();
                     }
                 }
 
                 if (testNumber % 313 == 0)
                 {
-                    ShowDebug(4, "Test: " + testNumber);
-                    ShowDebug(5, String.Format("Done: {0:P}", (Double)((Double) testNumber / (Double) maxNumTest)));
+                    //ShowDebug(4, "Test: " + testNumber);
+                    //ShowDebug(5, String.Format("Done: {0:P}", (Double)((Double) testNumber / (Double) maxNumTest)));
                 }
 
-                Thread.Sleep(1);
+                 Thread.Sleep(1);
             }
 
             Data.Running = RunningState.STOPPED;

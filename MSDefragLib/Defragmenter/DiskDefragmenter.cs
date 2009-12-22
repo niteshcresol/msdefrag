@@ -61,6 +61,11 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
+        public override IList<ClusterSquare> DirtySquares
+        {
+            get { return lib.DirtySquares; }
+        }
+
         #endregion
     }
 }

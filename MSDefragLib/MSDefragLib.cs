@@ -5602,7 +5602,7 @@ namespace MSDefragLib
             }
         }
 
-        public void ShowChangedClusters()
+        public void ShowChangedClusters2()
         {
             if (_dirtySquares.Count() >= MAX_DIRTY_SQUARES)
             {
@@ -5624,7 +5624,7 @@ namespace MSDefragLib
 
         private IList<ClusterSquare> _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
 
-        private IList<ClusterSquare> DirtySquares
+        public IList<ClusterSquare> DirtySquares
         {
             get
             {
@@ -5698,8 +5698,8 @@ namespace MSDefragLib
 
 //                        if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
                         {
-                            ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
-                            ShowChangedClusters();
+//                            ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
+                            // ShowChangedClusters();
                         }
                     }
                 }

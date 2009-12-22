@@ -15,6 +15,8 @@ namespace MSDefragLib.Defragmenter
 
         public abstract int NumSquares { get; set; }
 
+        public abstract IList<ClusterSquare> DirtySquares { get; }
+
         public abstract event ClustersModifiedHandler ClustersModified;
 
         public abstract event NewMessageHandler NewMessage;

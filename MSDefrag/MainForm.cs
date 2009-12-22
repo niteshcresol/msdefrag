@@ -19,8 +19,8 @@ namespace MSDefrag
 
         public MainForm()
         {
-            m_defragmenter = DefragmenterFactory.CreateSimulation();
-            //m_defragmenter = DefragmenterFactory.Create();
+            //m_defragmenter = DefragmenterFactory.CreateSimulation();
+            m_defragmenter = DefragmenterFactory.Create();
 
             Initialize();
 
@@ -31,11 +31,15 @@ namespace MSDefrag
 
             m_this = this;
 
-            Timer = new System.Timers.Timer(40);
+            GuiRefreshTimer = new System.Timers.Timer(40);
+            GuiRefreshTimer.Elapsed += new ElapsedEventHandler(OnRefreshGuiTimer);
 
-            Timer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            GuiRefreshTimer.Enabled = true;
 
-            Timer.Enabled = true;
+            GetSquareTimer = new System.Timers.Timer(10);
+            GetSquareTimer.Elapsed += new ElapsedEventHandler(OnGetSquaresTimer);
+
+            GetSquareTimer.Enabled = true;
         }
 
         #endregion
@@ -263,6 +267,8 @@ namespace MSDefrag
             lock (queue)
             {
                 queue.Enqueue(squaresList);
+
+                AddStatusMessage(2, "Num received squares:" + squaresList.Count);
             }
         }
 
@@ -279,8 +285,12 @@ namespace MSDefrag
                     queue = new Queue<IList<ClusterSquare>>();
                 }
 
+                int numSquares = 0;
+
                 foreach (IList<ClusterSquare> cs in list)
                 {
+                    numSquares += cs.Count;
+
                     foreach (MSDefragLib.ClusterSquare square in cs)
                     {
                         Int32 squareIndex = square.m_squareIndex;
@@ -291,6 +301,8 @@ namespace MSDefrag
                         m_graphicsClusters.DrawImageUnscaled(squareBitmaps[(Int32)square.m_color], posX * m_squareSize + 1, posY * m_squareSize + 1);
                     }
                 }
+
+                AddStatusMessage(3, "Draw squares: " + numSquares);
             }
         }
 
@@ -396,7 +408,7 @@ namespace MSDefrag
         private bool _inUse = false;
         private int _skippedFrames = 0;
 
-        private void OnTimedEvent(object source, ElapsedEventArgs e)
+        private void OnRefreshGuiTimer(object source, ElapsedEventArgs e)
         {
             if (ignoreEvent)
                 return;
@@ -409,6 +421,11 @@ namespace MSDefrag
             {
                 _skippedFrames++;
             }
+        }
+
+        private void OnGetSquaresTimer(object source, ElapsedEventArgs e)
+        {
+            AddChangedClustersToQueue(m_defragmenter.DirtySquares);
         }
 
         #endregion
@@ -455,7 +472,8 @@ namespace MSDefrag
 
         #region Other variables
 
-        System.Timers.Timer Timer;
+        System.Timers.Timer GuiRefreshTimer;
+        System.Timers.Timer GetSquareTimer;
 
         public static MainForm m_this;
 

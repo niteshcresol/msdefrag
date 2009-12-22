@@ -15,6 +15,8 @@ namespace MSDefragLib
 
         Int32 NumSquares { get; set; }
 
+        IList<ClusterSquare> DirtySquares { get; }
+
         event ClustersModifiedHandler ClustersModified;
         event NewMessageHandler NewMessage;
     }
