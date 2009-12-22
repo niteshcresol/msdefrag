@@ -17,7 +17,8 @@ namespace MSDefragLib
 
         public void Add(Int64 lcn, UInt64 vcn, UInt64 length, Boolean isVirtual)
         {
-            Debug.Assert(lcn >= 0);
+            if (lcn < 0)
+                throw new InvalidDataException("LCN numbers cannot be negative");
             _fragments.Add(new Fragment((UInt64)lcn, vcn, length, isVirtual));
         }
 
