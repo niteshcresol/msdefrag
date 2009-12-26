@@ -10,6 +10,7 @@ namespace MSDefragLib.FileSystem.Ntfs
     [Flags]
     public enum NameType : byte
     {
+        POSIX = 0x00,   // POSIX name
         NTFS = 0x01,    // long name
         DOS = 0x02      // 8.3 name
     }
@@ -24,7 +25,8 @@ namespace MSDefragLib.FileSystem.Ntfs
         [Conditional("DEBUG")]
         public void AssertValid()
         {
-            Debug.Assert((_nameType == 0x01) || (_nameType == 0x02) || (_nameType == 0x03));
+            Debug.Assert((_nameType == 0x00) || (_nameType == 0x01) ||
+                (_nameType == 0x02) || (_nameType == 0x03));
         }
 
         public static FileNameAttribute Parse(BinaryReader reader)
