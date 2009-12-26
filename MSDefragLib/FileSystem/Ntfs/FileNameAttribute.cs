@@ -10,9 +10,39 @@ namespace MSDefragLib.FileSystem.Ntfs
     [Flags]
     public enum NameType : byte
     {
+        /// <summary>
+        /// This is the largest namespace. It is case sensitive and allows all
+        /// Unicode characters except for: '\0' and '/'.  Beware that in
+        /// WinNT/2k/2003 by default files which eg have the same name except
+        /// for their case will not be distinguished by the standard utilities
+        /// and thus a "del filename" will delete both "filename" and "fileName"
+        /// without warning.  However if for example Services For Unix (SFU) are
+        /// installed and the case sensitive option was enabled at installation
+        /// time, then you can create/access/delete such files.
+        /// Note that even SFU places restrictions on the filenames beyond the
+        /// '\0' and '/' and in particular the following set of characters is
+        /// not allowed: '"', '/', '<', '>', '\'.  All other characters,
+        /// including the ones no allowed in WIN32 namespace are allowed.
+        /// Tested with SFU 3.5 (this is now free) running on Windows XP.
+        /// </summary>
         POSIX = 0x00,   // POSIX name
+        /// <summary>
+        /// The standard WinNT/2k NTFS long filenames. Case insensitive.  All
+        /// Unicode chars except: '\0', '"', '*', '/', ':', '<', '>', '?', '\',
+        /// and '|'.  Further, names cannot end with a '.' or a space.
+        /// </summary>
         NTFS = 0x01,    // long name
-        DOS = 0x02      // 8.3 name
+        /// <summary>
+        /// The standard DOS filenames (8.3 format). Uppercase only.  All 8-bit
+        /// characters greater space, except: '"', '*', '+', ',', '/', ':', ';',
+        /// '<', '=', '>', '?', and '\'.
+        /// </summary>
+        DOS = 0x02,      // 8.3 name
+        /// <summary>
+        /// means that both the Win32 and the DOS filenames are identical and
+        /// hence have been saved in this single filename record.
+        /// </summary>
+        WIN32_DOS = 0x03
     }
 
     [DebuggerDisplay("Name = {Name}")]
