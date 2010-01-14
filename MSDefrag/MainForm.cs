@@ -90,19 +90,19 @@ namespace MSDefrag
             backBrush = new SolidBrush(Color.Blue);
             fontBrush = new SolidBrush(Color.Yellow);
 
-            colors = new Color[(Int32)MSDefragLib.ClusterColors.COLORMAX];
+            colors = new Color[(Int32)MSDefragLib.eClusterState.MaxValue];
 
-            colors[(Int32)MSDefragLib.ClusterColors.COLORUNMOVABLE] = Color.Yellow;
-            colors[(Int32)MSDefragLib.ClusterColors.COLORALLOCATED] = Color.LightGray;
-            colors[(Int32)MSDefragLib.ClusterColors.COLORBACK] = Color.White;
-            colors[(Int32)MSDefragLib.ClusterColors.COLORBUSY] = Color.Blue;
-            colors[(Int32)MSDefragLib.ClusterColors.COLOREMPTY] = Color.White;
-            colors[(Int32)MSDefragLib.ClusterColors.COLORFRAGMENTED] = Color.Orange;
-            colors[(Int32)MSDefragLib.ClusterColors.COLORMFT] = Color.Pink;
-            colors[(Int32)MSDefragLib.ClusterColors.COLORSPACEHOG] = Color.GreenYellow;
-            colors[(Int32)MSDefragLib.ClusterColors.COLORUNFRAGMENTED] = Color.Green;
+            colors[(Int32)MSDefragLib.eClusterState.Unmovable] = Color.Yellow;
+            colors[(Int32)MSDefragLib.eClusterState.Allocated] = Color.LightGray;
+            colors[(Int32)MSDefragLib.eClusterState.Background] = Color.White;
+            colors[(Int32)MSDefragLib.eClusterState.Busy] = Color.Blue;
+            colors[(Int32)MSDefragLib.eClusterState.Free] = Color.White;
+            colors[(Int32)MSDefragLib.eClusterState.Fragmented] = Color.Orange;
+            colors[(Int32)MSDefragLib.eClusterState.Mft] = Color.Pink;
+            colors[(Int32)MSDefragLib.eClusterState.SpaceHog] = Color.DarkCyan;
+            colors[(Int32)MSDefragLib.eClusterState.Unfragmented] = Color.Green;
 
-            brushes = new SolidBrush[(Int32)MSDefragLib.ClusterColors.COLORMAX];
+            brushes = new SolidBrush[(Int32)MSDefragLib.eClusterState.MaxValue];
 
             int ii = 0;
 
@@ -111,7 +111,7 @@ namespace MSDefrag
                 brushes[ii] = new SolidBrush(col);
             }
 
-            gradientBrushes = new LinearGradientBrush[(Int32)MSDefragLib.ClusterColors.COLORMAX];
+            gradientBrushes = new LinearGradientBrush[(Int32)MSDefragLib.eClusterState.MaxValue];
 
             Byte brightnessFactor = 20;
             Byte darknessFactor = 70;
@@ -137,7 +137,7 @@ namespace MSDefrag
                 ii++;
             }
 
-            verticalBrushes = new LinearGradientBrush[(Int32)MSDefragLib.ClusterColors.COLORMAX];
+            verticalBrushes = new LinearGradientBrush[(Int32)MSDefragLib.eClusterState.MaxValue];
 
             brightnessFactor = 0;
             darknessFactor = 100;
@@ -168,7 +168,7 @@ namespace MSDefrag
 
         private void InitSquareRectangles()
         {
-            squareBitmaps = new Bitmap[(Int32)MSDefragLib.ClusterColors.COLORMAX];
+            squareBitmaps = new Bitmap[(Int32)MSDefragLib.eClusterState.MaxValue];
 
             int ii = 0;
 
@@ -198,7 +198,7 @@ namespace MSDefrag
                         darkColor, LinearGradientMode.ForwardDiagonal))
                     {
 
-                        if (ii == (Int32)MSDefragLib.ClusterColors.COLOREMPTY)
+                        if (ii == (Int32)MSDefragLib.eClusterState.Free)
                         {
                             g1.FillRectangle(verticalBrushes[(Int32)ii], rec);
                         }
@@ -319,8 +319,21 @@ namespace MSDefrag
             }
         }
 
-        private void InitDefrag()
+        private void StartDefragmentation(m_eDefragType mode)
         {
+            switch (mode)
+            {
+                case m_eDefragType.defragTypeDefragmentation:
+                    m_defragmenter = DefragmenterFactory.Create();
+                    break;
+                case m_eDefragType.defragTypeSimulation:
+                    m_defragmenter = DefragmenterFactory.CreateSimulation();
+                    break;
+                default:
+                    m_defragmenter = DefragmenterFactory.CreateSimulation();
+                    break;
+            }
+
             defragThread = new Thread(Defrag);
             defragThread.Priority = ThreadPriority.Lowest;
 
@@ -333,6 +346,8 @@ namespace MSDefrag
 
             InitBrushes();
             InitSquareRectangles();
+
+            defragThread.Start();
         }
 
         private void Defrag()
@@ -375,11 +390,7 @@ namespace MSDefrag
             toolButtonStartSimulation.Enabled = false;
             toolButtonStopDefrag.Enabled = true;
 
-            m_defragmenter = DefragmenterFactory.Create();
-
-            InitDefrag();
-
-            defragThread.Start();
+            StartDefragmentation(m_eDefragType.defragTypeDefragmentation);
         }
 
         private void OnStartSimulation(object sender, EventArgs e)
@@ -388,15 +399,15 @@ namespace MSDefrag
             toolButtonStartSimulation.Enabled = false;
             toolButtonStopDefrag.Enabled = true;
 
-            m_defragmenter = DefragmenterFactory.CreateSimulation();
-
-            InitDefrag();
-
-            defragThread.Start();
+            StartDefragmentation(m_eDefragType.defragTypeSimulation);
         }
 
         private void OnStopDefrag(object sender, EventArgs e)
         {
+            toolButtonStartDefrag.Enabled = false;
+            toolButtonStartSimulation.Enabled = false;
+            toolButtonStopDefrag.Enabled = false;
+
             StopDefragmentation();
 
             toolButtonStartDefrag.Enabled = true;
@@ -521,6 +532,12 @@ namespace MSDefrag
         private Thread defragThread = null;
 
         private IDefragmenter m_defragmenter = null;
+
+        private enum m_eDefragType
+        {
+            defragTypeDefragmentation = 0,
+            defragTypeSimulation
+        }
 
         #endregion
 

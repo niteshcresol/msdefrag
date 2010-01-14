@@ -7,13 +7,13 @@ namespace MSDefragLib
 {
     public class Colors
     {
-        public Colors(ClusterColors color)
+        public Colors(eClusterState color)
         {
             m_color = color;
             m_numColors = 0;
         }
 
-        public ClusterColors m_color;
+        public eClusterState m_color;
         public Int64 m_numColors;
     }
 }

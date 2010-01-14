@@ -167,6 +167,7 @@
             // 
             // toolButtonStopDefrag
             // 
+            this.toolButtonStopDefrag.Enabled = false;
             this.toolButtonStopDefrag.Image = ((System.Drawing.Image)(resources.GetObject("toolButtonStopDefrag.Image")));
             this.toolButtonStopDefrag.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolButtonStopDefrag.Name = "toolButtonStopDefrag";

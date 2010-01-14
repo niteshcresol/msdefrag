@@ -57,7 +57,7 @@ namespace MSDefragLib.Defragmenter
                     break;
                 }
 
-                ClusterColors col = (ClusterColors)rnd.Next((Int32)ClusterColors.COLORMAX);
+                eClusterState col = (eClusterState)rnd.Next((Int32)eClusterState.MaxValue);
 
                 for (Int32 squareNum = squareBegin; (Data.Running == RunningState.RUNNING) && (squareNum < squareEnd); squareNum++)
                 {
