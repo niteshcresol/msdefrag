@@ -19,19 +19,11 @@ namespace MSDefrag
 
         public MainForm()
         {
-            //m_defragmenter = DefragmenterFactory.CreateSimulation();
-            m_defragmenter = DefragmenterFactory.Create();
-
             Initialize();
-
-            defragThread = new Thread(Defrag);
-            defragThread.Priority = ThreadPriority.Lowest;
-
-            defragThread.Start();
 
             m_this = this;
 
-            GuiRefreshTimer = new System.Timers.Timer(40);
+            GuiRefreshTimer = new System.Timers.Timer(100);
             GuiRefreshTimer.Elapsed += new ElapsedEventHandler(OnRefreshGuiTimer);
 
             GuiRefreshTimer.Enabled = true;
@@ -48,17 +40,7 @@ namespace MSDefrag
 
         public void Initialize()
         {
-            m_defragmenter.NewMessage += new MSDefragLib.NewMessageHandler(SetStatus);
-            m_defragmenter.ClustersModified += new MSDefragLib.ClustersModifiedHandler(ShowChangedClusters);
-
             InitializeComponent();
-
-            InitializeBitmapDisplay();
-            InitializeBitmapClusters();
-            InitializeBitmapStatus();
-
-            InitBrushes();
-            InitSquareRectangles();
         }
 
         private void InitializeBitmapClusters()
@@ -337,14 +319,90 @@ namespace MSDefrag
             }
         }
 
+        private void InitDefrag()
+        {
+            defragThread = new Thread(Defrag);
+            defragThread.Priority = ThreadPriority.Lowest;
+
+            m_defragmenter.NewMessage += new MSDefragLib.NewMessageHandler(SetStatus);
+            m_defragmenter.ClustersModified += new MSDefragLib.ClustersModifiedHandler(ShowChangedClusters);
+
+            InitializeBitmapDisplay();
+            InitializeBitmapClusters();
+            InitializeBitmapStatus();
+
+            InitBrushes();
+            InitSquareRectangles();
+        }
+
         private void Defrag()
         {
             m_defragmenter.Start(@"C:\*");
         }
 
+        private void StopDefragmentation()
+        {
+            m_defragmenter.NewMessage -= new MSDefragLib.NewMessageHandler(SetStatus);
+            m_defragmenter.ClustersModified -= new MSDefragLib.ClustersModifiedHandler(ShowChangedClusters);
+
+            m_defragmenter.Stop(5000);
+
+            if (defragThread.IsAlive)
+            {
+                try
+                {
+                    defragThread.Abort();
+                }
+                catch (System.Exception)
+                {
+
+                }
+
+                while (defragThread.IsAlive)
+                {
+                    Thread.Sleep(1000);
+                }
+            }
+        }
+
         #endregion
 
         #region Event Handling
+
+        private void OnStartDefragmentation(object sender, EventArgs e)
+        {
+            toolButtonStartDefrag.Enabled = false;
+            toolButtonStartSimulation.Enabled = false;
+            toolButtonStopDefrag.Enabled = true;
+
+            m_defragmenter = DefragmenterFactory.Create();
+
+            InitDefrag();
+
+            defragThread.Start();
+        }
+
+        private void OnStartSimulation(object sender, EventArgs e)
+        {
+            toolButtonStartDefrag.Enabled = false;
+            toolButtonStartSimulation.Enabled = false;
+            toolButtonStopDefrag.Enabled = true;
+
+            m_defragmenter = DefragmenterFactory.CreateSimulation();
+
+            InitDefrag();
+
+            defragThread.Start();
+        }
+
+        private void OnStopDefrag(object sender, EventArgs e)
+        {
+            StopDefragmentation();
+
+            toolButtonStartDefrag.Enabled = true;
+            toolButtonStartSimulation.Enabled = true;
+            toolButtonStopDefrag.Enabled = false;
+        }
 
         private void ShowChangedClusters(object sender, EventArgs e)
         {
@@ -375,24 +433,7 @@ namespace MSDefrag
 
         private void OnGuiClosing(object sender, FormClosingEventArgs e)
         {
-            m_defragmenter.Stop(5000);
-
-            if (defragThread.IsAlive)
-            {
-                try
-                {
-                    defragThread.Abort();
-                }
-                catch (System.Exception)
-                {
-
-                }
-
-                while (defragThread.IsAlive)
-                {
-                    Thread.Sleep(1000);
-                }
-            }
+            StopDefragmentation();
         }
 
         private void OnResizeBegin(object sender, EventArgs e)
@@ -482,5 +523,6 @@ namespace MSDefrag
         private IDefragmenter m_defragmenter = null;
 
         #endregion
+
     }
 }
