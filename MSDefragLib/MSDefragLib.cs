@@ -5585,6 +5585,7 @@ namespace MSDefragLib
 
         public event ClustersModifiedHandler ShowChangedClustersEvent;
         public event NewMessageHandler ShowDebugEvent;
+        public event ProgressHandler ProgressEvent;
 
         protected virtual void OnShowChangedClusters(EventArgs e)
         {
@@ -5593,11 +5594,20 @@ namespace MSDefragLib
                 ShowChangedClustersEvent(this, e);
             }
         }
+
         protected virtual void OnShowDebug(EventArgs e)
         {
             if (ShowDebugEvent != null)
             {
                 ShowDebugEvent(this, e);
+            }
+        }
+
+        protected virtual void OnProgress(EventArgs e)
+        {
+            if (ProgressEvent != null)
+            {
+                ProgressEvent(this, e);
             }
         }
 
@@ -5617,6 +5627,13 @@ namespace MSDefragLib
 
             if (level < 6)
                 OnShowDebug(e);
+        }
+
+        public void ShowProgress(Double progress, Double all)
+        {
+            ProgressEventArgs e = new ProgressEventArgs(progress, all);
+
+            OnProgress(e);
         }
 
         private const Int32 MAX_DIRTY_SQUARES = 300;
@@ -5689,7 +5706,7 @@ namespace MSDefragLib
                 if (clusterSquare.m_isDirty)
                 {
                     clusterSquare.m_isDirty = false;
-                    ShowDebug(0, "Done: " + Data.PhaseDone + " / " + Data.PhaseTodo);
+//                    ShowDebug(0, "Done: " + Data.PhaseDone + " / " + Data.PhaseTodo);
 
                     lock (_dirtySquares)
                     {
@@ -5788,6 +5805,16 @@ namespace MSDefragLib
         public ChangedClusterEventArgs(IList<ClusterSquare> list)
         {
             m_list = list;
+        }
+    }
+
+    public class ProgressEventArgs : EventArgs
+    {
+        public Double Progress;
+
+        public ProgressEventArgs(Double progress, Double all)
+        {
+            Progress = (Double)(progress / all * 100);
         }
     }
 

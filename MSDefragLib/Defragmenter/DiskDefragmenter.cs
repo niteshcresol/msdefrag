@@ -35,6 +35,18 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
+        public override event ProgressHandler Progress
+        {
+            add
+            {
+                lib.ProgressEvent += value;
+            }
+            remove
+            {
+                lib.ProgressEvent -= value;
+            }
+        }
+
         public override void Start(string parameter)
         {
             lib.RunJkDefrag(@"C:\*", 2, 10, null, null);

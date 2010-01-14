@@ -9,10 +9,10 @@ namespace MSDefragLib.Defragmenter
     internal class SimulationDefragmenter : BaseDefragmenter
     {
         #region IDefragmenter Members
-        
-        public override event ClustersModifiedHandler ClustersModified;
 
+        public override event ClustersModifiedHandler ClustersModified;
         public override event NewMessageHandler NewMessage;
+        public override event ProgressHandler Progress;
 
         private DefragmenterState Data;
         private const Int32 MAX_DIRTY_SQUARES = 300;
@@ -40,7 +40,7 @@ namespace MSDefragLib.Defragmenter
 
             Random rnd = new Random();
 
-            Int32 maxNumTest = 4500213;
+            Int32 maxNumTest = 450025;
 
             for (int testNumber = 0; testNumber < maxNumTest; testNumber++)
             {
@@ -72,11 +72,13 @@ namespace MSDefragLib.Defragmenter
                     }
                 }
 
-                if (testNumber % 313 == 0)
-                {
+                ShowProgress(testNumber, maxNumTest);
+
+                //if (testNumber % 313 == 0)
+                //{
                     //ShowDebug(4, "Test: " + testNumber);
                     //ShowDebug(5, String.Format("Done: {0:P}", (Double)((Double) testNumber / (Double) maxNumTest)));
-                }
+                //}
 
                  Thread.Sleep(1);
             }
@@ -133,7 +135,15 @@ namespace MSDefragLib.Defragmenter
                 NewMessage(this, e);
             }
         }
-        
+
+        private void OnShowProgress(EventArgs e)
+        {
+            if (Progress != null)
+            {
+                Progress(this, e);
+            }
+        }
+
         public void ShowChangedClusters()
         {
             if (_dirtySquares.Count() >= MAX_DIRTY_SQUARES)
@@ -151,6 +161,13 @@ namespace MSDefragLib.Defragmenter
                 FileSystem.Ntfs.MSScanNtfsEventArgs e = new FileSystem.Ntfs.MSScanNtfsEventArgs(level, output);
                 OnNewMessage(e);
             }
+        }
+
+        public void ShowProgress(Double progress, Double all)
+        {
+            ProgressEventArgs e = new ProgressEventArgs(progress, all);
+
+            OnShowProgress(e);
         }
     }
 }

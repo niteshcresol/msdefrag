@@ -339,6 +339,7 @@ namespace MSDefrag
 
             m_defragmenter.NewMessage += new MSDefragLib.NewMessageHandler(SetStatus);
             m_defragmenter.ClustersModified += new MSDefragLib.ClustersModifiedHandler(ShowChangedClusters);
+            m_defragmenter.Progress += new MSDefragLib.ProgressHandler(UpdateProgress);
 
             InitializeBitmapDisplay();
             InitializeBitmapClusters();
@@ -426,6 +427,27 @@ namespace MSDefrag
 
                 AddChangedClustersToQueue(ea.m_list);
             }
+        }
+
+        private void UpdateProgress(object sender, EventArgs e)
+        {
+            if (e is ProgressEventArgs)
+            {
+                ProgressEventArgs ea = (ProgressEventArgs)e;
+
+                Double[] arg = new double[2];
+
+                arg[0] = ea.Progress;
+
+                BeginInvoke(new MethodInvoker(delegate { UpdateProgressBar(ea.Progress); }));
+            }
+        }
+
+        private void UpdateProgressBar(Double val)
+        {
+            progressBar.Value = (Int16)val;
+
+            progressBarText.Text = String.Format("{0:P}", val * 0.01);
         }
 
         // This will be called whenever the list changes.
@@ -533,7 +555,7 @@ namespace MSDefrag
 
         private IDefragmenter m_defragmenter = null;
 
-        private enum m_eDefragType
+        public enum m_eDefragType
         {
             defragTypeDefragmentation = 0,
             defragTypeSimulation

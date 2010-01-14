@@ -10,7 +10,6 @@ namespace MSDefragLib.Defragmenter
         #region IDefragmenter Members
 
         public abstract void Start(string parameter);
-
         public abstract void Stop(int timeoutMs);
 
         public abstract int NumSquares { get; set; }
@@ -18,8 +17,8 @@ namespace MSDefragLib.Defragmenter
         public abstract IList<ClusterSquare> DirtySquares { get; }
 
         public abstract event ClustersModifiedHandler ClustersModified;
-
         public abstract event NewMessageHandler NewMessage;
+        public abstract event ProgressHandler Progress;
 
         #endregion
     }

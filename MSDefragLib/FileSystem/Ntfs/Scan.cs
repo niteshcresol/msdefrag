@@ -1074,7 +1074,12 @@ namespace MSDefragLib.FileSystem.Ntfs
                         diskInfo.BytesPerMftRecord);
 
                 if (_lib.Data.PhaseDone % 50 == 0)
-                    ShowDebug(1, "Done: " + _lib.Data.PhaseDone + "/" + _lib.Data.PhaseTodo);
+                {
+                    _lib.ShowProgress((Double)(_lib.Data.PhaseDone), (Double)_lib.Data.PhaseTodo);
+//                    UpdateProgress((Double)((Double)(_lib.Data.PhaseDone) / (Double)_lib.Data.PhaseTodo));
+//                    ShowDebug(1, "Done: " + _lib.Data.PhaseDone + "/" + _lib.Data.PhaseTodo);
+                }
+
                 InodeNumber++;
             }
 

@@ -7,6 +7,7 @@ namespace MSDefragLib
 {
     public delegate void ClustersModifiedHandler(object sender, EventArgs e);
     public delegate void NewMessageHandler(object sender, EventArgs e);
+    public delegate void ProgressHandler(object sender, EventArgs e);
 
     public interface IDefragmenter
     {
@@ -19,5 +20,6 @@ namespace MSDefragLib
 
         event ClustersModifiedHandler ClustersModified;
         event NewMessageHandler NewMessage;
+        event ProgressHandler Progress;
     }
 }
