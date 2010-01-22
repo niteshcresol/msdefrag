@@ -5744,7 +5744,6 @@ namespace MSDefragLib
                 ClusterSquare square = new ClusterSquare(squareIndex, clusterIndex, lastClusterIndex);
 
                 square.m_colors[(Int32)eClusterState.Allocated] = 0;
-                square.m_colors[(Int32)eClusterState.Background] = 0;
                 square.m_colors[(Int32)eClusterState.Busy] = 0;
                 square.m_colors[(Int32)eClusterState.Free] = 0;
                 square.m_colors[(Int32)eClusterState.Fragmented] = 0;

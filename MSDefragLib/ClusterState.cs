@@ -15,7 +15,6 @@ namespace MSDefragLib
         Busy,
         Mft,
         SpaceHog,
-        Background,
 
         MaxValue
     }

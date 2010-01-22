@@ -28,7 +28,7 @@ namespace MSDefrag
 
             GuiRefreshTimer.Enabled = true;
 
-            GetSquareTimer = new System.Timers.Timer(10);
+            GetSquareTimer = new System.Timers.Timer(30);
             GetSquareTimer.Elapsed += new ElapsedEventHandler(OnGetSquaresTimer);
 
             GetSquareTimer.Enabled = true;
@@ -94,7 +94,6 @@ namespace MSDefrag
 
             colors[(Int32)MSDefragLib.eClusterState.Unmovable] = Color.Yellow;
             colors[(Int32)MSDefragLib.eClusterState.Allocated] = Color.LightGray;
-            colors[(Int32)MSDefragLib.eClusterState.Background] = Color.White;
             colors[(Int32)MSDefragLib.eClusterState.Busy] = Color.Blue;
             colors[(Int32)MSDefragLib.eClusterState.Free] = Color.White;
             colors[(Int32)MSDefragLib.eClusterState.Fragmented] = Color.Orange;
@@ -301,8 +300,6 @@ namespace MSDefrag
                 {
                     for (int ii = 0; ii < maxMessages; ii++)
                         m_graphicsStatus.DrawString(messages[ii], m_font, Brushes.Black, 25, 25 + 15 * ii);
-
-                    m_graphicsStatus.DrawString("Num skipped frames: " + _skippedFrames, m_font, Brushes.Black, 25, 25 + 15 * maxMessages);
                 }
             }
         }
@@ -381,6 +378,18 @@ namespace MSDefrag
             }
         }
 
+        private void UpdateProgressBar(Double val)
+        {
+            progressBar.Value = (Int16)val;
+
+            progressBarText.Text = String.Format("{0:P}", val * 0.01);
+        }
+
+        private void ShowStatistics()
+        {
+            progressBarStatistics.Text = "Frame skip: " + _skippedFrames;
+        }
+
         #endregion
 
         #region Event Handling
@@ -443,13 +452,6 @@ namespace MSDefrag
             }
         }
 
-        private void UpdateProgressBar(Double val)
-        {
-            progressBar.Value = (Int16)val;
-
-            progressBarText.Text = String.Format("{0:P}", val * 0.01);
-        }
-
         // This will be called whenever the list changes.
         private void SetStatus(object sender, EventArgs e)
         {
@@ -494,6 +496,8 @@ namespace MSDefrag
             else
             {
                 _skippedFrames++;
+
+                ShowStatistics();
             }
         }
 
