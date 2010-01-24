@@ -11,32 +11,24 @@ namespace MSDefragLib.Defragmenter
         #region IDefragmenter Members
 
         public override event ClustersModifiedHandler ClustersModified;
-        public override event NewMessageHandler NewMessage;
+        public override event LogMessageHandler LogMessage;
         public override event ProgressHandler Progress;
 
         private DefragmenterState Data;
-        private const Int32 MAX_DIRTY_SQUARES = 300;
-
-        private IList<ClusterSquare> _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
-
-        public override IList<ClusterSquare> DirtySquares
-        {
-            get
-            {
-                lock (_dirtySquares)
-                {
-                    IList<ClusterSquare> oldlist = _dirtySquares;
-                    _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
-                    return oldlist;
-                }
-            }
-        }
 
         public override void Start(string parameter)
         {
             Data = new DefragmenterState();
 
             Data.Running = RunningState.RUNNING;
+            Data.TotalClusters = 40000000;
+
+            List<eClusterState> clusterData = new List<eClusterState>((Int32)Data.TotalClusters);
+
+            for (Int32 ii = 0; ii < (Int32)Data.TotalClusters; ii++)
+            {
+                clusterData.Add(eClusterState.Free);
+            }
 
             Random rnd = new Random();
 
@@ -44,12 +36,12 @@ namespace MSDefragLib.Defragmenter
 
             for (int testNumber = 0; testNumber < maxNumTest; testNumber++)
             {
-                Int32 squareBegin = rnd.Next(NumSquares);
-                Int32 squareEnd = rnd.Next(squareBegin, squareBegin + 10);
+                Int32 clusterBegin = rnd.Next((Int32)Data.TotalClusters);
+                Int32 clusterEnd = rnd.Next(clusterBegin, clusterBegin + 50000);
 
-                if (squareEnd > NumSquares)
+                if (clusterEnd > (Int32)Data.TotalClusters)
                 {
-                    squareEnd = NumSquares;
+                    clusterEnd = (Int32)Data.TotalClusters;
                 }
 
                 if (Data.Running != RunningState.RUNNING)
@@ -59,26 +51,13 @@ namespace MSDefragLib.Defragmenter
 
                 eClusterState col = (eClusterState)rnd.Next((Int32)eClusterState.MaxValue);
 
-                for (Int32 squareNum = squareBegin; (Data.Running == RunningState.RUNNING) && (squareNum < squareEnd); squareNum++)
+                for (Int32 clusterNum = clusterBegin; (Data.Running == RunningState.RUNNING) && (clusterNum < clusterEnd); clusterNum++)
                 {
-                    ClusterSquare clusterSquare = new ClusterSquare(squareNum, 0, 20000);
-                    clusterSquare.m_color = col;
-
-                    lock (_dirtySquares)
-                    {
-                        _dirtySquares.Add(clusterSquare);
-
-//                        ShowChangedClusters();
-                    }
+                    clusterData[clusterNum] = col;
                 }
 
+                ShowChangedClusters(clusterBegin, clusterEnd);
                 ShowProgress(testNumber, maxNumTest);
-
-                //if (testNumber % 313 == 0)
-                //{
-                    //ShowDebug(4, "Test: " + testNumber);
-                    //ShowDebug(5, String.Format("Done: {0:P}", (Double)((Double) testNumber / (Double) maxNumTest)));
-                //}
 
                  Thread.Sleep(1);
             }
@@ -112,7 +91,7 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public override int NumSquares
+        public override int NumClusters
         {
             get;
             set;
@@ -128,11 +107,11 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        private void OnNewMessage(EventArgs e)
+        private void OnLogMessage(EventArgs e)
         {
-            if (NewMessage != null)
+            if (LogMessage != null)
             {
-                NewMessage(this, e);
+                LogMessage(this, e);
             }
         }
 
@@ -144,14 +123,8 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public void ShowChangedClusters()
+        public void ShowChangedClusters(Int32 clusterBegin, Int32 clusterEnd)
         {
-            if (_dirtySquares.Count() >= MAX_DIRTY_SQUARES)
-            {
-                ChangedClusterEventArgs e = new ChangedClusterEventArgs(DirtySquares);
-
-                OnClustersModified(e);
-            }
         }
 
         public void ShowDebug(UInt32 level, String output)
@@ -159,7 +132,7 @@ namespace MSDefragLib.Defragmenter
             if (level < 6)
             {
                 FileSystem.Ntfs.MSScanNtfsEventArgs e = new FileSystem.Ntfs.MSScanNtfsEventArgs(level, output);
-                OnNewMessage(e);
+                OnLogMessage(e);
             }
         }
 

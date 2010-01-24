@@ -12,12 +12,10 @@ namespace MSDefragLib.Defragmenter
         public abstract void Start(string parameter);
         public abstract void Stop(int timeoutMs);
 
-        public abstract int NumSquares { get; set; }
-
-        public abstract IList<ClusterSquare> DirtySquares { get; }
+        public abstract int NumClusters { get; set; }
 
         public abstract event ClustersModifiedHandler ClustersModified;
-        public abstract event NewMessageHandler NewMessage;
+        public abstract event LogMessageHandler LogMessage;
         public abstract event ProgressHandler Progress;
 
         #endregion

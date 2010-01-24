@@ -6,7 +6,7 @@ using System.Text;
 namespace MSDefragLib
 {
     public delegate void ClustersModifiedHandler(object sender, EventArgs e);
-    public delegate void NewMessageHandler(object sender, EventArgs e);
+    public delegate void LogMessageHandler(object sender, EventArgs e);
     public delegate void ProgressHandler(object sender, EventArgs e);
 
     public interface IDefragmenter
@@ -14,12 +14,10 @@ namespace MSDefragLib
         void Start(String parameter);
         void Stop(Int32 timeoutMs);
 
-        Int32 NumSquares { get; set; }
-
-        IList<ClusterSquare> DirtySquares { get; }
+        Int32 NumClusters { get; set; }
 
         event ClustersModifiedHandler ClustersModified;
-        event NewMessageHandler NewMessage;
+        event LogMessageHandler LogMessage;
         event ProgressHandler Progress;
     }
 }

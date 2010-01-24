@@ -13,13 +13,6 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (m_bitmapClusters != null) m_bitmapClusters.Dispose();
-            if (m_bitmapDisplay != null) m_bitmapDisplay.Dispose();
-            if (m_bitmapStatus != null) m_bitmapStatus.Dispose();
-            if (fontBrush != null) fontBrush.Dispose();
-            if (m_font != null) m_font.Dispose();
-            if (backBrush != null) backBrush.Dispose();
-
             if (disposing && (components != null))
             {
                 components.Dispose();

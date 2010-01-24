@@ -1656,7 +1656,7 @@ namespace MSDefragLib
                     OldZoneEnd[Zone] = ZoneEnd[Zone];
 
 		        /* Show debug info. */
-        		ShowDebug(4, String.Format("Zone calculation, iteration {0:G}: 0 - {0:G} - {0:G} - {0:G}",
+        		ShowLogMessage(4, String.Format("Zone calculation, iteration {0:G}: 0 - {0:G} - {0:G} - {0:G}",
                     Iterate, ZoneEnd[0], ZoneEnd[1], ZoneEnd[2]));
 
                 /* Reset the SizeOfUnmovableFragments array. We are going to (re)calculate these numbers
@@ -3388,7 +3388,7 @@ namespace MSDefragLib
 		        /* Update the progress percentage. */
                 Data.PhaseDone++;
 
-        		if (Data.PhaseDone % 100 == 0) ShowDebug(1, "Phase: " + Data.PhaseDone + " / " + Data.PhaseTodo);
+                if (Data.PhaseDone % 100 == 0) ShowLogMessage(1, "Phase: " + Data.PhaseDone + " / " + Data.PhaseTodo);
 	        }
 
 	        /* Force the percentage to 100%. */
@@ -5043,7 +5043,7 @@ namespace MSDefragLib
                     Data.IncludeMask = Path + "*";
                 }
 
-            ShowDebug(0, "Input mask: " + Data.IncludeMask);
+            ShowLogMessage(0, "Input mask: " + Data.IncludeMask);
 
             /* Defragment and optimize. */
             ShowDiskmap();
@@ -5483,11 +5483,11 @@ namespace MSDefragLib
 
                 if (Data.UseLastAccessTime == true)
 		        {
-                    ShowDebug(1, "NtfsDisableLastAccessUpdate is inactive, using LastAccessTime for SpaceHogs.");
+                    ShowLogMessage(1, "NtfsDisableLastAccessUpdate is inactive, using LastAccessTime for SpaceHogs.");
 		        }
 		        else
 		        {
-                    ShowDebug(1, "NtfsDisableLastAccessUpdate is active, ignoring LastAccessTime for SpaceHogs.");
+                    ShowLogMessage(1, "NtfsDisableLastAccessUpdate is active, ignoring LastAccessTime for SpaceHogs.");
 		        }
             }
             #endregion
@@ -5577,14 +5577,14 @@ namespace MSDefragLib
 
         public void ScanNtfsEventHandler(object sender, EventArgs e)
         {
-            if (ShowDebugEvent != null)
+            if (LogMessageEvent != null)
             {
-                ShowDebugEvent(this, e);
+                LogMessageEvent(this, e);
             }
         }
 
         public event ClustersModifiedHandler ShowChangedClustersEvent;
-        public event NewMessageHandler ShowDebugEvent;
+        public event LogMessageHandler LogMessageEvent;
         public event ProgressHandler ProgressEvent;
 
         protected virtual void OnShowChangedClusters(EventArgs e)
@@ -5595,11 +5595,11 @@ namespace MSDefragLib
             }
         }
 
-        protected virtual void OnShowDebug(EventArgs e)
+        protected virtual void OnShowLogMessage(EventArgs e)
         {
-            if (ShowDebugEvent != null)
+            if (LogMessageEvent != null)
             {
-                ShowDebugEvent(this, e);
+                LogMessageEvent(this, e);
             }
         }
 
@@ -5611,22 +5611,12 @@ namespace MSDefragLib
             }
         }
 
-        public void ShowChangedClusters2()
-        {
-            if (_dirtySquares.Count() >= MAX_DIRTY_SQUARES)
-            {
-                ChangedClusterEventArgs e = new ChangedClusterEventArgs(DirtySquares);
-
-                OnShowChangedClusters(e);
-            }
-        }
-
-        public void ShowDebug(UInt32 level, String output)
+        public void ShowLogMessage(UInt32 level, String output)
         {
             MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
 
             if (level < 6)
-                OnShowDebug(e);
+                OnShowLogMessage(e);
         }
 
         public void ShowProgress(Double progress, Double all)
@@ -5661,109 +5651,67 @@ namespace MSDefragLib
                 return;
             }
 
-            Double clusterPerSquare = (Double)Data.TotalClusters / (Double)(m_numSquares);
+//            Double clusterPerSquare = (Double)Data.TotalClusters / (Double)(m_numSquares);
 
-            if (m_clusterSquares.Count == 0)
-            {
-                ParseSquares();
-            }
+//            if (m_clusterSquares.Count == 0)
+//            {
+//                ParseSquares();
+//            }
 
-            Int32 squareBegin = (Int32)(clusterBegin / clusterPerSquare);
-            Int32 squareEnd = (Int32)(clusterEnd / clusterPerSquare);
+//            Int32 squareBegin = (Int32)(clusterBegin / clusterPerSquare);
+//            Int32 squareEnd = (Int32)(clusterEnd / clusterPerSquare);
 
-            if (squareEnd >= m_numSquares)
-            {
-                squareEnd = m_numSquares - 1;
-            }
+//            if (squareEnd >= m_numSquares)
+//            {
+//                squareEnd = m_numSquares - 1;
+//            }
 
-            for (Int32 ii = squareBegin; ii <= squareEnd; ii++)
-            {
-                ClusterSquare clusterSquare = m_clusterSquares[ii];
-                UInt64 clusterBeginIndex = clusterSquare.m_clusterBeginIndex;
-                UInt64 clusterEndIndex = clusterSquare.m_clusterEndIndex;
+//            for (Int32 ii = squareBegin; ii <= squareEnd; ii++)
+//            {
+//                ClusterSquare clusterSquare = m_clusterSquares[ii];
+//                UInt64 clusterBeginIndex = clusterSquare.m_clusterBeginIndex;
+//                UInt64 clusterEndIndex = clusterSquare.m_clusterEndIndex;
 
-                for (UInt64 jj = clusterBeginIndex; jj < clusterEndIndex; jj++)
-                {
-                    if ((jj < clusterBegin) || (jj > clusterEnd))
-                    {
-                        continue;
-                    }
+//                for (UInt64 jj = clusterBeginIndex; jj < clusterEndIndex; jj++)
+//                {
+//                    if ((jj < clusterBegin) || (jj > clusterEnd))
+//                    {
+//                        continue;
+//                    }
 
-                    Int32 oldColor = (Int32)m_clusterData[(Int32)jj];
+//                    Int32 oldColor = (Int32)m_clusterData[(Int32)jj];
 
-                    m_clusterData[(Int32)jj] = color;
+//                    m_clusterData[(Int32)jj] = color;
 
-                    if (clusterSquare.m_colors[oldColor] > 0)
-                    {
-                        clusterSquare.m_colors[oldColor]--;
-                    }
+//                    if (clusterSquare.m_colors[oldColor] > 0)
+//                    {
+//                        clusterSquare.m_colors[oldColor]--;
+//                    }
 
-                    clusterSquare.m_colors[(Int32)color]++;
-                }
+//                    clusterSquare.m_colors[(Int32)color]++;
+//                }
 
-                clusterSquare.SetMaxColor();
+//                clusterSquare.SetMaxColor();
 
-                if (clusterSquare.m_isDirty)
-                {
-                    clusterSquare.m_isDirty = false;
-//                    ShowDebug(0, "Done: " + Data.PhaseDone + " / " + Data.PhaseTodo);
+//                if (clusterSquare.m_isDirty)
+//                {
+//                    clusterSquare.m_isDirty = false;
+////                    ShowDebug(0, "Done: " + Data.PhaseDone + " / " + Data.PhaseTodo);
 
-                    lock (_dirtySquares)
-                    {
-                        _dirtySquares.Add(clusterSquare);
+//                    lock (_dirtySquares)
+//                    {
+//                        _dirtySquares.Add(clusterSquare);
 
-//                        if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
-                        {
-//                            ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
-                            // ShowChangedClusters();
-                        }
-                    }
-                }
-            }
+////                        if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
+//                        {
+////                            ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
+//                            // ShowChangedClusters();
+//                        }
+//                    }
+//                }
+//            }
         }
 
-        /// <summary>
-        /// This function parses whole cluster list and updates square information.
-        /// </summary>
-        private void ParseSquares()
-        {
-            Double clusterPerSquare = (Double)Data.TotalClusters / (Double)(m_numSquares);
-
-            m_clusterSquares.Clear();
-
-            for (Int32 squareIndex = 0; squareIndex < m_numSquares; squareIndex++)
-            {
-                UInt64 clusterIndex = (UInt64)(squareIndex * clusterPerSquare);
-                UInt64 lastClusterIndex = clusterIndex + (UInt64)clusterPerSquare - 1;
-
-                if (lastClusterIndex > (UInt64)m_clusterData.Count - 1)
-                {
-                    lastClusterIndex = (UInt64)m_clusterData.Count - 1;
-                }
-
-                ClusterSquare square = new ClusterSquare(squareIndex, clusterIndex, lastClusterIndex);
-
-                square.m_colors[(Int32)eClusterState.Allocated] = 0;
-                square.m_colors[(Int32)eClusterState.Busy] = 0;
-                square.m_colors[(Int32)eClusterState.Free] = 0;
-                square.m_colors[(Int32)eClusterState.Fragmented] = 0;
-                square.m_colors[(Int32)eClusterState.Mft] = 0;
-                square.m_colors[(Int32)eClusterState.SpaceHog] = 0;
-                square.m_colors[(Int32)eClusterState.Unfragmented] = 0;
-                square.m_colors[(Int32)eClusterState.Unmovable] = 0;
-
-                for (UInt64 jj = clusterIndex; jj <= lastClusterIndex; jj++)
-                {
-                    Int32 clusterColor = (Int32)m_clusterData[(Int32)jj];
-
-                    square.m_colors[clusterColor]++;
-                }
-
-                square.SetMaxColor();
-
-                m_clusterSquares.Add(square);
-            }
-        }
 
         #endregion
 

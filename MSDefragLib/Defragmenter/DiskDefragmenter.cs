@@ -23,15 +23,15 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public override event NewMessageHandler NewMessage
+        public override event LogMessageHandler LogMessage
         {
             add
             {
-                lib.ShowDebugEvent += value;
+                lib.LogMessageEvent += value;
             }
             remove
             {
-                lib.ShowDebugEvent -= value;
+                lib.LogMessageEvent -= value;
             }
         }
 
@@ -61,21 +61,15 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public override int NumSquares
+        public override int NumClusters
         {
             get
             {
-                return lib.NumSquares;
+                return (Int32)lib.Data.TotalClusters;
             }
             set
             {
-                lib.NumSquares = value;
             }
-        }
-
-        public override IList<ClusterSquare> DirtySquares
-        {
-            get { return lib.DirtySquares; }
         }
 
         #endregion
