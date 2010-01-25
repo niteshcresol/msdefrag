@@ -34,12 +34,12 @@
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.progressBar = new System.Windows.Forms.ToolStripProgressBar();
             this.progressBarText = new System.Windows.Forms.ToolStripStatusLabel();
+            this.progressBarStatistics = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripContainer1 = new System.Windows.Forms.ToolStripContainer();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolButtonStartDefrag = new System.Windows.Forms.ToolStripButton();
             this.toolButtonStartSimulation = new System.Windows.Forms.ToolStripButton();
             this.toolButtonStopDefrag = new System.Windows.Forms.ToolStripButton();
-            this.progressBarStatistics = new System.Windows.Forms.ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.statusStrip1.SuspendLayout();
             this.toolStripContainer1.BottomToolStripPanel.SuspendLayout();
@@ -51,7 +51,7 @@
             // 
             // pictureBox1
             // 
-            this.pictureBox1.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
+            this.pictureBox1.BackColor = System.Drawing.SystemColors.Control;
             this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pictureBox1.Location = new System.Drawing.Point(0, 0);
             this.pictureBox1.Margin = new System.Windows.Forms.Padding(0);
@@ -72,7 +72,6 @@
             this.progressBarStatistics});
             this.statusStrip1.Location = new System.Drawing.Point(0, 0);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.ManagerRenderMode;
             this.statusStrip1.Size = new System.Drawing.Size(830, 22);
             this.statusStrip1.TabIndex = 1;
             this.statusStrip1.Text = "statusStrip1";
@@ -95,6 +94,12 @@
             this.progressBarText.Name = "progressBarText";
             this.progressBarText.Size = new System.Drawing.Size(27, 17);
             this.progressBarText.Text = "0 %";
+            // 
+            // progressBarStatistics
+            // 
+            this.progressBarStatistics.Name = "progressBarStatistics";
+            this.progressBarStatistics.Size = new System.Drawing.Size(71, 17);
+            this.progressBarStatistics.Text = "Frame skip: 0";
             // 
             // toolStripContainer1
             // 
@@ -170,12 +175,6 @@
             this.toolButtonStopDefrag.Size = new System.Drawing.Size(57, 28);
             this.toolButtonStopDefrag.Text = "Stop";
             this.toolButtonStopDefrag.Click += new System.EventHandler(this.OnStopDefrag);
-            // 
-            // progressBarStatistics
-            // 
-            this.progressBarStatistics.Name = "progressBarStatistics";
-            this.progressBarStatistics.Size = new System.Drawing.Size(71, 17);
-            this.progressBarStatistics.Text = "Frame skip: 0";
             // 
             // MainForm
             // 

@@ -88,5 +88,11 @@ namespace MSDefragLib
             }
         }
 
+        public UInt64 NumClusters
+        {
+            get { return defragmenter.NumClusters; }
+
+            set {}
+        }
     }
 }

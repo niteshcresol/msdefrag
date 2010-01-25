@@ -16,13 +16,16 @@ namespace MSDefragLib.Defragmenter
 
         private DefragmenterState Data;
 
-        public override void Start(string parameter)
+        public SimulationDefragmenter()
         {
             Data = new DefragmenterState();
 
             Data.Running = RunningState.RUNNING;
             Data.TotalClusters = 40000000;
+        }
 
+        public override void Start(string parameter)
+        {
             List<eClusterState> clusterData = new List<eClusterState>((Int32)Data.TotalClusters);
 
             for (Int32 ii = 0; ii < (Int32)Data.TotalClusters; ii++)
@@ -91,10 +94,10 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public override int NumClusters
+        public override UInt64 NumClusters
         {
-            get;
-            set;
+            get { return Data.TotalClusters; }
+            set {}
         }
 
         #endregion

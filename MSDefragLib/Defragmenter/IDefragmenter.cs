@@ -14,7 +14,7 @@ namespace MSDefragLib
         void Start(String parameter);
         void Stop(Int32 timeoutMs);
 
-        Int32 NumClusters { get; set; }
+        UInt64 NumClusters { get; set; }
 
         event ClustersModifiedHandler ClustersModified;
         event LogMessageHandler LogMessage;

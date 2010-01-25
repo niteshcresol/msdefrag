@@ -61,11 +61,11 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public override int NumClusters
+        public override UInt64 NumClusters
         {
             get
             {
-                return (Int32)lib.Data.TotalClusters;
+                return lib.Data.TotalClusters;
             }
             set
             {

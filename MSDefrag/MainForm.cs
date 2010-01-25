@@ -40,7 +40,7 @@ namespace MSDefrag
         {
             diskBitmap = null;
 
-            diskBitmap = new DiskBitmap(pictureBox1.Width, pictureBox1.Height, 10);
+            diskBitmap = new DiskBitmap(pictureBox1.Width, pictureBox1.Height, 10, m_defragmenter.NumClusters);
 
             pictureBox1.Image = diskBitmap.bitmap;
         }

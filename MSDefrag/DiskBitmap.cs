@@ -11,6 +11,9 @@ namespace MSDefrag
     {
         #region Settings
 
+        private static Int32 borderOffset = 1;
+        private static Int32 borderWidth = 2;
+
         private static Color ColorUnmovable = Color.Yellow;
         private static Color ColorAllocated = Color.LightGray;
         private static Color ColorBusy = Color.Blue;
@@ -24,8 +27,10 @@ namespace MSDefrag
 
         #region Constructor
 
-        public DiskBitmap(Int32 width, Int32 height, Int32 squareSize)
+        public DiskBitmap(Int32 width, Int32 height, Int32 squareSize, UInt64 numClusters)
         {
+            NumClusters = numClusters;
+
             Initialize(width, height, squareSize);
         }
 
@@ -48,15 +53,64 @@ namespace MSDefrag
         {
             squareSize = sqSize > 1 ? sqSize - 1 : 1;
 
-            NumX = (width - 2) / squareSize;
-            NumY = (height - 2) / squareSize;
+            Int32 availableWidth = width - borderOffset * 2 - borderWidth * 2;
+            Int32 availableHeight = height - borderOffset * 2 - borderWidth * 2;
 
-            offsetX = (width - squareSize * NumX) / 2;
-            offsetY = 0;
+            NumX = availableWidth / squareSize;
+            NumY = availableHeight / squareSize;
+
+            int mapWidth = NumX * squareSize + borderWidth * 2;
+            int mapHeight = NumY * squareSize + borderWidth * 2;
+
+            int borderOffsetX = (width - mapWidth) / 2;
+            int borderOffsetY = (height - mapHeight) / 2;
+
+            offsetX = borderOffsetX + borderWidth;
+            offsetY = borderOffsetY + borderWidth;
 
             bitmap = new Bitmap(width, height);
 
             graphics = Graphics.FromImage(bitmap);
+
+            Rectangle rec = new Rectangle(borderOffsetX, borderOffsetY, mapWidth, mapHeight);
+
+            LinearGradientBrush brush = new LinearGradientBrush(rec, Color.Black, Color.Black, LinearGradientMode.ForwardDiagonal);
+
+            graphics.FillRectangle(brush, rec);
+
+            // Outside border
+            graphics.DrawLine(Pens.White,
+                borderOffsetX, borderOffsetY, 
+                borderOffsetX + mapWidth, borderOffsetY);
+
+            graphics.DrawLine(Pens.DarkGray,
+                borderOffsetX + mapWidth - 1, borderOffsetY,
+                borderOffsetX + mapWidth - 1, borderOffsetY + mapHeight - 1);
+
+            graphics.DrawLine(Pens.DarkGray,
+                borderOffsetX + mapWidth - 1, borderOffsetY + mapHeight - 1,
+                borderOffsetX, borderOffsetY + mapHeight - 1);
+
+            graphics.DrawLine(Pens.White,
+                borderOffsetX, borderOffsetY + mapHeight,
+                borderOffsetX, borderOffsetY);
+
+            // Inside border
+            graphics.DrawLine(Pens.DarkGray, 
+                borderOffsetX + borderWidth - 1, borderOffsetY + borderWidth - 1,
+                borderOffsetX + mapWidth - borderWidth, borderOffsetY + borderWidth - 1);
+
+            graphics.DrawLine(Pens.White,
+                borderOffsetX + mapWidth - borderWidth, borderOffsetY + borderWidth - 1,
+                borderOffsetX + mapWidth - borderWidth, borderOffsetY + mapHeight - borderWidth);
+
+            graphics.DrawLine(Pens.White,
+                borderOffsetX + mapWidth - borderWidth, borderOffsetY + mapHeight - borderWidth,
+                borderOffsetX + borderWidth - 1, borderOffsetY + mapHeight - borderWidth);
+
+            graphics.DrawLine(Pens.DarkGray,
+                borderOffsetX + borderWidth - 1, borderOffsetY + mapHeight - borderWidth,
+                borderOffsetX + borderWidth - 1, borderOffsetY + borderWidth - 1);
         }
 
         private void InitColors()
@@ -105,9 +159,9 @@ namespace MSDefrag
 
             foreach (Color col in colors)
             {
-                Rectangle rec = new Rectangle(-1, -1, squareSize, squareSize);
+                Rectangle rec = new Rectangle(0, 0, squareSize, squareSize);
 
-                linearHorizontalGradientBrushes[ii] = GetLinearGradientBrushFromColor(col, rec, 20, 70, LinearGradientMode.Horizontal);
+                linearHorizontalGradientBrushes[ii] = GetLinearGradientBrushFromColor(col, false, rec, 20, 70, LinearGradientMode.Horizontal);
 
                 ii++;
             }
@@ -122,9 +176,9 @@ namespace MSDefrag
 
             foreach (Color col in colors)
             {
-                Rectangle rec = new Rectangle(-1, -1, squareSize, squareSize);
+                Rectangle rec = new Rectangle(0, 0, squareSize, squareSize);
 
-                linearVerticalGradientBrushes[ii] = GetLinearGradientBrushFromColor(col, rec, 0, 100, LinearGradientMode.Vertical);
+                linearVerticalGradientBrushes[ii] = GetLinearGradientBrushFromColor(col, true, rec, 0, 100, LinearGradientMode.Vertical);
 
                 ii++;
             }
@@ -139,9 +193,9 @@ namespace MSDefrag
 
             foreach (Color col in colors)
             {
-                Rectangle rec = new Rectangle(-1, -1, squareSize, squareSize);
+                Rectangle rec = new Rectangle(0, 0, squareSize, squareSize);
 
-                linearForwardDiagonalGradientBrushes[ii] = GetLinearGradientBrushFromColor(col, rec, 80, 70, LinearGradientMode.ForwardDiagonal);
+                linearForwardDiagonalGradientBrushes[ii] = GetLinearGradientBrushFromColor(col, false, rec, 80, 70, LinearGradientMode.ForwardDiagonal);
 
                 ii++;
             }
@@ -155,11 +209,11 @@ namespace MSDefrag
 
             foreach (Color col in colors)
             {
-                mapSquareBitmaps[(Int32)ii] = new Bitmap(squareSize + 1, squareSize + 1);
+                mapSquareBitmaps[(Int32)ii] = new Bitmap(squareSize, squareSize);
 
                 using (Graphics g1 = Graphics.FromImage(mapSquareBitmaps[(Int32)ii]))
                 {
-                    Rectangle rec = new Rectangle(0, 0, squareSize + 1, squareSize + 1);
+                    Rectangle rec = new Rectangle(0, 0, squareSize, squareSize);
 
                     if (ii == (Int32)MSDefragLib.eClusterState.Free)
                     {
@@ -181,9 +235,13 @@ namespace MSDefrag
 
             mapSquares = new List<MapSquare>(NumSquares);
 
+            Double numClustersInSquare = NumClusters / (UInt64)NumSquares;
+
             for (Int16 ii = 0; ii < NumSquares; ii++)
             {
-                mapSquares.Add(new MapSquare(ii, 0, 0));
+                UInt64 clusterBegin = (UInt64)(ii * numClustersInSquare);
+                UInt64 clusterEnd = (UInt64)(clusterBegin + numClustersInSquare - 1);
+                mapSquares.Add(new MapSquare(ii, clusterBegin, clusterEnd));
             }
 
             DrawMapSquares(0, NumSquares);
@@ -194,7 +252,7 @@ namespace MSDefrag
         #region Helper functions
 
         private LinearGradientBrush GetLinearGradientBrushFromColor(
-            Color color, Rectangle rec, Byte brightness, Byte darkness, LinearGradientMode mode)
+            Color color, Boolean bright, Rectangle rec, Byte brightness, Byte darkness, LinearGradientMode mode)
         {
             LinearGradientBrush brush = null;
 
@@ -209,7 +267,13 @@ namespace MSDefrag
             Color darkColor = Color.FromArgb(r, g, b);
             Color brightColor = Color.FromArgb(r2, g2, b2);
 
-            brush = new LinearGradientBrush(rec, darkColor, brightColor, mode);
+            if (bright)
+            {
+                darkColor = Color.FromArgb(r2, g2, b2);
+                brightColor = Color.FromArgb(r, g, b);
+            }
+
+            brush = new LinearGradientBrush(rec, brightColor, darkColor, mode);
 
             return brush;
         }
@@ -266,10 +330,11 @@ namespace MSDefrag
             for (Int32 ii = indexBegin; ii < indexEnd; ii++ )
             {
                 Int32 posX = (Int32)(ii % NumX);
-                Int32 posY = (Int32)(ii / NumY);
+                Int32 posY = (Int32)(ii / NumX);
+                Int32 squareMapBitmapIndex = (Int32)mapSquares[ii].maxClusterState;
 
-                graphics.DrawImageUnscaled(mapSquareBitmaps[(Int32)mapSquares[ii].maxClusterState], 
-                    offsetX + posX * squareSize + 1, offsetY + posY * squareSize + 1);
+                graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex], 
+                    offsetX + posX * squareSize, offsetY + posY * squareSize);
             }
         }
 
@@ -309,6 +374,8 @@ namespace MSDefrag
         #region Other
 
         List<MapSquare> mapSquares;
+
+        UInt64 NumClusters;
 
         #endregion
 
