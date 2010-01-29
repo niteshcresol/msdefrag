@@ -15,19 +15,19 @@ namespace MSDefrag
 {
     public partial class MainForm : Form
     {
+        #region Constructor
+
         public MainForm()
         {
-            m_this = this;
-
             Initialize();
         }
+
+        #endregion
 
         #region Initialization
 
         public void Initialize()
         {
-            m_defragmenter = new DefragmenterFactory();
-
             InitializeComponent();
 
             GuiRefreshTimer = new System.Timers.Timer(100);
@@ -41,7 +41,6 @@ namespace MSDefrag
             diskBitmap = null;
 
             diskBitmap = new DiskBitmap(pictureBox1.Width, pictureBox1.Height, 10, m_defragmenter.NumClusters);
-
             pictureBox1.Image = diskBitmap.bitmap;
         }
 
@@ -52,6 +51,7 @@ namespace MSDefrag
         private void RefreshDisplay()
         {
             _inUse = true;
+
             try
             {
                 pictureBox1.Invalidate();
@@ -62,52 +62,13 @@ namespace MSDefrag
             }
         }
 
-        Queue<IList<ClusterSquare>> queue = new Queue<IList<ClusterSquare>>();
-
-        private void AddChangedClustersToQueue(IList<MSDefragLib.ClusterSquare> squaresList)
+        private void AddChangedClustersToQueue(IList<MSDefragLib.ClusterStructure> changedClusters)
         {
-            if (squaresList == null)
+            if (changedClusters == null)
                 return;
 
-            lock (queue)
-            {
-                queue.Enqueue(squaresList);
-            }
+            diskBitmap.AddChangedClusters(changedClusters);
         }
-
-        //private void DrawChangedClusters()
-        //{
-        //    lock (m_bitmapDisplay)
-        //    {
-        //        Queue<IList<ClusterSquare>> list;
-
-        //        lock (queue)
-        //        {
-        //            list = queue;
-
-        //            queue = new Queue<IList<ClusterSquare>>();
-        //        }
-
-        //        int numSquares = 0;
-
-        //        foreach (IList<ClusterSquare> cs in list)
-        //        {
-        //            numSquares += cs.Count;
-
-        //            foreach (MSDefragLib.ClusterSquare square in cs)
-        //            {
-        //                Int32 squareIndex = square.m_squareIndex;
-
-        //                Int32 posX = (Int32)(squareIndex % m_numSquaresX);
-        //                Int32 posY = (Int32)(squareIndex / m_numSquaresX);
-
-        //                m_graphicsClusters.DrawImageUnscaled(squareBitmaps[(Int32)square.m_color], posX * m_squareSize + 1, posY * m_squareSize + 1);
-        //            }
-        //        }
-
-        //        AddStatusMessage(3, "Draw squares: " + numSquares);
-        //    }
-        //}
 
         #endregion
 
@@ -118,29 +79,27 @@ namespace MSDefrag
             switch (mode)
             {
                 case m_eDefragType.defragTypeDefragmentation:
-                    m_defragmenter.Create();
-                    break;
-                case m_eDefragType.defragTypeSimulation:
-                    m_defragmenter.CreateSimulation();
+                    m_defragmenter = DefragmenterFactory.Create();
                     break;
                 default:
-                    m_defragmenter.CreateSimulation();
+                    m_defragmenter = DefragmenterFactory.CreateSimulation();
                     break;
             }
 
-            m_defragmenter.Start();
+            m_defragmenter.StartDefragmentation("A");
 
-            //m_defragmenter.ClustersModified += new MSDefragLib.ClustersModifiedHandler(ShowChangedClusters);
-            m_defragmenter.defragmenter.Progress += new MSDefragLib.ProgressHandler(UpdateProgress);
+            m_defragmenter.ProgressEvent += new ProgressHandler(UpdateProgress);
+            m_defragmenter.UpdateDiskMapEvent += new UpdateDiskMapHandler(UpdateDiskMap);
 
             InitializeBitmapDisplay();
         }
 
         private void StopDefragmentation()
         {
-            //m_defragmenter.ClustersModified -= new MSDefragLib.ClustersModifiedHandler(ShowChangedClusters);
+            m_defragmenter.ProgressEvent -= new MSDefragLib.ProgressHandler(UpdateProgress);
+            m_defragmenter.UpdateDiskMapEvent -= new UpdateDiskMapHandler(UpdateDiskMap);
 
-            m_defragmenter.Stop(4000);
+            m_defragmenter.StopDefragmentation(4000);
         }
 
         private void UpdateProgressBar(Double val)
@@ -190,11 +149,8 @@ namespace MSDefrag
             toolButtonStopDefrag.Enabled = false;
         }
 
-        private void ShowChangedClusters(object sender, EventArgs e)
+        private void UpdateDiskMap(object sender, EventArgs e)
         {
-            if (ignoreEvent)
-                return;
-
             if (e is ChangedClusterEventArgs)
             {
                 ChangedClusterEventArgs ea = (ChangedClusterEventArgs)e;
@@ -256,9 +212,7 @@ namespace MSDefrag
 
         System.Timers.Timer GuiRefreshTimer;
 
-        public static MainForm m_this;
-
-        private DefragmenterFactory m_defragmenter = null;
+        private IDefragmenter m_defragmenter = null;
 
         public enum m_eDefragType
         {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using MSDefragLib;
 
 namespace MSDefrag
 {
@@ -283,45 +284,30 @@ namespace MSDefrag
         /// <summary>
         /// This function parses whole cluster list and updates square information.
         /// </summary>
-        //private void ParseSquares()
-        //{
-        //    Double clusterPerSquare = (Double)Data.TotalClusters / (Double)(m_numSquares);
+        public void AddChangedClusters(IList<ClusterStructure>clusters)
+        {
+            Double numClustersInSquare = NumClusters / (UInt64)NumSquares;
 
-        //    m_clusterSquares.Clear();
+            foreach (ClusterStructure cluster in clusters)
+            {
+                UInt64 clusterIndex = cluster.index;
 
-        //    for (Int32 squareIndex = 0; squareIndex < m_numSquares; squareIndex++)
-        //    {
-        //        UInt64 clusterIndex = (UInt64)(squareIndex * clusterPerSquare);
-        //        UInt64 lastClusterIndex = clusterIndex + (UInt64)clusterPerSquare - 1;
+                Int32 mapSquareIndex = (Int32)(clusterIndex / numClustersInSquare);
 
-        //        if (lastClusterIndex > (UInt64)m_clusterData.Count - 1)
-        //        {
-        //            lastClusterIndex = (UInt64)m_clusterData.Count - 1;
-        //        }
+                MapSquare mapSquare = mapSquares[mapSquareIndex];
 
-        //        ClusterSquare square = new ClusterSquare(squareIndex, clusterIndex, lastClusterIndex);
+                //mapSquare.numClusterStates[(Int32)cluster.State]++;
 
-        //        square.m_colors[(Int32)eClusterState.Allocated] = 0;
-        //        square.m_colors[(Int32)eClusterState.Busy] = 0;
-        //        square.m_colors[(Int32)eClusterState.Free] = 0;
-        //        square.m_colors[(Int32)eClusterState.Fragmented] = 0;
-        //        square.m_colors[(Int32)eClusterState.Mft] = 0;
-        //        square.m_colors[(Int32)eClusterState.SpaceHog] = 0;
-        //        square.m_colors[(Int32)eClusterState.Unfragmented] = 0;
-        //        square.m_colors[(Int32)eClusterState.Unmovable] = 0;
+                mapSquare.maxClusterState = cluster.State;
 
-        //        for (UInt64 jj = clusterIndex; jj <= lastClusterIndex; jj++)
-        //        {
-        //            Int32 clusterColor = (Int32)m_clusterData[(Int32)jj];
+                //mapSquare.SetMaxColor();
 
-        //            square.m_colors[clusterColor]++;
-        //        }
+                mapSquare.isDirty = true;
+            }
 
-        //        square.SetMaxColor();
+            DrawMapSquares(0, NumSquares);
 
-        //        m_clusterSquares.Add(square);
-        //    }
-        //}
+        }
 
         #region Drawing
 

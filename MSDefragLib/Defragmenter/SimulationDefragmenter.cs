@@ -10,41 +10,55 @@ namespace MSDefragLib.Defragmenter
     {
         #region IDefragmenter Members
 
-        public override event ClustersModifiedHandler ClustersModified;
-        public override event LogMessageHandler LogMessage;
-        public override event ProgressHandler Progress;
+        DefragEventDispatcher m_eventDispatcher;
+
+        public override DefragEventDispatcher defragEventDispatcher
+        {
+            get
+            {
+                return m_eventDispatcher;
+            }
+            set
+            {
+                m_eventDispatcher = value;
+            }
+        }
 
         private DefragmenterState Data;
+        List<ClusterStructure> clusterData;
 
         public SimulationDefragmenter()
         {
+            defragEventDispatcher = new DefragEventDispatcher();
+
             Data = new DefragmenterState();
 
             Data.Running = RunningState.RUNNING;
             Data.TotalClusters = 40000000;
+
+            clusterData = new List<ClusterStructure>((Int32)Data.TotalClusters);
+
+            for (UInt64 ii = 0; ii < Data.TotalClusters; ii++)
+            {
+                ClusterStructure cluster = new ClusterStructure(ii, eClusterState.Free);
+                clusterData.Add(cluster);
+            }
         }
 
         public override void Start(string parameter)
         {
-            List<eClusterState> clusterData = new List<eClusterState>((Int32)Data.TotalClusters);
-
-            for (Int32 ii = 0; ii < (Int32)Data.TotalClusters; ii++)
-            {
-                clusterData.Add(eClusterState.Free);
-            }
-
             Random rnd = new Random();
 
             Int32 maxNumTest = 450025;
 
             for (int testNumber = 0; testNumber < maxNumTest; testNumber++)
             {
-                Int32 clusterBegin = rnd.Next((Int32)Data.TotalClusters);
-                Int32 clusterEnd = rnd.Next(clusterBegin, clusterBegin + 50000);
+                UInt64 clusterBegin = (UInt64)(rnd.Next((Int32)Data.TotalClusters));
+                UInt64 clusterEnd = (UInt64)(rnd.Next((Int32)clusterBegin, (Int32)clusterBegin + 50000));
 
-                if (clusterEnd > (Int32)Data.TotalClusters)
+                if (clusterEnd > Data.TotalClusters)
                 {
-                    clusterEnd = (Int32)Data.TotalClusters;
+                    clusterEnd = Data.TotalClusters;
                 }
 
                 if (Data.Running != RunningState.RUNNING)
@@ -54,12 +68,12 @@ namespace MSDefragLib.Defragmenter
 
                 eClusterState col = (eClusterState)rnd.Next((Int32)eClusterState.MaxValue);
 
-                for (Int32 clusterNum = clusterBegin; (Data.Running == RunningState.RUNNING) && (clusterNum < clusterEnd); clusterNum++)
+                for (UInt64 clusterNum = clusterBegin; (Data.Running == RunningState.RUNNING) && (clusterNum < clusterEnd); clusterNum++)
                 {
-                    clusterData[clusterNum] = col;
+                    clusterData[(Int32)clusterNum].State = col;
                 }
 
-                ShowChangedClusters(clusterBegin, clusterEnd);
+                // ShowChangedClusters(clusterBegin, clusterEnd);
                 ShowProgress(testNumber, maxNumTest);
 
                  Thread.Sleep(1);
@@ -94,6 +108,11 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
+        public override void ResendAllClusters()
+        {
+            ShowChangedClusters(0, Data.TotalClusters);
+        }
+
         public override UInt64 NumClusters
         {
             get { return Data.TotalClusters; }
@@ -102,48 +121,41 @@ namespace MSDefragLib.Defragmenter
 
         #endregion
 
-        private void OnClustersModified(EventArgs e)
+        //private void OnClustersModified(EventArgs e)
+        //{
+        //    if (ClustersModified != null)
+        //    {
+        //        ClustersModified(this, e);
+        //    }
+        //}
+
+        //private void OnLogMessage(EventArgs e)
+        //{
+        //    if (LogMessage != null)
+        //    {
+        //        LogMessage(this, e);
+        //    }
+        //}
+
+        public void ShowChangedClusters(UInt64 clusterBegin, UInt64 clusterEnd)
         {
-            if (ClustersModified != null)
-            {
-                ClustersModified(this, e);
-            }
+            IList<ClusterStructure> clusters = clusterData.GetRange((Int32)clusterBegin, (Int32)(clusterEnd - clusterBegin + 1));
+
+            defragEventDispatcher.AddChangedClusters(clusters);
         }
 
-        private void OnLogMessage(EventArgs e)
+        public void ShowLogMessage(UInt32 level, String message)
         {
-            if (LogMessage != null)
-            {
-                LogMessage(this, e);
-            }
-        }
-
-        private void OnShowProgress(EventArgs e)
-        {
-            if (Progress != null)
-            {
-                Progress(this, e);
-            }
-        }
-
-        public void ShowChangedClusters(Int32 clusterBegin, Int32 clusterEnd)
-        {
-        }
-
-        public void ShowDebug(UInt32 level, String output)
-        {
-            if (level < 6)
-            {
-                FileSystem.Ntfs.MSScanNtfsEventArgs e = new FileSystem.Ntfs.MSScanNtfsEventArgs(level, output);
-                OnLogMessage(e);
-            }
+            //if (level < 6)
+            //{
+            //    FileSystem.Ntfs.MSScanNtfsEventArgs e = new FileSystem.Ntfs.MSScanNtfsEventArgs(level, output);
+            //    OnLogMessage(e);
+            //}
         }
 
         public void ShowProgress(Double progress, Double all)
         {
-            ProgressEventArgs e = new ProgressEventArgs(progress, all);
-
-            OnShowProgress(e);
+            defragEventDispatcher.UpdateProgress(progress, all);
         }
     }
 }

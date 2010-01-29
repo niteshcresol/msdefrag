@@ -18,4 +18,35 @@ namespace MSDefragLib
 
         MaxValue
     }
+
+    /// <summary>
+    /// Structure for describing cluster
+    /// </summary>
+    public class ClusterStructure
+    {
+        public ClusterStructure(UInt64 clusterIndex, eClusterState newState)
+        {
+            index = clusterIndex;
+            state = newState;
+            isDirty = true;
+        }
+
+        public UInt64 index;
+
+        private eClusterState state;
+        public eClusterState State
+        {
+            get { return state; }
+            set
+            {
+                if (state != value)
+                {
+                    isDirty = true;
+                }
+
+                state = value;
+            }
+        }
+        public Boolean isDirty;
+    }
 }

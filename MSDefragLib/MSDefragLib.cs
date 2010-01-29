@@ -50,9 +50,10 @@ namespace MSDefragLib
 
         public MSDefragLib()
         {
-            m_scanNtfs = new Scan(this);
+            defragEventDispatcher = new DefragEventDispatcher();
 
-            m_scanNtfs.ShowDebugEvent += new Scan.ShowDebugHandler(ScanNtfsEventHandler);
+            m_scanNtfs = new Scan(this);
+            //m_scanNtfs.ShowDebugEvent += new Scan.ShowDebugHandler(ScanNtfsEventHandler);
         }
 
         /*
@@ -1198,13 +1199,14 @@ namespace MSDefragLib
 
             PrevInUse = true;
 
-            if (m_clusterData == null)
+            if (clusterData == null)
             {
-                m_clusterData = new List<eClusterState>(40000000);
+                clusterData = new List<ClusterStructure>(40000000);
 
-                for (Int32 ii = 0; ii < 40000000; ii++)
+                for (UInt64 ii = 0; ii < 40000000; ii++)
                 {
-                    m_clusterData.Add(eClusterState.Free);
+                    ClusterStructure cluster = new ClusterStructure(ii, eClusterState.Free);
+                    clusterData.Add(cluster);
                 }
             }
 
@@ -5537,6 +5539,11 @@ namespace MSDefragLib
             Data.Running = RunningState.STOPPED;
         }
 
+        public void ResendAllClusters()
+        {
+            ShowChangedClusters(0, Data.TotalClusters);
+        }
+
         #region StopJKDefrag
 
         /// <summary>
@@ -5575,75 +5582,25 @@ namespace MSDefragLib
 
         #region EventHandling
 
-        public void ScanNtfsEventHandler(object sender, EventArgs e)
-        {
-            if (LogMessageEvent != null)
-            {
-                LogMessageEvent(this, e);
-            }
-        }
-
-        public event ClustersModifiedHandler ShowChangedClustersEvent;
-        public event LogMessageHandler LogMessageEvent;
-        public event ProgressHandler ProgressEvent;
-
-        protected virtual void OnShowChangedClusters(EventArgs e)
-        {
-            if (ShowChangedClustersEvent != null)
-            {
-                ShowChangedClustersEvent(this, e);
-            }
-        }
-
-        protected virtual void OnShowLogMessage(EventArgs e)
-        {
-            if (LogMessageEvent != null)
-            {
-                LogMessageEvent(this, e);
-            }
-        }
-
-        protected virtual void OnProgress(EventArgs e)
-        {
-            if (ProgressEvent != null)
-            {
-                ProgressEvent(this, e);
-            }
-        }
-
         public void ShowLogMessage(UInt32 level, String output)
         {
-            MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
+            //MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
 
-            if (level < 6)
-                OnShowLogMessage(e);
+            //if (level < 6)
+            //    OnShowLogMessage(e);
         }
 
         public void ShowProgress(Double progress, Double all)
         {
-            ProgressEventArgs e = new ProgressEventArgs(progress, all);
-
-            OnProgress(e);
+            defragEventDispatcher.UpdateProgress(progress, all);
         }
 
-        private const Int32 MAX_DIRTY_SQUARES = 300;
-
-        private IList<ClusterSquare> _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
-
-        public IList<ClusterSquare> DirtySquares
+        public void UpdateDiskMap(IList<ClusterStructure> clusters)
         {
-            get
-            {
-                lock (_dirtySquares)
-                {
-                    IList<ClusterSquare> oldlist = _dirtySquares;
-                    _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
-                    return oldlist;
-                }
-            }
+            defragEventDispatcher.AddChangedClusters(clusters);
         }
 
-        private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, eClusterState color)
+        private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, eClusterState newState)
         {
             if ((clusterBegin < 0) || (clusterBegin > Data.TotalClusters) ||
                 (clusterEnd < 0) || (clusterEnd > Data.TotalClusters))
@@ -5651,67 +5608,20 @@ namespace MSDefragLib
                 return;
             }
 
-//            Double clusterPerSquare = (Double)Data.TotalClusters / (Double)(m_numSquares);
+            for (UInt64 jj = clusterBegin; jj < clusterEnd; jj++)
+            {
+                clusterData[(Int32)jj].State = newState;
+            }
 
-//            if (m_clusterSquares.Count == 0)
-//            {
-//                ParseSquares();
-//            }
-
-//            Int32 squareBegin = (Int32)(clusterBegin / clusterPerSquare);
-//            Int32 squareEnd = (Int32)(clusterEnd / clusterPerSquare);
-
-//            if (squareEnd >= m_numSquares)
-//            {
-//                squareEnd = m_numSquares - 1;
-//            }
-
-//            for (Int32 ii = squareBegin; ii <= squareEnd; ii++)
-//            {
-//                ClusterSquare clusterSquare = m_clusterSquares[ii];
-//                UInt64 clusterBeginIndex = clusterSquare.m_clusterBeginIndex;
-//                UInt64 clusterEndIndex = clusterSquare.m_clusterEndIndex;
-
-//                for (UInt64 jj = clusterBeginIndex; jj < clusterEndIndex; jj++)
-//                {
-//                    if ((jj < clusterBegin) || (jj > clusterEnd))
-//                    {
-//                        continue;
-//                    }
-
-//                    Int32 oldColor = (Int32)m_clusterData[(Int32)jj];
-
-//                    m_clusterData[(Int32)jj] = color;
-
-//                    if (clusterSquare.m_colors[oldColor] > 0)
-//                    {
-//                        clusterSquare.m_colors[oldColor]--;
-//                    }
-
-//                    clusterSquare.m_colors[(Int32)color]++;
-//                }
-
-//                clusterSquare.SetMaxColor();
-
-//                if (clusterSquare.m_isDirty)
-//                {
-//                    clusterSquare.m_isDirty = false;
-////                    ShowDebug(0, "Done: " + Data.PhaseDone + " / " + Data.PhaseTodo);
-
-//                    lock (_dirtySquares)
-//                    {
-//                        _dirtySquares.Add(clusterSquare);
-
-////                        if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
-//                        {
-////                            ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
-//                            // ShowChangedClusters();
-//                        }
-//                    }
-//                }
-//            }
+            ShowChangedClusters(clusterBegin, clusterEnd);
         }
 
+        public void ShowChangedClusters(UInt64 clusterStart, UInt64 clusterEnd)
+        {
+            IList<ClusterStructure> clusters = clusterData.GetRange((Int32)clusterStart, (Int32)(clusterEnd - clusterStart + 1));
+
+            defragEventDispatcher.AddChangedClusters(clusters);
+        }
 
         #endregion
 
@@ -5720,114 +5630,10 @@ namespace MSDefragLib
         public DefragmenterState Data
         { get; set; }
 
-        List<eClusterState> m_clusterData = null;
-        List<ClusterSquare> m_clusterSquares = null;
+        List<ClusterStructure> clusterData = null;
 
-        private Int32 m_numSquares = 0;
-
-        public Int32 NumSquares
-        {
-            set
-            {
-                m_numSquares = value;
-
-                m_clusterSquares = new List<ClusterSquare>(m_numSquares);
-            }
-
-            get
-            {
-                return m_numSquares;
-            }
-        }
+        DefragEventDispatcher defragEventDispatcher;
 
         #endregion
     }
-
-    #region Event classes
-
-    public class ChangedClusterEventArgs : EventArgs
-    {
-        public IList<ClusterSquare> m_list;
-
-        public ChangedClusterEventArgs(IList<ClusterSquare> list)
-        {
-            m_list = list;
-        }
-    }
-
-    public class ProgressEventArgs : EventArgs
-    {
-        public Double Progress;
-
-        public ProgressEventArgs(Double progress, Double all)
-        {
-            Progress = (Double)(progress / all * 100);
-        }
-    }
-
-    //public class DrawClusterEventArgs : EventArgs 
-    //{
-    //    public UInt64 m_clusterNumber;
-    //    public MSDefragLib.CLUSTER_COLORS m_color;
-    //    public MSDefragDataStruct m_data;
-
-    //    public DrawClusterEventArgs(MSDefragDataStruct data, UInt64 clusterNum, MSDefragLib.CLUSTER_COLORS col)
-    //    {
-    //        m_data = data;
-    //        m_clusterNumber = clusterNum;
-    //        m_color = col;
-    //    }
-    //}
-    //public class DrawClusterEventArgs2 : EventArgs
-    //{
-    //    public UInt64 m_startClusterNumber;
-    //    public UInt64 m_endClusterNumber;
-    //    public MSDefragDataStruct m_data;
-
-    //    public Int32 m_squareBegin;
-    //    public Int32 m_squareEnd;
-
-    //    public DrawClusterEventArgs2(MSDefragDataStruct data, UInt64 startClusterNum, UInt64 endClusterNum)
-    //    {
-    //        m_data = data;
-    //        m_startClusterNumber = startClusterNum;
-    //        m_endClusterNumber = endClusterNum;
-    //    }
-
-    //    public DrawClusterEventArgs2(Int32 squareBegin, Int32 squareEnd)
-    //    {
-    //        m_squareBegin = squareBegin;
-    //        m_squareEnd = squareEnd;
-    //    }
-    //}
-    //public class NotifyGuiEventArgs : EventArgs
-    //{
-    //    public ClusterSquare m_clusterSquare;
-
-    //    public NotifyGuiEventArgs(ClusterSquare clusterSquare)
-    //    {
-    //        m_clusterSquare = clusterSquare;
-    //    }
-    //}
-
-    #endregion
-
-    #region ClusterStructure
-
-    /// <summary>
-    /// Structure for describing cluster
-    /// </summary>
-    public class ClusterStructure
-    {
-        public ClusterStructure(UInt64 clusterIndex, eClusterState color)
-        {
-            m_clusterIndex = clusterIndex;
-            m_color = color;
-        }
-
-        public UInt64 m_clusterIndex;
-        public eClusterState m_color;
-    }
-
-    #endregion
 }
