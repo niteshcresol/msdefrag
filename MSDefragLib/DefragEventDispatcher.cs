@@ -8,7 +8,7 @@ namespace MSDefragLib
 {
     public class DefragEventDispatcher
     {
-        #region Constructor 
+        #region Constructor
 
         public DefragEventDispatcher()
         {
@@ -51,7 +51,7 @@ namespace MSDefragLib
         {
             while (true)
             {
-                Thread.Sleep(1000);
+                Thread.Sleep(300);
 
                 SendProgressEvent();
                 SendLogMessages();

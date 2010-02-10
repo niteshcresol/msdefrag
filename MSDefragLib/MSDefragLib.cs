@@ -38,7 +38,6 @@ using System.Timers;
 
 namespace MSDefragLib
 {
-
     internal class MSDefragLib
     {
         public class STARTING_LCN_INPUT_BUFFER
@@ -48,9 +47,11 @@ namespace MSDefragLib
 
         private Scan m_scanNtfs;
 
-        public MSDefragLib()
+        private DefragEventDispatcher m_defragEventDispatcher;
+
+        public MSDefragLib(DefragEventDispatcher defragEventDispatcher)
         {
-            defragEventDispatcher = new DefragEventDispatcher();
+            m_defragEventDispatcher = defragEventDispatcher;
 
             m_scanNtfs = new Scan(this);
             //m_scanNtfs.ShowDebugEvent += new Scan.ShowDebugHandler(ScanNtfsEventHandler);
@@ -5592,12 +5593,12 @@ namespace MSDefragLib
 
         public void ShowProgress(Double progress, Double all)
         {
-            defragEventDispatcher.UpdateProgress(progress, all);
+            m_defragEventDispatcher.UpdateProgress(progress, all);
         }
 
         public void UpdateDiskMap(IList<ClusterStructure> clusters)
         {
-            defragEventDispatcher.AddChangedClusters(clusters);
+            m_defragEventDispatcher.AddChangedClusters(clusters);
         }
 
         private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, eClusterState newState)
@@ -5620,7 +5621,7 @@ namespace MSDefragLib
         {
             IList<ClusterStructure> clusters = clusterData.GetRange((Int32)clusterStart, (Int32)(clusterEnd - clusterStart + 1));
 
-            defragEventDispatcher.AddChangedClusters(clusters);
+            m_defragEventDispatcher.AddChangedClusters(clusters);
         }
 
         #endregion
@@ -5631,8 +5632,6 @@ namespace MSDefragLib
         { get; set; }
 
         List<ClusterStructure> clusterData = null;
-
-        DefragEventDispatcher defragEventDispatcher;
 
         #endregion
     }

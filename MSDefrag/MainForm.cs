@@ -54,6 +54,7 @@ namespace MSDefrag
 
             try
             {
+                diskBitmap.DrawAllMapSquares();
                 pictureBox1.Invalidate();
             }
             finally
@@ -64,7 +65,7 @@ namespace MSDefrag
 
         private void AddChangedClustersToQueue(IList<MSDefragLib.ClusterStructure> changedClusters)
         {
-            if (changedClusters == null)
+            if (changedClusters == null || diskBitmap == null)
                 return;
 
             diskBitmap.AddChangedClusters(changedClusters);

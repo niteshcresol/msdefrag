@@ -34,7 +34,7 @@ namespace MSDefragLib.Defragmenter
             Data = new DefragmenterState();
 
             Data.Running = RunningState.RUNNING;
-            Data.TotalClusters = 40000000;
+            Data.TotalClusters = 400000;
 
             clusterData = new List<ClusterStructure>((Int32)Data.TotalClusters);
 
@@ -73,7 +73,7 @@ namespace MSDefragLib.Defragmenter
                     clusterData[(Int32)clusterNum].State = col;
                 }
 
-                // ShowChangedClusters(clusterBegin, clusterEnd);
+                ShowChangedClusters(clusterBegin, clusterEnd);
                 ShowProgress(testNumber, maxNumTest);
 
                  Thread.Sleep(1);
@@ -121,14 +121,6 @@ namespace MSDefragLib.Defragmenter
 
         #endregion
 
-        //private void OnClustersModified(EventArgs e)
-        //{
-        //    if (ClustersModified != null)
-        //    {
-        //        ClustersModified(this, e);
-        //    }
-        //}
-
         //private void OnLogMessage(EventArgs e)
         //{
         //    if (LogMessage != null)
@@ -139,7 +131,7 @@ namespace MSDefragLib.Defragmenter
 
         public void ShowChangedClusters(UInt64 clusterBegin, UInt64 clusterEnd)
         {
-            IList<ClusterStructure> clusters = clusterData.GetRange((Int32)clusterBegin, (Int32)(clusterEnd - clusterBegin + 1));
+            IList<ClusterStructure> clusters = clusterData.GetRange((Int32)clusterBegin, (Int32)(clusterEnd - clusterBegin));
 
             defragEventDispatcher.AddChangedClusters(clusters);
         }

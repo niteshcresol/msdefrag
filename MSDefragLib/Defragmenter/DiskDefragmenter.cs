@@ -7,21 +7,28 @@ namespace MSDefragLib.Defragmenter
 {
     internal class DiskDefragmenter : BaseDefragmenter
     {
-        private MSDefragLib lib = new MSDefragLib();
+        private DefragEventDispatcher m_defragEventDispatcher = new DefragEventDispatcher();
+
+        public override DefragEventDispatcher defragEventDispatcher
+        {
+            get
+            {
+                return m_defragEventDispatcher;
+            }
+            set
+            {
+                m_defragEventDispatcher = value;
+            }
+        }
+
+        private MSDefragLib lib = null;
+
+        public DiskDefragmenter()
+        {
+            lib = new MSDefragLib(m_defragEventDispatcher);
+        }
 
         #region IDefragmenter Members
-
-        //public override event ClustersModifiedHandler ClustersModified
-        //{
-        //    add
-        //    {
-        //        lib.ShowChangedClustersEvent += value;
-        //    }
-        //    remove
-        //    {
-        //        lib.ShowChangedClustersEvent -= value;
-        //    }
-        //}
 
         //public override event LogMessageHandler LogMessage
         //{
@@ -32,18 +39,6 @@ namespace MSDefragLib.Defragmenter
         //    remove
         //    {
         //        lib.LogMessageEvent -= value;
-        //    }
-        //}
-
-        //public override event ProgressHandler Progress
-        //{
-        //    add
-        //    {
-        //        lib.ProgressEvent += value;
-        //    }
-        //    remove
-        //    {
-        //        lib.ProgressEvent -= value;
         //    }
         //}
 
@@ -75,17 +70,6 @@ namespace MSDefragLib.Defragmenter
 
             set {}
         }
-
-        public override DefragEventDispatcher defragEventDispatcher
-        {
-            get
-            {
-                return defragEventDispatcher;
-            }
-
-            set {}
-        }
-
         #endregion
     }
 }

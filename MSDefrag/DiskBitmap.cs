@@ -286,42 +286,53 @@ namespace MSDefrag
         /// </summary>
         public void AddChangedClusters(IList<ClusterStructure>clusters)
         {
-            Double numClustersInSquare = NumClusters / (UInt64)NumSquares;
+            Double numClustersInSquare = (Double)((Double)NumClusters / (Double)NumSquares);
 
-            foreach (ClusterStructure cluster in clusters)
+            lock (mapSquares)
             {
-                UInt64 clusterIndex = cluster.index;
+                foreach (ClusterStructure cluster in clusters)
+                {
+                    UInt64 clusterIndex = cluster.index;
 
-                Int32 mapSquareIndex = (Int32)(clusterIndex / numClustersInSquare);
+                    Int32 mapSquareIndex = (Int32)(clusterIndex / numClustersInSquare);
 
-                MapSquare mapSquare = mapSquares[mapSquareIndex];
+                    MapSquare mapSquare = mapSquares[mapSquareIndex];
 
-                //mapSquare.numClusterStates[(Int32)cluster.State]++;
+                    //mapSquare.numClusterStates[(Int32)cluster.State]++;
 
-                mapSquare.maxClusterState = cluster.State;
+                    mapSquare.maxClusterState = cluster.State;
 
-                //mapSquare.SetMaxColor();
+                    //mapSquare.SetMaxColor();
 
-                mapSquare.isDirty = true;
+                    mapSquare.isDirty = true;
+                }
             }
-
-            DrawMapSquares(0, NumSquares);
-
         }
 
         #region Drawing
 
         private void DrawMapSquares(Int32 indexBegin, Int32 indexEnd)
         {
-            for (Int32 ii = indexBegin; ii < indexEnd; ii++ )
+            lock (mapSquares)
             {
-                Int32 posX = (Int32)(ii % NumX);
-                Int32 posY = (Int32)(ii / NumX);
-                Int32 squareMapBitmapIndex = (Int32)mapSquares[ii].maxClusterState;
+                for (Int32 ii = indexBegin; ii < indexEnd; ii++)
+                {
+                    Int32 posX = (Int32)(ii % NumX);
+                    Int32 posY = (Int32)(ii / NumX);
+                    Int32 squareMapBitmapIndex = (Int32)mapSquares[ii].maxClusterState;
 
-                graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex], 
-                    offsetX + posX * squareSize, offsetY + posY * squareSize);
+                    if (mapSquares[ii].isDirty == true)
+                    {
+                        graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex],
+                            offsetX + posX * squareSize, offsetY + posY * squareSize);
+                    }
+                }
             }
+        }
+
+        public void DrawAllMapSquares()
+        {
+            DrawMapSquares(0, NumSquares);
         }
 
         #endregion
