@@ -304,7 +304,7 @@ namespace MSDefrag
 
                     //mapSquare.SetMaxColor();
 
-                    mapSquare.isDirty = true;
+                    mapSquare.IsDirty = true;
                 }
             }
         }
@@ -321,7 +321,7 @@ namespace MSDefrag
                     Int32 posY = (Int32)(ii / NumX);
                     Int32 squareMapBitmapIndex = (Int32)mapSquares[ii].maxClusterState;
 
-                    if (mapSquares[ii].isDirty == true)
+                    if (mapSquares[ii].IsDirty == true)
                     {
                         graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex],
                             offsetX + posX * squareSize, offsetY + posY * squareSize);
@@ -370,9 +370,9 @@ namespace MSDefrag
 
         #region Other
 
-        List<MapSquare> mapSquares;
+        private List<MapSquare> mapSquares;
 
-        UInt64 NumClusters;
+        private UInt64 NumClusters;
 
         #endregion
 

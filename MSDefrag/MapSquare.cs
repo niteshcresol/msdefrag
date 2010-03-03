@@ -22,7 +22,7 @@ namespace MSDefrag
                 numClusterStates[ii] = 0;
             }
 
-            isDirty = true;
+            IsDirty = true;
         }
 
         private eClusterState GetMaxSquareColor()
@@ -73,17 +73,17 @@ namespace MSDefrag
 
             if ((Int32)maxClusterState != oldState)
             {
-                isDirty = true;
+                IsDirty = true;
             }
         }
 
-        public Boolean isDirty;
-        public Int32 squareIndex;
+        public Boolean IsDirty { set; get;}
+        private Int32 squareIndex;
 
         public eClusterState maxClusterState = eClusterState.Free;
 
-        public UInt64 clusterBeginIndex = 0;
-        public UInt64 clusterEndIndex = 0;
+        private UInt64 clusterBeginIndex = 0;
+        private UInt64 clusterEndIndex = 0;
 
         public Int32[] numClusterStates = null;
 

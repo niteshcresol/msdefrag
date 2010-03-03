@@ -8,7 +8,7 @@ namespace MSDefrag
 {
     class DiskMapSquares
     {
-        List<MapSquare> squares;
+        private List<MapSquare> squares;
 
         public DiskMapSquares()
         {
