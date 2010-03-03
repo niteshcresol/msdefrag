@@ -49,13 +49,19 @@ namespace MSDefragLib
 
         public void StartEventDispatcher()
         {
-            while (true)
+            try
             {
-                Thread.Sleep(300);
+                while (true)
+                {
+                    Thread.Sleep(300);
 
-                SendProgressEvent();
-                SendLogMessages();
-                UpdateDiskMap();
+                    SendProgressEvent();
+                    SendLogMessages();
+                    UpdateDiskMap();
+                }
+            }
+            catch (ThreadInterruptedException interruptException)
+            {
             }
         }
 
@@ -93,8 +99,8 @@ namespace MSDefragLib
 
         #region Variables
 
-        Double progressStatus;
-        List<ClusterStructure> changedClusters;
+        private Double progressStatus;
+        private List<ClusterStructure> changedClusters;
 
         #endregion
     }

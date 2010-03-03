@@ -64,36 +64,14 @@ namespace MSDefragLib.Defragmenter
 
             if (defragThread.IsAlive)
             {
-                try
-                {
-                    defragThread.Abort();
-                }
-                catch (System.Exception)
-                {
-
-                }
-
-                while (defragThread.IsAlive)
-                {
-                    Thread.Sleep(1000);
-                }
+                defragThread.Interrupt();
+                defragThread.Join();
             }
 
             if (eventDispatcherThread.IsAlive)
             {
-                try
-                {
-                    eventDispatcherThread.Abort();
-                }
-                catch (System.Exception)
-                {
-
-                }
-
-                while (eventDispatcherThread.IsAlive)
-                {
-                    Thread.Sleep(1000);
-                }
+                eventDispatcherThread.Interrupt();
+                eventDispatcherThread.Join();
             }
         }
 
