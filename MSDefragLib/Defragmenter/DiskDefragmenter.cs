@@ -7,33 +7,40 @@ namespace MSDefragLib.Defragmenter
 {
     internal class DiskDefragmenter : BaseDefragmenter
     {
-        private MSDefragLib lib = new MSDefragLib();
+        private DefragEventDispatcher m_defragEventDispatcher = new DefragEventDispatcher();
+
+        public override DefragEventDispatcher defragEventDispatcher
+        {
+            get
+            {
+                return m_defragEventDispatcher;
+            }
+            set
+            {
+                m_defragEventDispatcher = value;
+            }
+        }
+
+        private MSDefragLib lib = null;
+
+        public DiskDefragmenter()
+        {
+            lib = new MSDefragLib(m_defragEventDispatcher);
+        }
 
         #region IDefragmenter Members
 
-        public override event ClustersModifiedHandler ClustersModified
-        {
-            add
-            {
-                lib.ShowChangedClustersEvent += value;
-            }
-            remove
-            {
-                lib.ShowChangedClustersEvent -= value;
-            }
-        }
-
-        public override event NewMessageHandler NewMessage
-        {
-            add
-            {
-                lib.ShowDebugEvent += value;
-            }
-            remove
-            {
-                lib.ShowDebugEvent -= value;
-            }
-        }
+        //public override event LogMessageHandler LogMessage
+        //{
+        //    add
+        //    {
+        //        lib.LogMessageEvent += value;
+        //    }
+        //    remove
+        //    {
+        //        lib.LogMessageEvent -= value;
+        //    }
+        //}
 
         public override void Start(string parameter)
         {
@@ -49,23 +56,23 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public override int NumSquares
+        public override void ResendAllClusters()
+        {
+            lib.ResendAllClusters();
+        }
+
+        public override UInt64 NumClusters
         {
             get
             {
-                return lib.NumSquares;
+                if (lib.Data != null)
+                    return lib.Data.TotalClusters;
+                else
+                    return 0;
             }
-            set
-            {
-                lib.NumSquares = value;
-            }
-        }
 
-        public override IList<ClusterSquare> DirtySquares
-        {
-            get { return lib.DirtySquares; }
+            set {}
         }
-
         #endregion
     }
 }

@@ -38,7 +38,6 @@ using System.Timers;
 
 namespace MSDefragLib
 {
-
     internal class MSDefragLib
     {
         public class STARTING_LCN_INPUT_BUFFER
@@ -48,12 +47,14 @@ namespace MSDefragLib
 
         private Scan m_scanNtfs;
 
-        public MSDefragLib()
-        {
-            m_scanNtfs = new Scan(this);
+        private DefragEventDispatcher m_defragEventDispatcher;
 
-            m_scanNtfs.ShowDebugEvent += new Scan.ShowDebugHandler(ScanNtfsEventHandler);
-            //ShowDebugEvent += new ShowDebugHandler(ShowDebugEventHandler);
+        public MSDefragLib(DefragEventDispatcher defragEventDispatcher)
+        {
+            m_defragEventDispatcher = defragEventDispatcher;
+
+            m_scanNtfs = new Scan(this);
+            //m_scanNtfs.ShowDebugEvent += new Scan.ShowDebugHandler(ScanNtfsEventHandler);
         }
 
         /*
@@ -1060,7 +1061,7 @@ namespace MSDefragLib
 	        UInt64 SegmentBegin;
 	        UInt64 SegmentEnd;
 
-	        ClusterColors Color;
+	        eClusterState Color;
 
             /* Determine if the item is fragmented. */
             Boolean Fragmented = IsFragmented(Item, 0, Item.Clusters);
@@ -1098,12 +1099,12 @@ namespace MSDefragLib
 			        /* Determine the color with which to draw this segment. */
 			        if (UnDraw == false)
 			        {
-                        Color = ClusterColors.COLORUNFRAGMENTED;
+                        Color = eClusterState.Unfragmented;
 
-                        if (Item.SpaceHog) Color = ClusterColors.COLORSPACEHOG;
-                        if (Fragmented) Color = ClusterColors.COLORFRAGMENTED;
-                        if (Item.Unmovable) Color = ClusterColors.COLORUNMOVABLE;
-                        if (Item.Exclude) Color = ClusterColors.COLORUNMOVABLE;
+                        if (Item.SpaceHog) Color = eClusterState.SpaceHog;
+                        if (Fragmented) Color = eClusterState.Fragmented;
+                        if (Item.Unmovable) Color = eClusterState.Unmovable;
+                        if (Item.Exclude) Color = eClusterState.Unmovable;
 
 				        if ((Vcn + SegmentBegin - RealVcn < BusyOffset) &&
 					        (Vcn + SegmentEnd - RealVcn > BusyOffset))
@@ -1119,12 +1120,12 @@ namespace MSDefragLib
 						        SegmentEnd = RealVcn + BusyOffset + BusySize - Vcn;
 					        }
 
-                            Color = ClusterColors.COLORBUSY;
+                            Color = eClusterState.Busy;
 				        }
 			        }
 			        else
 			        {
-                        Color = ClusterColors.COLOREMPTY;
+                        Color = eClusterState.Free;
 
 				        for (int i = 0; i < 3; i++)
 				        {
@@ -1142,7 +1143,7 @@ namespace MSDefragLib
                                     SegmentEnd = RealVcn + Data.MftExcludes[i].End - fragment.Lcn;
 						        }
 
-                                Color = ClusterColors.COLORMFT;
+                                Color = eClusterState.Mft;
 					        }
 				        }
 			        }
@@ -1199,13 +1200,14 @@ namespace MSDefragLib
 
             PrevInUse = true;
 
-            if (m_clusterData == null)
+            if (clusterData == null)
             {
-                m_clusterData = new List<ClusterColors>(40000000);
+                clusterData = new List<ClusterStructure>(40000000);
 
-                for (Int32 ii = 0; ii < 40000000; ii++)
+                for (UInt64 ii = 0; ii < 40000000; ii++)
                 {
-                    m_clusterData.Add(ClusterColors.COLOREMPTY);
+                    ClusterStructure cluster = new ClusterStructure(ii, eClusterState.Free);
+                    clusterData.Add(cluster);
                 }
             }
 
@@ -1268,15 +1270,15 @@ namespace MSDefragLib
                             (Lcn == Data.MftExcludes[1].End) ||
                             (Lcn == Data.MftExcludes[2].End))
                         {
-                            DrawCluster(ClusterStart,Lcn,ClusterColors.COLORUNMOVABLE);
+                            DrawCluster(ClusterStart,Lcn,eClusterState.Unmovable);
                         }
                         else if (PrevInUse == false)
                         {
-                            DrawCluster(ClusterStart,Lcn,ClusterColors.COLOREMPTY);
+                            DrawCluster(ClusterStart,Lcn,eClusterState.Free);
                         }
                         else
                         {
-                            DrawCluster(ClusterStart,Lcn,ClusterColors.COLORALLOCATED);
+                            DrawCluster(ClusterStart,Lcn,eClusterState.Allocated);
                         }
 
                         InUse = true;
@@ -1286,13 +1288,13 @@ namespace MSDefragLib
 
                     if ((PrevInUse == false) && (InUse != false))
                     {          /* Free */
-                        DrawCluster(ClusterStart, Lcn, ClusterColors.COLOREMPTY);
+                        DrawCluster(ClusterStart, Lcn, eClusterState.Free);
                         ClusterStart = Lcn;
                     }
 
                     if ((PrevInUse != false) && (InUse == false))
                     {          /* In use */
-                        DrawCluster(ClusterStart, Lcn, ClusterColors.COLORALLOCATED);
+                        DrawCluster(ClusterStart, Lcn, eClusterState.Allocated);
                         ClusterStart = Lcn;
                     }
 
@@ -1308,12 +1310,12 @@ namespace MSDefragLib
             {
                 if (PrevInUse == false)
                 {          /* Free */
-                    DrawCluster(ClusterStart, Lcn, ClusterColors.COLOREMPTY);
+                    DrawCluster(ClusterStart, Lcn, eClusterState.Free);
                 }
 
                 if (PrevInUse != false)
                 {          /* In use */
-                    DrawCluster(ClusterStart, Lcn, ClusterColors.COLORALLOCATED);
+                    DrawCluster(ClusterStart, Lcn, eClusterState.Allocated);
                 }
             }
 
@@ -1323,7 +1325,7 @@ namespace MSDefragLib
                 if (Data.RedrawScreen != 2) break;
                 if (Data.MftExcludes[i].Start <= 0) continue;
 
-                DrawCluster(Data.MftExcludes[i].Start, Data.MftExcludes[i].End, ClusterColors.COLORMFT);
+                DrawCluster(Data.MftExcludes[i].Start, Data.MftExcludes[i].End, eClusterState.Mft);
             }
 
             /* Colorize all the files on the screen.
@@ -1657,7 +1659,7 @@ namespace MSDefragLib
                     OldZoneEnd[Zone] = ZoneEnd[Zone];
 
 		        /* Show debug info. */
-        		ShowDebug(4, String.Format("Zone calculation, iteration {0:G}: 0 - {0:G} - {0:G} - {0:G}",
+        		ShowLogMessage(4, String.Format("Zone calculation, iteration {0:G}: 0 - {0:G} - {0:G} - {0:G}",
                     Iterate, ZoneEnd[0], ZoneEnd[1], ZoneEnd[2]));
 
                 /* Reset the SizeOfUnmovableFragments array. We are going to (re)calculate these numbers
@@ -1795,7 +1797,7 @@ namespace MSDefragLib
 	        / * Draw the item and the destination clusters on the screen in the BUSY	color. * /
 	        ColorizeItem(Data,Item,MoveParams.StartingVcn.QuadPart,MoveParams.ClusterCount,NO);
 
-        //	jkGui->DrawCluster(Data,NewLcn,NewLcn + Size,JKDefragStruct::COLORBUSY);
+        //	jkGui->DrawCluster(Data,NewLcn,NewLcn + Size,JKDefragStruct::Busy);
 
 	        / * Call Windows to perform the move. * /
 	        ErrorCode = DeviceIoControl(Data->Disk.VolumeHandle,FSCTL_MOVE_FILE,&MoveParams,
@@ -1814,7 +1816,7 @@ namespace MSDefragLib
 	        Data->PhaseDone = Data->PhaseDone + MoveParams.ClusterCount;
 
 	        / * Undraw the destination clusters on the screen. * /
-        //	jkGui->DrawCluster(Data,NewLcn,NewLcn + Size,JKDefragStruct::COLOREMPTY);
+        //	jkGui->DrawCluster(Data,NewLcn,NewLcn + Size,JKDefragStruct::Free);
 
 	        return(ErrorCode);
         }
@@ -1920,7 +1922,7 @@ namespace MSDefragLib
 				        //				}
 
         //				jkGui->DrawCluster(Data,MoveParams.StartingLcn.QuadPart,
-        //					MoveParams.StartingLcn.QuadPart + MoveParams.ClusterCount,JKDefragStruct::COLORBUSY);
+        //					MoveParams.StartingLcn.QuadPart + MoveParams.ClusterCount,JKDefragStruct::Busy);
 
 				        / * Call Windows to perform the move. * /
 				        ErrorCode = DeviceIoControl(Data->Disk.VolumeHandle,FSCTL_MOVE_FILE,&MoveParams,
@@ -1940,7 +1942,7 @@ namespace MSDefragLib
 
 				        / * Undraw the destination clusters on the screen. * /
         //				jkGui->DrawCluster(Data,MoveParams.StartingLcn.QuadPart,
-        //					MoveParams.StartingLcn.QuadPart + MoveParams.ClusterCount,JKDefragStruct::COLOREMPTY);
+        //					MoveParams.StartingLcn.QuadPart + MoveParams.ClusterCount,JKDefragStruct::Free);
 
 				        / * If there was an error then exit. * /
 				        if (ErrorCode != NO_ERROR) return(ErrorCode);
@@ -3248,7 +3250,7 @@ namespace MSDefragLib
 	        /* Update the diskmap with the CLUSTER_COLORS. */
             Data.PhaseDone = Data.PhaseTodo;
 
-            DrawCluster(0, Data.TotalClusters, ClusterColors.COLOREMPTY);
+            DrawCluster(0, Data.TotalClusters, eClusterState.Free);
 
 	        /* Setup the progress counter and the file/dir counters. */
             Data.PhaseDone = 0;
@@ -3389,7 +3391,7 @@ namespace MSDefragLib
 		        /* Update the progress percentage. */
                 Data.PhaseDone++;
 
-        		if (Data.PhaseDone % 100 == 0) ShowDebug(1, "Phase: " + Data.PhaseDone + " / " + Data.PhaseTodo);
+                if (Data.PhaseDone % 100 == 0) ShowLogMessage(1, "Phase: " + Data.PhaseDone + " / " + Data.PhaseTodo);
 	        }
 
 	        /* Force the percentage to 100%. */
@@ -5044,7 +5046,7 @@ namespace MSDefragLib
                     Data.IncludeMask = Path + "*";
                 }
 
-            ShowDebug(0, "Input mask: " + Data.IncludeMask);
+            ShowLogMessage(0, "Input mask: " + Data.IncludeMask);
 
             /* Defragment and optimize. */
             ShowDiskmap();
@@ -5484,11 +5486,11 @@ namespace MSDefragLib
 
                 if (Data.UseLastAccessTime == true)
 		        {
-                    ShowDebug(1, "NtfsDisableLastAccessUpdate is inactive, using LastAccessTime for SpaceHogs.");
+                    ShowLogMessage(1, "NtfsDisableLastAccessUpdate is inactive, using LastAccessTime for SpaceHogs.");
 		        }
 		        else
 		        {
-                    ShowDebug(1, "NtfsDisableLastAccessUpdate is active, ignoring LastAccessTime for SpaceHogs.");
+                    ShowLogMessage(1, "NtfsDisableLastAccessUpdate is active, ignoring LastAccessTime for SpaceHogs.");
 		        }
             }
             #endregion
@@ -5538,6 +5540,11 @@ namespace MSDefragLib
             Data.Running = RunningState.STOPPED;
         }
 
+        public void ResendAllClusters()
+        {
+            ShowChangedClusters(0, Data.TotalClusters);
+        }
+
         #region StopJKDefrag
 
         /// <summary>
@@ -5576,68 +5583,25 @@ namespace MSDefragLib
 
         #region EventHandling
 
-        public void ScanNtfsEventHandler(object sender, EventArgs e)
+        public void ShowLogMessage(UInt32 level, String output)
         {
-            if (ShowDebugEvent != null)
-            {
-                ShowDebugEvent(this, e);
-            }
+            //MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
+
+            //if (level < 6)
+            //    OnShowLogMessage(e);
         }
 
-        public event ClustersModifiedHandler ShowChangedClustersEvent;
-        public event NewMessageHandler ShowDebugEvent;
-
-        protected virtual void OnShowChangedClusters(EventArgs e)
+        public void ShowProgress(Double progress, Double all)
         {
-            if (ShowChangedClustersEvent != null)
-            {
-                ShowChangedClustersEvent(this, e);
-            }
-        }
-        protected virtual void OnShowDebug(EventArgs e)
-        {
-            if (ShowDebugEvent != null)
-            {
-                ShowDebugEvent(this, e);
-            }
+            m_defragEventDispatcher.UpdateProgress(progress, all);
         }
 
-        public void ShowChangedClusters2()
+        public void UpdateDiskMap(IList<ClusterStructure> clusters)
         {
-            if (_dirtySquares.Count() >= MAX_DIRTY_SQUARES)
-            {
-                ChangedClusterEventArgs e = new ChangedClusterEventArgs(DirtySquares);
-
-                OnShowChangedClusters(e);
-            }
+            m_defragEventDispatcher.AddChangedClusters(clusters);
         }
 
-        public void ShowDebug(UInt32 level, String output)
-        {
-            MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
-
-            if (level < 6)
-                OnShowDebug(e);
-        }
-
-        private const Int32 MAX_DIRTY_SQUARES = 300;
-
-        private IList<ClusterSquare> _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
-
-        public IList<ClusterSquare> DirtySquares
-        {
-            get
-            {
-                lock (_dirtySquares)
-                {
-                    IList<ClusterSquare> oldlist = _dirtySquares;
-                    _dirtySquares = new List<ClusterSquare>(MAX_DIRTY_SQUARES);
-                    return oldlist;
-                }
-            }
-        }
-
-        private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, ClusterColors color)
+        private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, eClusterState newState)
         {
             if ((clusterBegin < 0) || (clusterBegin > Data.TotalClusters) ||
                 (clusterEnd < 0) || (clusterEnd > Data.TotalClusters))
@@ -5645,109 +5609,19 @@ namespace MSDefragLib
                 return;
             }
 
-            Double clusterPerSquare = (Double)Data.TotalClusters / (Double)(m_numSquares);
-
-            if (m_clusterSquares.Count == 0)
+            for (UInt64 jj = clusterBegin; jj < clusterEnd; jj++)
             {
-                ParseSquares();
+                clusterData[(Int32)jj].State = newState;
             }
 
-            Int32 squareBegin = (Int32)(clusterBegin / clusterPerSquare);
-            Int32 squareEnd = (Int32)(clusterEnd / clusterPerSquare);
-
-            if (squareEnd >= m_numSquares)
-            {
-                squareEnd = m_numSquares - 1;
-            }
-
-            for (Int32 ii = squareBegin; ii <= squareEnd; ii++)
-            {
-                ClusterSquare clusterSquare = m_clusterSquares[ii];
-                UInt64 clusterBeginIndex = clusterSquare.m_clusterBeginIndex;
-                UInt64 clusterEndIndex = clusterSquare.m_clusterEndIndex;
-
-                for (UInt64 jj = clusterBeginIndex; jj < clusterEndIndex; jj++)
-                {
-                    if ((jj < clusterBegin) || (jj > clusterEnd))
-                    {
-                        continue;
-                    }
-
-                    Int32 oldColor = (Int32)m_clusterData[(Int32)jj];
-
-                    m_clusterData[(Int32)jj] = color;
-
-                    if (clusterSquare.m_colors[oldColor] > 0)
-                    {
-                        clusterSquare.m_colors[oldColor]--;
-                    }
-
-                    clusterSquare.m_colors[(Int32)color]++;
-                }
-
-                clusterSquare.SetMaxColor();
-
-                if (clusterSquare.m_isDirty)
-                {
-                    clusterSquare.m_isDirty = false;
-                    ShowDebug(0, "Done: " + Data.PhaseDone + " / " + Data.PhaseTodo);
-
-                    lock (_dirtySquares)
-                    {
-                        _dirtySquares.Add(clusterSquare);
-
-//                        if (_dirtySquares.Count() == MAX_DIRTY_SQUARES)
-                        {
-//                            ShowDebug(4, "Notify: " + clusterSquare.m_squareIndex);
-                            // ShowChangedClusters();
-                        }
-                    }
-                }
-            }
+            ShowChangedClusters(clusterBegin, clusterEnd);
         }
 
-        /// <summary>
-        /// This function parses whole cluster list and updates square information.
-        /// </summary>
-        private void ParseSquares()
+        public void ShowChangedClusters(UInt64 clusterStart, UInt64 clusterEnd)
         {
-            Double clusterPerSquare = (Double)Data.TotalClusters / (Double)(m_numSquares);
+            IList<ClusterStructure> clusters = clusterData.GetRange((Int32)clusterStart, (Int32)(clusterEnd - clusterStart + 1));
 
-            m_clusterSquares.Clear();
-
-            for (Int32 squareIndex = 0; squareIndex < m_numSquares; squareIndex++)
-            {
-                UInt64 clusterIndex = (UInt64)(squareIndex * clusterPerSquare);
-                UInt64 lastClusterIndex = clusterIndex + (UInt64)clusterPerSquare - 1;
-
-                if (lastClusterIndex > (UInt64)m_clusterData.Count - 1)
-                {
-                    lastClusterIndex = (UInt64)m_clusterData.Count - 1;
-                }
-
-                ClusterSquare square = new ClusterSquare(squareIndex, clusterIndex, lastClusterIndex);
-
-                square.m_colors[(Int32)ClusterColors.COLORALLOCATED] = 0;
-                square.m_colors[(Int32)ClusterColors.COLORBACK] = 0;
-                square.m_colors[(Int32)ClusterColors.COLORBUSY] = 0;
-                square.m_colors[(Int32)ClusterColors.COLOREMPTY] = 0;
-                square.m_colors[(Int32)ClusterColors.COLORFRAGMENTED] = 0;
-                square.m_colors[(Int32)ClusterColors.COLORMFT] = 0;
-                square.m_colors[(Int32)ClusterColors.COLORSPACEHOG] = 0;
-                square.m_colors[(Int32)ClusterColors.COLORUNFRAGMENTED] = 0;
-                square.m_colors[(Int32)ClusterColors.COLORUNMOVABLE] = 0;
-
-                for (UInt64 jj = clusterIndex; jj <= lastClusterIndex; jj++)
-                {
-                    Int32 clusterColor = (Int32)m_clusterData[(Int32)jj];
-
-                    square.m_colors[clusterColor]++;
-                }
-
-                square.SetMaxColor();
-
-                m_clusterSquares.Add(square);
-            }
+            m_defragEventDispatcher.AddChangedClusters(clusters);
         }
 
         #endregion
@@ -5757,104 +5631,8 @@ namespace MSDefragLib
         public DefragmenterState Data
         { get; set; }
 
-        List<ClusterColors> m_clusterData = null;
-        List<ClusterSquare> m_clusterSquares = null;
-
-        private Int32 m_numSquares = 0;
-
-        public Int32 NumSquares
-        {
-            set
-            {
-                m_numSquares = value;
-
-                m_clusterSquares = new List<ClusterSquare>(m_numSquares);
-            }
-
-            get
-            {
-                return m_numSquares;
-            }
-        }
+        List<ClusterStructure> clusterData = null;
 
         #endregion
     }
-
-    #region Event classes
-
-    public class ChangedClusterEventArgs : EventArgs
-    {
-        public IList<ClusterSquare> m_list;
-
-        public ChangedClusterEventArgs(IList<ClusterSquare> list)
-        {
-            m_list = list;
-        }
-    }
-
-    //public class DrawClusterEventArgs : EventArgs 
-    //{
-    //    public UInt64 m_clusterNumber;
-    //    public MSDefragLib.CLUSTER_COLORS m_color;
-    //    public MSDefragDataStruct m_data;
-
-    //    public DrawClusterEventArgs(MSDefragDataStruct data, UInt64 clusterNum, MSDefragLib.CLUSTER_COLORS col)
-    //    {
-    //        m_data = data;
-    //        m_clusterNumber = clusterNum;
-    //        m_color = col;
-    //    }
-    //}
-    //public class DrawClusterEventArgs2 : EventArgs
-    //{
-    //    public UInt64 m_startClusterNumber;
-    //    public UInt64 m_endClusterNumber;
-    //    public MSDefragDataStruct m_data;
-
-    //    public Int32 m_squareBegin;
-    //    public Int32 m_squareEnd;
-
-    //    public DrawClusterEventArgs2(MSDefragDataStruct data, UInt64 startClusterNum, UInt64 endClusterNum)
-    //    {
-    //        m_data = data;
-    //        m_startClusterNumber = startClusterNum;
-    //        m_endClusterNumber = endClusterNum;
-    //    }
-
-    //    public DrawClusterEventArgs2(Int32 squareBegin, Int32 squareEnd)
-    //    {
-    //        m_squareBegin = squareBegin;
-    //        m_squareEnd = squareEnd;
-    //    }
-    //}
-    //public class NotifyGuiEventArgs : EventArgs
-    //{
-    //    public ClusterSquare m_clusterSquare;
-
-    //    public NotifyGuiEventArgs(ClusterSquare clusterSquare)
-    //    {
-    //        m_clusterSquare = clusterSquare;
-    //    }
-    //}
-
-    #endregion
-
-    #region ClusterStructure
-
-    /// <summary>
-    /// Structure for describing cluster
-    /// </summary>
-    public class ClusterStructure
-    {
-        public ClusterStructure(UInt64 clusterIndex, ClusterColors color)
-        {
-            m_clusterIndex = clusterIndex;
-            m_color = color;
-        }
-
-        public UInt64 m_clusterIndex;
-        public ClusterColors m_color;
-    }
-
-    #endregion
 }

@@ -79,6 +79,6 @@ namespace MSDefragLib
         public Int64 StartTime;
 
 	    /* The array with error messages. */
-	    List<String> DebugMsg;
+	    // List<String> DebugMsg;
     }
 }

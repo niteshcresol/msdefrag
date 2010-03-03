@@ -60,13 +60,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClusterColors.cs" />
+    <Compile Include="ClusterState.cs" />
     <Compile Include="ClusterSquare.cs" />
     <Compile Include="Colors.cs" />
     <Compile Include="Common\Fragment.cs" />
     <Compile Include="Common\FragmentList.cs" />
     <Compile Include="Common\ItemStruct.cs" />
     <Compile Include="Common\ItemTree.cs" />
+    <Compile Include="DefragEventDispatcher.cs" />
     <Compile Include="Defragmenter\BaseDefragmenter.cs" />
     <Compile Include="Defragmenter\DefragmenterFactory.cs" />
     <Compile Include="Defragmenter\DiskDefragmenter.cs" />
