@@ -54,7 +54,7 @@ namespace MSDefragLib
             {
                 _mountPoint = value;
                 String root = Path.GetPathRoot(value);
-                Open(root.Replace(@"\",""));
+                Open(root.Replace(@"\",String.Empty));
             }
         }
         

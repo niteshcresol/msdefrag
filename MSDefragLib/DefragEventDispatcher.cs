@@ -12,7 +12,7 @@ namespace MSDefragLib
 
         public DefragEventDispatcher()
         {
-            progressStatus = 0.0;
+            //progressStatus = 0.0;
             changedClusters = new List<ClusterState>();
             filteredClusters = new List<MapClusterState>();
         }
@@ -48,11 +48,11 @@ namespace MSDefragLib
             }
         }
 
-        public void AddLogMessage(Int16 level, String message)
-        {
-        }
+        //public void AddLogMessage(Int16 level, String message)
+        //{
+        //}
 
-        public Int16 NumFilteredClusters
+        public Int16 NumberFilteredClusters
         {
             get;
             set;
@@ -62,9 +62,9 @@ namespace MSDefragLib
 
         #region Events
 
-        public event ProgressHandler ProgressEvent;
-        public event UpdateDiskMapHandler UpdateDiskMapEvent;
-        public event UpdateFilteredDiskMapHandler UpdateFilteredDiskMapEvent;
+        public event EventHandler<ProgressEventArgs> ProgressEvent;
+        //public event UpdateDiskMapEventHandler UpdateDiskMapEvent;
+        public event EventHandler<FilteredClusterEventArgs> UpdateFilteredDiskMapEvent;
 
         public void StartEventDispatcher()
         {
@@ -75,7 +75,7 @@ namespace MSDefragLib
                     Thread.Sleep(300);
 
                     SendProgressEvent();
-                    SendLogMessages();
+                    //SendLogMessages();
                     //UpdateDiskMap();
                     UpdateFilteredDiskMap();
                 }
@@ -95,21 +95,21 @@ namespace MSDefragLib
             }
         }
 
-        private void UpdateDiskMap()
-        {
-            lock (changedClusters)
-            {
-                if (changedClusters.Count > 0)
-                {
-                    IList<ClusterState> oldList = changedClusters;
+        //private void UpdateDiskMap()
+        //{
+        //    lock (changedClusters)
+        //    {
+        //        if (changedClusters.Count > 0)
+        //        {
+        //            IList<ClusterState> oldList = changedClusters;
 
-                    changedClusters = new List<ClusterState>();
-                    ChangedClusterEventArgs e = new ChangedClusterEventArgs(oldList);
+        //            changedClusters = new List<ClusterState>();
+        //            ChangedClusterEventArgs e = new ChangedClusterEventArgs(oldList);
 
-                    UpdateDiskMapEvent(this, e);
-                }
-            }
-        }
+        //            UpdateDiskMapEvent(this, e);
+        //        }
+        //    }
+        //}
 
         private void UpdateFilteredDiskMap()
         {
@@ -127,9 +127,9 @@ namespace MSDefragLib
             }
         }
 
-        private void SendLogMessages()
-        {
-        }
+        //private void SendLogMessages()
+        //{
+        //}
 
         #endregion
 
@@ -146,31 +146,53 @@ namespace MSDefragLib
 
     public class ProgressEventArgs : EventArgs
     {
-        public Double Progress;
+        private Double progress;
 
-        public ProgressEventArgs(Double progress)
+        public Double Progress
         {
-            Progress = (Double)(progress * 100);
+            get { return progress; }
+            set { progress = value; }
+        }
+
+        public ProgressEventArgs(Double value)
+        {
+            Progress = (Double)(value * 100);
         }
     }
 
     public class ChangedClusterEventArgs : EventArgs
     {
-        public IList<ClusterState> m_list;
+        private IList<ClusterState> clusters;
+
+        public IList<ClusterState> Clusters
+        {
+            get
+            {
+                return clusters;
+            }
+        }
 
         public ChangedClusterEventArgs(IList<ClusterState> list)
         {
-            m_list = list;
+            clusters = list;
         }
     }
 
     public class FilteredClusterEventArgs : EventArgs
     {
-        public IList<MapClusterState> m_list;
+        private IList<MapClusterState> clusters;
+
+        public IList<MapClusterState> Clusters
+        {
+            get
+            {
+                return clusters;
+            }
+        }
 
         public FilteredClusterEventArgs(IList<MapClusterState> list)
         {
-            m_list = list;
+            clusters = list;
         }
     }
 

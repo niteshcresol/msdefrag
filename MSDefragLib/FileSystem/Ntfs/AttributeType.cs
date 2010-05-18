@@ -235,7 +235,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 case AttributeTypeEnum.AttributeLoggedUtilityStream:
                     return ("$LOGGED_UTILITY_STREAM");
                 case AttributeTypeEnum.AttributeInvalid:
-                    return "";
+                    return String.Empty;
                 default:
                     throw new NotSupportedException();
             }

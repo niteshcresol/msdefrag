@@ -21,7 +21,7 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        private MSDefragLib lib = null;
+        private MSDefragLib lib;
 
         public DiskDefragmenter()
         {
@@ -42,13 +42,13 @@ namespace MSDefragLib.Defragmenter
         //    }
         //}
 
-        public override void Start(string parameter)
+        public override void BeginDefragmentation(string parameter)
         {
             lib.RunJkDefrag(@"C:\*", 2, 10, null, null);
             //lib.RunJkDefrag(@"T:\*", 2, 10, null, null);
         }
 
-        public override void Stop(Int32 timeoutMs)
+        public override void FinishDefragmentation(Int32 timeoutMs)
         {
             if ((lib.Data != null) && (lib.Data.Running == RunningState.RUNNING))
             {

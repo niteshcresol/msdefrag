@@ -10,27 +10,27 @@ namespace MSDefragLib.Defragmenter
     {
         #region IDefragmenter Members
 
-        private Thread defragThread = null;
-        private Thread eventDispatcherThread = null;
+        private Thread defragThread;
+        private Thread eventDispatcherThread;
 
-        public event ProgressHandler ProgressEvent
+        public event EventHandler<ProgressEventArgs> ProgressEvent
         {
             add { defragEventDispatcher.ProgressEvent += value; }
             remove { defragEventDispatcher.ProgressEvent -= value; }
         }
-        public event UpdateDiskMapHandler UpdateDiskMapEvent
-        {
-            add { defragEventDispatcher.UpdateDiskMapEvent += value; }
-            remove { defragEventDispatcher.UpdateDiskMapEvent -= value; }
-        }
-        public event UpdateFilteredDiskMapHandler UpdateFilteredDiskMapEvent
+        //public event UpdateDiskMapEventHandler UpdateDiskMapEvent
+        //{
+        //    add { defragEventDispatcher.UpdateDiskMapEvent += value; }
+        //    remove { defragEventDispatcher.UpdateDiskMapEvent -= value; }
+        //}
+        public event EventHandler<FilteredClusterEventArgs> UpdateFilteredDiskMapEvent
         {
             add { defragEventDispatcher.UpdateFilteredDiskMapEvent += value; }
             remove { defragEventDispatcher.UpdateFilteredDiskMapEvent -= value; }
         }
 
-        public abstract void Start(string parameter);
-        public abstract void Stop(int timeoutMs);
+        public abstract void BeginDefragmentation(string parameter);
+        public abstract void FinishDefragmentation(int timeoutMS);
 
         public abstract UInt64 NumClusters { get; set; }
 
@@ -55,7 +55,7 @@ namespace MSDefragLib.Defragmenter
 
         private void Defrag()
         {
-            Start(@"C:\*");
+            BeginDefragmentation(@"C:\*");
         }
 
         private void EventDispatcher()
@@ -65,7 +65,7 @@ namespace MSDefragLib.Defragmenter
 
         public void StopDefragmentation(int timeoutMs)
         {
-            Stop(5000);
+            FinishDefragmentation(5000);
 
             if (defragThread.IsAlive)
             {

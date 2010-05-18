@@ -13,7 +13,7 @@ namespace MSDefragLib.FS.KnownBootSector
     {
         private const UInt16 BOOT_SECTOR_SIGNATURE = 0xAA55;
 
-        public BaseBootSector(byte[] buffer)
+        protected BaseBootSector(byte[] buffer)
         {
             Data = buffer;
             AssertValid();

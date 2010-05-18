@@ -35,7 +35,7 @@ namespace MSDefragLib
 
             // Initialize filters with current values
 
-            ReparseClusters(0);
+            ReparseClusters();
         }
 
         public void AddCluster(UInt64 idxCluster, eClusterState state)
@@ -64,7 +64,7 @@ namespace MSDefragLib
             return clusters;
         }
 
-        private void ReparseClusters(UInt64 idxCluster)
+        private void ReparseClusters()
         {
             Int32 filterBegin = 0;
             Int32 filterEnd = numFilteredClusters;

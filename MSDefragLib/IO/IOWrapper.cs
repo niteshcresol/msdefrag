@@ -559,7 +559,7 @@ namespace MSDefragLib.IO
             IntPtr hModule = IntPtr.Zero;
             IntPtr pMessageBuffer;
             int dwBufferLength;
-            string sMsg = "";
+            string sMsg = String.Empty;
             uint  dwFormatFlags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
                                    | FORMAT_MESSAGE_IGNORE_INSERTS;
 

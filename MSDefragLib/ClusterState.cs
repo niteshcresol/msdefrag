@@ -31,9 +31,12 @@ namespace MSDefragLib
             isDirty = true;
         }
 
-        public UInt64 index;
+        private UInt64 index;
+
+        public UInt64 Index { get { return index; } }
 
         private eClusterState state;
+
         public eClusterState State
         {
             get { return state; }
@@ -47,6 +50,12 @@ namespace MSDefragLib
                 state = value;
             }
         }
-        public Boolean isDirty;
+
+        private Boolean isDirty;
+
+        public Boolean Dirty {
+            get { return isDirty; }
+            set { isDirty = value; }
+        }
     }
 }

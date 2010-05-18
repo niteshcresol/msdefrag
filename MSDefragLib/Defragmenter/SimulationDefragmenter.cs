@@ -39,7 +39,7 @@ namespace MSDefragLib.Defragmenter
             diskMap = new DiskMap((Int32)Data.TotalClusters);
         }
 
-        public override void Start(string parameter)
+        public override void BeginDefragmentation(string parameter)
         {
             Random rnd = new Random();
 
@@ -77,7 +77,7 @@ namespace MSDefragLib.Defragmenter
             Data.Running = RunningState.STOPPED;
         }
 
-        public override void Stop(Int32 timeoutMs)
+        public override void FinishDefragmentation(Int32 timeoutMs)
         {
             /* Sanity check. */
             if (Data.Running != RunningState.RUNNING)
@@ -137,7 +137,7 @@ namespace MSDefragLib.Defragmenter
 
             defragEventDispatcher.AddFilteredClusters(clusters);
         }
-
+        /*
         public void ShowLogMessage(UInt32 level, String message)
         {
             //if (level < 6)
@@ -146,7 +146,7 @@ namespace MSDefragLib.Defragmenter
             //    OnLogMessage(e);
             //}
         }
-
+        */
         public void ShowProgress(Double progress, Double all)
         {
             defragEventDispatcher.UpdateProgress(progress, all);

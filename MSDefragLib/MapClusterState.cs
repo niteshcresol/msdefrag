@@ -20,46 +20,54 @@ namespace MSDefragLib
             }
         }
 
-        public UInt64 index;
+        private UInt64 index;
 
-        public eClusterState GetMaxState()
+        public UInt64 Index
         {
-            if (numClusterStates[(Int32)eClusterState.Busy] > 0)
-            {
-                return eClusterState.Busy;
-            }
+            get { return index; }
+        }
 
-            if (numClusterStates[(Int32)eClusterState.Mft] > 0)
+        public eClusterState MaxState
+        {
+            get
             {
-                return eClusterState.Mft;
-            }
+                if (numClusterStates[(Int32)eClusterState.Busy] > 0)
+                {
+                    return eClusterState.Busy;
+                }
 
-            if (numClusterStates[(Int32)eClusterState.Unmovable] > 0)
-            {
-                return eClusterState.Unmovable;
-            }
+                if (numClusterStates[(Int32)eClusterState.Mft] > 0)
+                {
+                    return eClusterState.Mft;
+                }
 
-            if (numClusterStates[(Int32)eClusterState.Fragmented] > 0)
-            {
-                return eClusterState.Fragmented;
-            }
+                if (numClusterStates[(Int32)eClusterState.Unmovable] > 0)
+                {
+                    return eClusterState.Unmovable;
+                }
 
-            if (numClusterStates[(Int32)eClusterState.Unfragmented] > 0)
-            {
-                return eClusterState.Unfragmented;
-            }
+                if (numClusterStates[(Int32)eClusterState.Fragmented] > 0)
+                {
+                    return eClusterState.Fragmented;
+                }
 
-            if (numClusterStates[(Int32)eClusterState.SpaceHog] > 0)
-            {
-                return eClusterState.SpaceHog;
-            }
+                if (numClusterStates[(Int32)eClusterState.Unfragmented] > 0)
+                {
+                    return eClusterState.Unfragmented;
+                }
 
-            if (numClusterStates[(Int32)eClusterState.Allocated] > 0)
-            {
-                return eClusterState.Allocated;
-            }
+                if (numClusterStates[(Int32)eClusterState.SpaceHog] > 0)
+                {
+                    return eClusterState.SpaceHog;
+                }
 
-            return eClusterState.Free;
+                if (numClusterStates[(Int32)eClusterState.Allocated] > 0)
+                {
+                    return eClusterState.Allocated;
+                }
+
+                return eClusterState.Free;
+            }
         }
 
         public void AddClusterState(eClusterState state)
@@ -85,7 +93,13 @@ namespace MSDefragLib
             }
         }
 
-        public Boolean isDirty;
+        private Boolean isDirty;
+
+        public Boolean Dirty
+        {
+            get { return isDirty; }
+            set { isDirty = value; }
+        }
         Int32[] numClusterStates;
     }
 }

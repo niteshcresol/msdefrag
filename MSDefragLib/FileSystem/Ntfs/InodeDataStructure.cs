@@ -110,11 +110,11 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             switch (attribute.NameType)
             {
-                case NameType.DOS:
+                case NameTypes.DOS:
                     ShortFilename = ShortFilename ?? attribute.Name;
                     break;
-                case NameType.NTFS | NameType.DOS:
-                case NameType.NTFS:
+                case NameTypes.NTFS | NameTypes.DOS:
+                case NameTypes.NTFS:
                     LongFilename = LongFilename ?? attribute.Name;
                     break;
                 default:

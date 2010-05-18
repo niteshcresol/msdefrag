@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using MSDefragLib;
 using System.Threading;
 using System.Timers;
+using System.Globalization;
 
 namespace MSDefrag
 {
@@ -30,7 +31,7 @@ namespace MSDefrag
         {
             InitializeComponent();
 
-            GuiRefreshTimer = new System.Timers.Timer(100);
+            GuiRefreshTimer = new System.Timers.Timer(1000);
 
             GuiRefreshTimer.Elapsed += new ElapsedEventHandler(OnRefreshGuiTimer);
             GuiRefreshTimer.Enabled = true;
@@ -81,11 +82,11 @@ namespace MSDefrag
 
         #region Other
 
-        private void StartDefragmentation(m_eDefragType mode)
+        private void StartDefragmentation(EnumDefragType mode)
         {
             switch (mode)
             {
-                case m_eDefragType.defragTypeDefragmentation:
+                case EnumDefragType.defragTypeDefragmentation:
                     m_defragmenter = DefragmenterFactory.Create();
                     break;
                 default:
@@ -95,9 +96,9 @@ namespace MSDefrag
 
             m_defragmenter.StartDefragmentation("A");
 
-            m_defragmenter.ProgressEvent += new ProgressHandler(UpdateProgress);
+            m_defragmenter.ProgressEvent += new EventHandler<ProgressEventArgs>(UpdateProgress);
             //m_defragmenter.UpdateDiskMapEvent += new UpdateDiskMapHandler(UpdateDiskMap);
-            m_defragmenter.UpdateFilteredDiskMapEvent += new UpdateFilteredDiskMapHandler(UpdateFilteredDiskMap);
+            m_defragmenter.UpdateFilteredDiskMapEvent += new EventHandler<FilteredClusterEventArgs>(UpdateFilteredDiskMap);
 
             InitializeBitmapDisplay();
         }
@@ -106,16 +107,16 @@ namespace MSDefrag
         {
             m_defragmenter.StopDefragmentation(4000);
 
-            m_defragmenter.ProgressEvent -= new MSDefragLib.ProgressHandler(UpdateProgress);
+            m_defragmenter.ProgressEvent -= new EventHandler<ProgressEventArgs>(UpdateProgress);
             //m_defragmenter.UpdateDiskMapEvent -= new UpdateDiskMapHandler(UpdateDiskMap);
-            m_defragmenter.UpdateFilteredDiskMapEvent -= new UpdateFilteredDiskMapHandler(UpdateFilteredDiskMap);
+            m_defragmenter.UpdateFilteredDiskMapEvent -= new EventHandler<FilteredClusterEventArgs>(UpdateFilteredDiskMap);
         }
 
         private void UpdateProgressBar(Double val)
         {
             progressBar.Value = (Int16)val;
 
-            progressBarText.Text = String.Format("{0:P}", val * 0.01);
+            progressBarText.Text = String.Format(CultureInfo.CurrentCulture, "{0:P}", val * 0.01);
         }
 
         private void ShowStatistics()
@@ -133,7 +134,7 @@ namespace MSDefrag
             toolButtonStartSimulation.Enabled = false;
             toolButtonStopDefrag.Enabled = true;
 
-            StartDefragmentation(m_eDefragType.defragTypeDefragmentation);
+            StartDefragmentation(EnumDefragType.defragTypeDefragmentation);
         }
 
         private void OnStartSimulation(object sender, EventArgs e)
@@ -142,7 +143,7 @@ namespace MSDefrag
             toolButtonStartSimulation.Enabled = false;
             toolButtonStopDefrag.Enabled = true;
 
-            StartDefragmentation(m_eDefragType.defragTypeSimulation);
+            StartDefragmentation(EnumDefragType.defragTypeSimulation);
         }
 
         private void OnStopDefrag(object sender, EventArgs e)
@@ -160,30 +161,30 @@ namespace MSDefrag
 
         private void UpdateDiskMap(object sender, EventArgs e)
         {
-            if (e is ChangedClusterEventArgs)
-            {
-                ChangedClusterEventArgs ea = (ChangedClusterEventArgs)e;
+            ChangedClusterEventArgs ea = e as ChangedClusterEventArgs;
 
-                AddChangedClustersToQueue(ea.m_list);
+            if (ea != null)
+            {
+                AddChangedClustersToQueue(ea.Clusters);
             }
         }
 
         private void UpdateFilteredDiskMap(object sender, EventArgs e)
         {
-            if (e is FilteredClusterEventArgs)
-            {
-                FilteredClusterEventArgs ea = (FilteredClusterEventArgs)e;
+            FilteredClusterEventArgs ea = e as FilteredClusterEventArgs;
 
-                AddFilteredClustersToQueue(ea.m_list);
+            if (ea != null)
+            {
+                AddFilteredClustersToQueue(ea.Clusters);
             }
         }
 
         private void UpdateProgress(object sender, EventArgs e)
         {
-            if (e is ProgressEventArgs)
-            {
-                ProgressEventArgs ea = (ProgressEventArgs)e;
+            ProgressEventArgs ea = e as ProgressEventArgs;
 
+            if (ea != null)
+            {
                 BeginInvoke(new MethodInvoker(delegate { UpdateProgressBar(ea.Progress); }));
             }
         }
@@ -203,8 +204,8 @@ namespace MSDefrag
             ignoreEvent = false;
         }
 
-        private bool _inUse = false;
-        private int _skippedFrames = 0;
+        private bool _inUse;
+        private int _skippedFrames;
 
         private void OnRefreshGuiTimer(object source, ElapsedEventArgs e)
         {
@@ -231,9 +232,9 @@ namespace MSDefrag
 
         System.Timers.Timer GuiRefreshTimer;
 
-        private IDefragmenter m_defragmenter = null;
+        private IDefragmenter m_defragmenter;
 
-        public enum m_eDefragType
+        private enum EnumDefragType
         {
             defragTypeDefragmentation = 0,
             defragTypeSimulation

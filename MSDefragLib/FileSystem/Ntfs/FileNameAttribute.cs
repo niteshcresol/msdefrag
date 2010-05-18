@@ -8,7 +8,7 @@ using System.Text;
 namespace MSDefragLib.FileSystem.Ntfs
 {
     [Flags]
-    public enum NameType : byte
+    public enum NameTypes : byte
     {
         /// <summary>
         /// This is the largest namespace. It is case sensitive and allows all
@@ -83,8 +83,8 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <summary>
         /// NTFS or DOS name
         /// </summary>
-        public NameType NameType
-        { get { return (NameType)_nameType; } }
+        public NameTypes NameType
+        { get { return (NameTypes)_nameType; } }
 
         public InodeReference ParentDirectory
         { get; private set; }

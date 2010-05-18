@@ -61,8 +61,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClusterState.cs" />
-    <Compile Include="ClusterSquare.cs" />
-    <Compile Include="Colors.cs" />
     <Compile Include="Common\Fragment.cs" />
     <Compile Include="Common\FragmentList.cs" />
     <Compile Include="Common\ItemStruct.cs" />

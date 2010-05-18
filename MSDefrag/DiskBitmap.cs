@@ -8,7 +8,7 @@ using MSDefragLib;
 
 namespace MSDefrag
 {
-    class DiskBitmap
+    class DiskBitmap : IDisposable
     {
         #region Settings
 
@@ -33,6 +33,39 @@ namespace MSDefrag
             NumClusters = numClusters;
 
             Initialize(width, height, squareSize);
+        }
+
+        public void Dispose()
+        {
+            foreach (SolidBrush br in solidBrushes)
+            {
+                br.Dispose();
+            }
+
+            foreach (LinearGradientBrush br in linearHorizontalGradientBrushes)
+            {
+                br.Dispose();
+            }
+
+            foreach (LinearGradientBrush br in linearVerticalGradientBrushes)
+            {
+                br.Dispose();
+            }
+
+            foreach (LinearGradientBrush br in linearForwardDiagonalGradientBrushes)
+            {
+                br.Dispose();
+            }
+
+            foreach (Bitmap b in mapSquareBitmaps)
+            {
+                b.Dispose();
+            }
+
+            bitmap.Dispose();
+            graphics.Dispose();
+
+            GC.SuppressFinalize(this);
         }
 
         #endregion
@@ -206,9 +239,7 @@ namespace MSDefrag
         {
             mapSquareBitmaps = new Bitmap[(Int32)MSDefragLib.eClusterState.MaxValue];
 
-            int ii = 0;
-
-            foreach (Color col in colors)
+            for (int ii = 0; ii < (Int32)MSDefragLib.eClusterState.MaxValue; ii++)
             {
                 mapSquareBitmaps[(Int32)ii] = new Bitmap(squareSize, squareSize);
 
@@ -225,8 +256,6 @@ namespace MSDefrag
                         g1.FillRectangle(linearForwardDiagonalGradientBrushes[(Int32)ii], rec);
                     }
                 }
-
-                ii++;
             }
         }
 
@@ -236,13 +265,13 @@ namespace MSDefrag
 
             mapSquares = new List<MapSquare>(NumSquares);
 
-            Double numClustersInSquare = NumClusters / (UInt64)NumSquares;
+            //Double numClustersInSquare = NumClusters / (UInt64)NumSquares;
 
             for (Int16 ii = 0; ii < NumSquares; ii++)
             {
-                UInt64 clusterBegin = (UInt64)(ii * numClustersInSquare);
-                UInt64 clusterEnd = (UInt64)(clusterBegin + numClustersInSquare - 1);
-                mapSquares.Add(new MapSquare(ii, clusterBegin, clusterEnd));
+                //UInt64 clusterBegin = (UInt64)(ii * numClustersInSquare);
+                //UInt64 clusterEnd = (UInt64)(clusterBegin + numClustersInSquare - 1);
+                mapSquares.Add(new MapSquare(/*ii, clusterBegin,clusterEnd*/));
             }
 
             DrawMapSquares(0, NumSquares);
@@ -252,7 +281,7 @@ namespace MSDefrag
 
         #region Helper functions
 
-        private LinearGradientBrush GetLinearGradientBrushFromColor(
+        private static LinearGradientBrush GetLinearGradientBrushFromColor(
             Color color, Boolean bright, Rectangle rec, Byte brightness, Byte darkness, LinearGradientMode mode)
         {
             LinearGradientBrush brush = null;
@@ -292,7 +321,7 @@ namespace MSDefrag
             {
                 foreach (ClusterState cluster in clusters)
                 {
-                    UInt64 clusterIndex = cluster.index;
+                    UInt64 clusterIndex = cluster.Index;
 
                     Int32 mapSquareIndex = (Int32)(clusterIndex / numClustersInSquare);
 
@@ -304,7 +333,7 @@ namespace MSDefrag
 
                     //mapSquare.SetMaxColor();
 
-                    mapSquare.IsDirty = true;
+                    mapSquare.Dirty = true;
                 }
             }
         }
@@ -314,17 +343,15 @@ namespace MSDefrag
         /// </summary>
         public void AddFilteredClusters(IList<MapClusterState> clusters)
         {
-            Double numClustersInSquare = (Double)((Double)NumClusters / (Double)NumSquares);
-
             lock (mapSquares)
             {
                 foreach (MapClusterState cluster in clusters)
                 {
-                    MapSquare mapSquare = mapSquares[(Int32)cluster.index];
+                    MapSquare mapSquare = mapSquares[(Int32)cluster.Index];
 
-                    mapSquare.maxClusterState = cluster.GetMaxState();
+                    mapSquare.maxClusterState = cluster.MaxState;
 
-                    mapSquare.IsDirty = true;
+                    mapSquare.Dirty = true;
                 }
             }
         }
@@ -342,12 +369,12 @@ namespace MSDefrag
 
                     Int32 squareMapBitmapIndex = (Int32)mapSquares[ii].maxClusterState;
 
-                    if (mapSquares[ii].IsDirty == true)
+                    if (mapSquares[ii].Dirty == true)
                     {
                         graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex],
                             offsetX + posX * squareSize, offsetY + posY * squareSize);
 
-                        mapSquares[ii].IsDirty = false;
+                        mapSquares[ii].Dirty = false;
                     }
                 }
             }
@@ -365,7 +392,7 @@ namespace MSDefrag
         #region Gui
 
         private Int32 numSquares;
-        public Int32 NumSquares { get { return numSquares; } private set { numSquares = value; } }
+        public Int32 NumSquares { get { return numSquares; } }
 
         private Int32 numX;
         public Int32 NumX { get { return numX; } set { numX = value; numSquares = numX * numY; } }
