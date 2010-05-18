@@ -295,7 +295,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 foundStream.ParseRunData(runData, startingVcn);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 _countRunDataIssues++;
                 Trace.WriteLine(this, String.Format("RunData Parse issue {1} for Stream: {0}",
@@ -815,7 +815,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 ProcessAttributes(diskInfo, inodeData,
                     reader, bufLength - fileRecordHeader.AttributeOffset, UInt16.MaxValue, 0);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 _countProcessAttributesIssues++;
                 Trace.WriteLine(this, String.Format("ProcessAttributes failed for {0} (cnt={1})",

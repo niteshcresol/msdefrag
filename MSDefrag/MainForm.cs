@@ -61,12 +61,20 @@ namespace MSDefrag
             _inUse = false;
         }
 
-        private void AddChangedClustersToQueue(IList<MSDefragLib.ClusterStructure> changedClusters)
+        private void AddChangedClustersToQueue(IList<MSDefragLib.ClusterState> changedClusters)
         {
             if (changedClusters == null || diskBitmap == null)
                 return;
 
             diskBitmap.AddChangedClusters(changedClusters);
+        }
+
+        private void AddFilteredClustersToQueue(IList<MSDefragLib.MapClusterState> filteredClusters)
+        {
+            if (filteredClusters == null || diskBitmap == null)
+                return;
+
+            diskBitmap.AddFilteredClusters(filteredClusters);
         }
 
         #endregion
@@ -88,17 +96,19 @@ namespace MSDefrag
             m_defragmenter.StartDefragmentation("A");
 
             m_defragmenter.ProgressEvent += new ProgressHandler(UpdateProgress);
-            m_defragmenter.UpdateDiskMapEvent += new UpdateDiskMapHandler(UpdateDiskMap);
+            //m_defragmenter.UpdateDiskMapEvent += new UpdateDiskMapHandler(UpdateDiskMap);
+            m_defragmenter.UpdateFilteredDiskMapEvent += new UpdateFilteredDiskMapHandler(UpdateFilteredDiskMap);
 
             InitializeBitmapDisplay();
         }
 
         private void StopDefragmentation()
         {
-            m_defragmenter.ProgressEvent -= new MSDefragLib.ProgressHandler(UpdateProgress);
-            m_defragmenter.UpdateDiskMapEvent -= new UpdateDiskMapHandler(UpdateDiskMap);
-
             m_defragmenter.StopDefragmentation(4000);
+
+            m_defragmenter.ProgressEvent -= new MSDefragLib.ProgressHandler(UpdateProgress);
+            //m_defragmenter.UpdateDiskMapEvent -= new UpdateDiskMapHandler(UpdateDiskMap);
+            m_defragmenter.UpdateFilteredDiskMapEvent -= new UpdateFilteredDiskMapHandler(UpdateFilteredDiskMap);
         }
 
         private void UpdateProgressBar(Double val)
@@ -155,6 +165,16 @@ namespace MSDefrag
                 ChangedClusterEventArgs ea = (ChangedClusterEventArgs)e;
 
                 AddChangedClustersToQueue(ea.m_list);
+            }
+        }
+
+        private void UpdateFilteredDiskMap(object sender, EventArgs e)
+        {
+            if (e is FilteredClusterEventArgs)
+            {
+                FilteredClusterEventArgs ea = (FilteredClusterEventArgs)e;
+
+                AddFilteredClustersToQueue(ea.m_list);
             }
         }
 

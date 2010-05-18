@@ -284,13 +284,13 @@ namespace MSDefrag
         /// <summary>
         /// This function parses whole cluster list and updates square information.
         /// </summary>
-        public void AddChangedClusters(IList<ClusterStructure>clusters)
+        public void AddChangedClusters(IList<ClusterState>clusters)
         {
             Double numClustersInSquare = (Double)((Double)NumClusters / (Double)NumSquares);
 
             lock (mapSquares)
             {
-                foreach (ClusterStructure cluster in clusters)
+                foreach (ClusterState cluster in clusters)
                 {
                     UInt64 clusterIndex = cluster.index;
 
@@ -309,6 +309,26 @@ namespace MSDefrag
             }
         }
 
+        /// <summary>
+        /// This function parses whole cluster list and updates square information.
+        /// </summary>
+        public void AddFilteredClusters(IList<MapClusterState> clusters)
+        {
+            Double numClustersInSquare = (Double)((Double)NumClusters / (Double)NumSquares);
+
+            lock (mapSquares)
+            {
+                foreach (MapClusterState cluster in clusters)
+                {
+                    MapSquare mapSquare = mapSquares[(Int32)cluster.index];
+
+                    mapSquare.maxClusterState = cluster.GetMaxState();
+
+                    mapSquare.IsDirty = true;
+                }
+            }
+        }
+
         #region Drawing
 
         private void DrawMapSquares(Int32 indexBegin, Int32 indexEnd)
@@ -319,12 +339,15 @@ namespace MSDefrag
                 {
                     Int32 posX = (Int32)(ii % NumX);
                     Int32 posY = (Int32)(ii / NumX);
+
                     Int32 squareMapBitmapIndex = (Int32)mapSquares[ii].maxClusterState;
 
                     if (mapSquares[ii].IsDirty == true)
                     {
                         graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex],
                             offsetX + posX * squareSize, offsetY + posY * squareSize);
+
+                        mapSquares[ii].IsDirty = false;
                     }
                 }
             }

@@ -25,7 +25,7 @@ namespace MSDefragLib.Defragmenter
         }
 
         private DefragmenterState Data;
-        List<ClusterStructure> clusterData;
+        DiskMap diskMap;
 
         public SimulationDefragmenter()
         {
@@ -36,13 +36,7 @@ namespace MSDefragLib.Defragmenter
             Data.Running = RunningState.RUNNING;
             Data.TotalClusters = 400000;
 
-            clusterData = new List<ClusterStructure>((Int32)Data.TotalClusters);
-
-            for (UInt64 ii = 0; ii < Data.TotalClusters; ii++)
-            {
-                ClusterStructure cluster = new ClusterStructure(ii, eClusterState.Free);
-                clusterData.Add(cluster);
-            }
+            diskMap = new DiskMap((Int32)Data.TotalClusters);
         }
 
         public override void Start(string parameter)
@@ -70,10 +64,11 @@ namespace MSDefragLib.Defragmenter
 
                 for (UInt64 clusterNum = clusterBegin; (Data.Running == RunningState.RUNNING) && (clusterNum < clusterEnd); clusterNum++)
                 {
-                    clusterData[(Int32)clusterNum].State = col;
+                    diskMap.SetClusterState(clusterNum, col);
                 }
 
-                ShowChangedClusters(clusterBegin, clusterEnd);
+                //ShowChangedClusters(clusterBegin, clusterEnd);
+                ShowFilteredClusters(clusterBegin, clusterEnd);
                 ShowProgress(testNumber, maxNumTest);
 
                  Thread.Sleep(1);
@@ -131,9 +126,16 @@ namespace MSDefragLib.Defragmenter
 
         public void ShowChangedClusters(UInt64 clusterBegin, UInt64 clusterEnd)
         {
-            IList<ClusterStructure> clusters = clusterData.GetRange((Int32)clusterBegin, (Int32)(clusterEnd - clusterBegin));
+            IList<ClusterState> clusters = diskMap.GetClusters(clusterBegin, clusterEnd);
 
             defragEventDispatcher.AddChangedClusters(clusters);
+        }
+
+        public void ShowFilteredClusters(UInt64 clusterBegin, UInt64 clusterEnd)
+        {
+            IList<MapClusterState> clusters = diskMap.GetFilteredClusters(clusterBegin, clusterEnd);
+
+            defragEventDispatcher.AddFilteredClusters(clusters);
         }
 
         public void ShowLogMessage(UInt32 level, String message)

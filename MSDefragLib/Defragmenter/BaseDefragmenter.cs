@@ -23,6 +23,11 @@ namespace MSDefragLib.Defragmenter
             add { defragEventDispatcher.UpdateDiskMapEvent += value; }
             remove { defragEventDispatcher.UpdateDiskMapEvent -= value; }
         }
+        public event UpdateFilteredDiskMapHandler UpdateFilteredDiskMapEvent
+        {
+            add { defragEventDispatcher.UpdateFilteredDiskMapEvent += value; }
+            remove { defragEventDispatcher.UpdateFilteredDiskMapEvent -= value; }
+        }
 
         public abstract void Start(string parameter);
         public abstract void Stop(int timeoutMs);

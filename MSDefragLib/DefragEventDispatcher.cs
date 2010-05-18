@@ -13,7 +13,8 @@ namespace MSDefragLib
         public DefragEventDispatcher()
         {
             progressStatus = 0.0;
-            changedClusters = new List<ClusterStructure>();
+            changedClusters = new List<ClusterState>();
+            filteredClusters = new List<MapClusterState>();
         }
 
         #endregion
@@ -25,13 +26,24 @@ namespace MSDefragLib
             progressStatus = (all != 0) ? progress / all : 0.0;
         }
 
-        public void AddChangedClusters(IList<ClusterStructure> clusters)
+        public void AddChangedClusters(IList<ClusterState> clusters)
         {
             lock (changedClusters)
             {
-                foreach (ClusterStructure cluster in clusters)
+                foreach (ClusterState cluster in clusters)
                 {
                     changedClusters.Add(cluster);
+                }
+            }
+        }
+
+        public void AddFilteredClusters(IList<MapClusterState> clusters)
+        {
+            lock (filteredClusters)
+            {
+                foreach (MapClusterState cluster in clusters)
+                {
+                    filteredClusters.Add(cluster);
                 }
             }
         }
@@ -40,12 +52,19 @@ namespace MSDefragLib
         {
         }
 
+        public Int16 NumFilteredClusters
+        {
+            get;
+            set;
+        }
+
         #endregion
 
         #region Events
 
         public event ProgressHandler ProgressEvent;
         public event UpdateDiskMapHandler UpdateDiskMapEvent;
+        public event UpdateFilteredDiskMapHandler UpdateFilteredDiskMapEvent;
 
         public void StartEventDispatcher()
         {
@@ -57,10 +76,11 @@ namespace MSDefragLib
 
                     SendProgressEvent();
                     SendLogMessages();
-                    UpdateDiskMap();
+                    //UpdateDiskMap();
+                    UpdateFilteredDiskMap();
                 }
             }
-            catch (ThreadInterruptedException interruptException)
+            catch (ThreadInterruptedException)
             {
             }
         }
@@ -81,12 +101,28 @@ namespace MSDefragLib
             {
                 if (changedClusters.Count > 0)
                 {
-                    IList<ClusterStructure> oldList = changedClusters;
+                    IList<ClusterState> oldList = changedClusters;
 
-                    changedClusters = new List<ClusterStructure>();
+                    changedClusters = new List<ClusterState>();
                     ChangedClusterEventArgs e = new ChangedClusterEventArgs(oldList);
 
                     UpdateDiskMapEvent(this, e);
+                }
+            }
+        }
+
+        private void UpdateFilteredDiskMap()
+        {
+            lock (filteredClusters)
+            {
+                if (filteredClusters.Count > 0)
+                {
+                    IList<MapClusterState> oldList = filteredClusters;
+
+                    filteredClusters = new List<MapClusterState>();
+                    FilteredClusterEventArgs e = new FilteredClusterEventArgs(oldList);
+
+                    UpdateFilteredDiskMapEvent(this, e);
                 }
             }
         }
@@ -100,7 +136,8 @@ namespace MSDefragLib
         #region Variables
 
         private Double progressStatus;
-        private List<ClusterStructure> changedClusters;
+        private List<ClusterState> changedClusters;
+        private List<MapClusterState> filteredClusters;
 
         #endregion
     }
@@ -119,9 +156,19 @@ namespace MSDefragLib
 
     public class ChangedClusterEventArgs : EventArgs
     {
-        public IList<ClusterStructure> m_list;
+        public IList<ClusterState> m_list;
 
-        public ChangedClusterEventArgs(IList<ClusterStructure> list)
+        public ChangedClusterEventArgs(IList<ClusterState> list)
+        {
+            m_list = list;
+        }
+    }
+
+    public class FilteredClusterEventArgs : EventArgs
+    {
+        public IList<MapClusterState> m_list;
+
+        public FilteredClusterEventArgs(IList<MapClusterState> list)
         {
             m_list = list;
         }

@@ -125,53 +125,6 @@ namespace MSDefragLib
 	        /* 57 */   "Ignoring volume '%s' because it is not a harddisk."
         };
 
-
-        /* Search case-insensitive for a substring. */
-/*
-        char *JKDefragLib::stristr(char *Haystack, char *Needle)
-        {
-	        register char *p1;
-	        register size_t i;
-
-	        if ((Haystack == NULL) || (Needle == NULL)) return(NULL);
-
-	        p1 = Haystack;
-	        i = strlen(Needle);
-
-	        while (*p1 != '\0')
-	        {
-		        if (_strnicmp(p1,Needle,i) == 0) return(p1);
-
-		        p1++;
-	        }
-
-	        return(NULL);
-        }
-*/
-
-        /* Search case-insensitive for a substring. */
-/*
-        WCHAR *JKDefragLib::stristrW(WCHAR *Haystack, WCHAR *Needle)
-        {
-	        WCHAR *p1;
-	        size_t i;
-
-	        if ((Haystack == NULL) || (Needle == NULL)) return(NULL);
-
-	        p1 = Haystack;
-	        i = wcslen(Needle);
-
-	        while (*p1 != 0)
-	        {
-		        if (_wcsnicmp(p1,Needle,i) == 0) return(p1);
-
-		        p1++;
-	        }
-
-	        return(NULL);
-        }
-*/
-
         /// <summary>
         /// Return a string with the error message for GetLastError().
         /// </summary>
@@ -1200,15 +1153,9 @@ namespace MSDefragLib
 
             PrevInUse = true;
 
-            if (clusterData == null)
+            if (diskMap == null)
             {
-                clusterData = new List<ClusterStructure>(40000000);
-
-                for (UInt64 ii = 0; ii < 40000000; ii++)
-                {
-                    ClusterStructure cluster = new ClusterStructure(ii, eClusterState.Free);
-                    clusterData.Add(cluster);
-                }
+                diskMap = new DiskMap((Int32)Data.TotalClusters);
             }
 
             do
@@ -5596,7 +5543,7 @@ namespace MSDefragLib
             m_defragEventDispatcher.UpdateProgress(progress, all);
         }
 
-        public void UpdateDiskMap(IList<ClusterStructure> clusters)
+        public void UpdateDiskMap(IList<ClusterState> clusters)
         {
             m_defragEventDispatcher.AddChangedClusters(clusters);
         }
@@ -5611,17 +5558,24 @@ namespace MSDefragLib
 
             for (UInt64 jj = clusterBegin; jj < clusterEnd; jj++)
             {
-                clusterData[(Int32)jj].State = newState;
+                diskMap.SetClusterState(jj, newState);
             }
 
-            ShowChangedClusters(clusterBegin, clusterEnd);
+            ShowFilteredClusters(clusterBegin, clusterEnd);
         }
 
         public void ShowChangedClusters(UInt64 clusterStart, UInt64 clusterEnd)
         {
-            IList<ClusterStructure> clusters = clusterData.GetRange((Int32)clusterStart, (Int32)(clusterEnd - clusterStart + 1));
+            IList<ClusterState> clusters = diskMap.GetClusters(clusterStart, clusterEnd);
 
             m_defragEventDispatcher.AddChangedClusters(clusters);
+        }
+
+        public void ShowFilteredClusters(UInt64 clusterStart, UInt64 clusterEnd)
+        {
+            IList<MapClusterState> clusters = diskMap.GetFilteredClusters(clusterStart, clusterEnd);
+
+            m_defragEventDispatcher.AddFilteredClusters(clusters);
         }
 
         #endregion
@@ -5631,7 +5585,7 @@ namespace MSDefragLib
         public DefragmenterState Data
         { get; set; }
 
-        List<ClusterStructure> clusterData = null;
+        DiskMap diskMap;
 
         #endregion
     }

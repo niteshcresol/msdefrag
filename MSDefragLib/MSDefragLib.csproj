@@ -73,6 +73,7 @@
     <Compile Include="Defragmenter\DiskDefragmenter.cs" />
     <Compile Include="Defragmenter\IDefragmenter.cs" />
     <Compile Include="Defragmenter\SimulationDefragmenter.cs" />
+    <Compile Include="DiskMap.cs" />
     <Compile Include="FileSystem\Ntfs\BitmapFile.cs" />
     <Compile Include="FileSystem\Ntfs\ByteArray.cs" />
     <Compile Include="FileSystem\Ntfs\IAttribute.cs" />
@@ -107,6 +108,7 @@
     <Compile Include="IO\IOWrapper.cs" />
     <Compile Include="IO\OverlappedBuilder.cs" />
     <Compile Include="DefragmenterState.cs" />
+    <Compile Include="MapClusterState.cs" />
     <Compile Include="MSDefragLib.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Wildcard.cs" />

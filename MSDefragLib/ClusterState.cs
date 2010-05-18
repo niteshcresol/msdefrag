@@ -22,9 +22,9 @@ namespace MSDefragLib
     /// <summary>
     /// Structure for describing cluster
     /// </summary>
-    public class ClusterStructure
+    public class ClusterState
     {
-        public ClusterStructure(UInt64 clusterIndex, eClusterState newState)
+        public ClusterState(UInt64 clusterIndex, eClusterState newState)
         {
             index = clusterIndex;
             state = newState;

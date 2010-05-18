@@ -72,7 +72,7 @@ namespace MSDefragLib.FS
             if (s == "")
                 return FS.Filesystem.FAT16;
             throw new NotImplementedException("Eventually add the strings for other filesystems");
-            return FS.Filesystem.UnknownType;
+            //return FS.Filesystem.UnknownType;
         }
     }
 }
