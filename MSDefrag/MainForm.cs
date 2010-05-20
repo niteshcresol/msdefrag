@@ -20,55 +20,21 @@ namespace MSDefrag
 
         public MainForm()
         {
-            Initialize();
+            InitializeComponent();
         }
 
         #endregion
 
         #region Initialization
 
-        public void Initialize()
+        private void ResetBitmapDisplay()
         {
-            InitializeComponent();
-
-            GuiRefreshTimer = new System.Timers.Timer(1000);
-
-            GuiRefreshTimer.Elapsed += new ElapsedEventHandler(OnRefreshGuiTimer);
-            GuiRefreshTimer.Enabled = true;
-        }
-
-        private void InitializeBitmapDisplay()
-        {
-            diskBitmap = null;
-
-            diskBitmap = new DiskBitmap(pictureBox1.Width, pictureBox1.Height, 10, m_defragmenter.NumClusters);
-            pictureBox1.Image = diskBitmap.bitmap;
+            diskBitmap = new DiskBitmap(pictureBox1, 10, Defragmenter.NumClusters);;
         }
 
         #endregion
 
         #region Graphics functions
-
-        private void RefreshDisplay()
-        {
-            _inUse = true;
-
-            if (diskBitmap != null)
-            {
-                diskBitmap.DrawAllMapSquares();
-                pictureBox1.Invalidate();
-            }
-
-            _inUse = false;
-        }
-
-        private void AddChangedClustersToQueue(IList<MSDefragLib.ClusterState> changedClusters)
-        {
-            if (changedClusters == null || diskBitmap == null)
-                return;
-
-            diskBitmap.AddChangedClusters(changedClusters);
-        }
 
         private void AddFilteredClustersToQueue(IList<MSDefragLib.MapClusterState> filteredClusters)
         {
@@ -87,29 +53,29 @@ namespace MSDefrag
             switch (mode)
             {
                 case EnumDefragType.defragTypeDefragmentation:
-                    m_defragmenter = DefragmenterFactory.Create();
+                    Defragmenter = DefragmenterFactory.Create();
                     break;
                 default:
-                    m_defragmenter = DefragmenterFactory.CreateSimulation();
+                    Defragmenter = DefragmenterFactory.CreateSimulation();
                     break;
             }
 
-            m_defragmenter.StartDefragmentation("A");
+            Defragmenter.StartDefragmentation("A");
 
-            m_defragmenter.ProgressEvent += new EventHandler<ProgressEventArgs>(UpdateProgress);
-            //m_defragmenter.UpdateDiskMapEvent += new UpdateDiskMapHandler(UpdateDiskMap);
-            m_defragmenter.UpdateFilteredDiskMapEvent += new EventHandler<FilteredClusterEventArgs>(UpdateFilteredDiskMap);
+            Defragmenter.ProgressEvent += new EventHandler<ProgressEventArgs>(UpdateProgress);
+            Defragmenter.UpdateFilteredDiskMapEvent += new EventHandler<FilteredClusterEventArgs>(UpdateFilteredDiskMap);
+            Defragmenter.LogMessageEvent += new EventHandler<LogMessagesEventArgs>(UpdateLogMessages);
 
-            InitializeBitmapDisplay();
+            ResetBitmapDisplay();
         }
 
         private void StopDefragmentation()
         {
-            m_defragmenter.StopDefragmentation(4000);
+            Defragmenter.StopDefragmentation(4000);
 
-            m_defragmenter.ProgressEvent -= new EventHandler<ProgressEventArgs>(UpdateProgress);
-            //m_defragmenter.UpdateDiskMapEvent -= new UpdateDiskMapHandler(UpdateDiskMap);
-            m_defragmenter.UpdateFilteredDiskMapEvent -= new EventHandler<FilteredClusterEventArgs>(UpdateFilteredDiskMap);
+            Defragmenter.ProgressEvent -= new EventHandler<ProgressEventArgs>(UpdateProgress);
+            Defragmenter.UpdateFilteredDiskMapEvent -= new EventHandler<FilteredClusterEventArgs>(UpdateFilteredDiskMap);
+            Defragmenter.LogMessageEvent -= new EventHandler<LogMessagesEventArgs>(UpdateLogMessages);
         }
 
         private void UpdateProgressBar(Double val)
@@ -119,9 +85,9 @@ namespace MSDefrag
             progressBarText.Text = String.Format(CultureInfo.CurrentCulture, "{0:P}", val * 0.01);
         }
 
-        private void ShowStatistics()
+        private void UpdateLogMessage(IList<LogMessage> list)
         {
-            progressBarStatistics.Text = "Frame skip: " + _skippedFrames;
+            LogMessageLabel.Text = "<" + list.Last().LogLevel.ToString() + "> " + list.Last().Message;
         }
 
         #endregion
@@ -159,16 +125,6 @@ namespace MSDefrag
             toolButtonStopDefrag.Enabled = false;
         }
 
-        private void UpdateDiskMap(object sender, EventArgs e)
-        {
-            ChangedClusterEventArgs ea = e as ChangedClusterEventArgs;
-
-            if (ea != null)
-            {
-                AddChangedClustersToQueue(ea.Clusters);
-            }
-        }
-
         private void UpdateFilteredDiskMap(object sender, EventArgs e)
         {
             FilteredClusterEventArgs ea = e as FilteredClusterEventArgs;
@@ -189,6 +145,16 @@ namespace MSDefrag
             }
         }
 
+        private void UpdateLogMessages(object sender, EventArgs e)
+        {
+            LogMessagesEventArgs ea = e as LogMessagesEventArgs;
+
+            if (ea != null)
+            {
+                BeginInvoke(new MethodInvoker(delegate { UpdateLogMessage(ea.Messages); }));
+            }
+        }
+
         private void OnGuiClosing(object sender, FormClosingEventArgs e)
         {
             StopDefragmentation();
@@ -196,43 +162,19 @@ namespace MSDefrag
 
         private void OnResizeBegin(object sender, EventArgs e)
         {
-            ignoreEvent = true;
+            diskBitmap.SetBusy(true);
         }
 
         private void OnResizeEnd(object sender, EventArgs e)
         {
-            ignoreEvent = false;
-        }
-
-        private bool _inUse;
-        private int _skippedFrames;
-
-        private void OnRefreshGuiTimer(object source, ElapsedEventArgs e)
-        {
-            if (ignoreEvent)
-                return;
-
-            if (_inUse == false)
-            {
-                RefreshDisplay();
-            }
-            else
-            {
-                _skippedFrames++;
-
-                BeginInvoke(new MethodInvoker(delegate { ShowStatistics(); })); 
-            }
+            diskBitmap.SetBusy(false);
         }
 
         #endregion
 
         #region Variables
 
-        Boolean ignoreEvent;
-
-        System.Timers.Timer GuiRefreshTimer;
-
-        private IDefragmenter m_defragmenter;
+        private IDefragmenter Defragmenter;
 
         private enum EnumDefragType
         {

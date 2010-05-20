@@ -47,7 +47,7 @@ namespace MSDefragLib
 
         private Scan m_scanNtfs;
 
-        private DefragEventDispatcher m_defragEventDispatcher;
+        public DefragEventDispatcher m_defragEventDispatcher;
 
         public MSDefragLib(DefragEventDispatcher defragEventDispatcher)
         {
@@ -1160,7 +1160,7 @@ namespace MSDefragLib
 
             do
             {
-                if (Data.Running != RunningState.RUNNING) break;
+                if (Data.Running != RunningState.Running) break;
                 if (Data.RedrawScreen != 2) break;
                 if (!Data.Disk.IsOpen) break;
 
@@ -1199,7 +1199,7 @@ namespace MSDefragLib
                 //Mask = 1;
                 IndexMax = bitmapData.Buffer.Length;
 
-                while ((Index < IndexMax) && (Data.Running == RunningState.RUNNING))
+                while ((Index < IndexMax) && (Data.Running == RunningState.Running))
                 {
                     //InUse = (bitmapData.Buffer[Index] & Mask);
                     InUse = bitmapData.Buffer[Index];
@@ -1280,7 +1280,7 @@ namespace MSDefragLib
                 ignore it. */
             for (Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
             {
-                if (Data.Running != RunningState.RUNNING) break;
+                if (Data.Running != RunningState.Running) break;
                 if (Data.RedrawScreen != 2) break;
 
                 if ((Item.LongFilename != null) &&
@@ -3213,7 +3213,7 @@ namespace MSDefragLib
 	        /* Walk through all the items one by one. */
             for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
 	        {
-                if (Data.Running != RunningState.RUNNING) break;
+                if (Data.Running != RunningState.Running) break;
 
 		        /* If requested then redraw the diskmap. */
                 if (Data.RedrawScreen == 1) ShowDiskmap();
@@ -4631,75 +4631,22 @@ namespace MSDefragLib
         /// <param name="Mode"></param>
         void DefragOnePath(String Path, UInt16 Mode)
         {
-            #region Initialize Variables
-
-            int i;
-
-	        /*  Initialize the data. Some items are inherited from the caller and are not initialized. */
-	        Data.Phase = 0;
-
-            Data.Disk = new Disk();
-
-            Data.ItemTree = null;
-
-            Data.BalanceCount = 0;
-
-            Data.MftExcludes = new List<ExcludesStruct>();
-
-            Data.MftExcludes.Add(new ExcludesStruct());
-            Data.MftExcludes.Add(new ExcludesStruct());
-            Data.MftExcludes.Add(new ExcludesStruct());
-
-            Data.MftExcludes[0].Start = 0;
-            Data.MftExcludes[0].End = 0;
-            Data.MftExcludes[1].Start = 0;
-            Data.MftExcludes[1].End = 0;
-            Data.MftExcludes[2].Start = 0;
-            Data.MftExcludes[2].End = 0;
-
-            Data.TotalClusters = 0;
-            Data.BytesPerCluster = 0;
-
-            for (i = 0; i < 3; i++) Data.Zones[i] = 0;
-
-            Data.CannotMoveDirs = 0;
-            Data.CountDirectories = 0;
-            Data.CountAllFiles = 0;
-            Data.CountFragmentedItems = 0;
-            Data.CountAllBytes = 0;
-            Data.CountFragmentedBytes = 0;
-            Data.CountAllClusters = 0;
-            Data.CountFragmentedClusters = 0;
-            Data.CountFreeClusters = 0;
-            Data.CountGaps = 0;
-            Data.BiggestGap = 0;
-            Data.CountGapsLess16 = 0;
-            Data.CountClustersLess16 = 0;
-            Data.PhaseTodo = 0;
-            Data.PhaseDone = 0;
-
-            DateTime Time = System.DateTime.Now;
-
-            #endregion
-
             #region Excludes
 
-            /* Compare the item with the Exclude masks. If a mask matches then return,
-             * ignoring the item. */
+            /* Compare the item with the Exclude masks.
+             * If a mask matches then return, ignore the item. */
             if (Data.Excludes != null)
 	        {
                 String matchedExclude = null;
 
                 foreach (String exclude in Data.Excludes)
                 {
-                    if (Wildcard.MatchMask(Path, exclude) == true) break;
+                    if (Wildcard.MatchMask(Path, exclude) == true) return;
 
-                    if ((exclude.Equals("*")) &&
-                        (exclude.Length <= 3) &&
-                        (exclude[0].ToString().ToLower().Equals(Path[0].ToString().ToLower())))
+                    if ((exclude.Equals("*")) && (exclude.Length <= 3) &&
+                        (String.Compare(exclude[0].ToString(), Path[0].ToString(), true) == 0))
                     {
                         matchedExclude = exclude;
-
                         break;
                     }
                 }
@@ -4714,9 +4661,6 @@ namespace MSDefragLib
             }
 
             #endregion
-
-            /* Clear the screen and show "Processing '%s'" message. */
-            //jkGui->ClearScreen(Data->DebugMsg[14],Path);
 
 	        /* Try to change our permissions so we can access special files and directories
              * such as "C:\System Volume Information". If this does not succeed then quietly
@@ -4998,7 +4942,7 @@ namespace MSDefragLib
             /* Defragment and optimize. */
             ShowDiskmap();
 
-            if (Data.Running == RunningState.RUNNING)
+            if (Data.Running == RunningState.Running)
             {
                 AnalyzeVolume();
 
@@ -5293,10 +5237,9 @@ namespace MSDefragLib
 */
 
         /* Run the defragger/optimizer */
-        public void RunJkDefrag(String Path, UInt16 Mode,
-            UInt16 FreeSpace, List<String> Excludes, List<String> SpaceHogs)
+        public void RunJkDefrag(String Path, UInt16 Mode, UInt16 FreeSpace, List<String> Excludes, List<String> SpaceHogs)
         {
-            Data = new DefragmenterState();
+            Data = new DefragmenterState(FreeSpace, Excludes, SpaceHogs);
 
             #region old code
 
@@ -5322,12 +5265,6 @@ namespace MSDefragLib
             //int i;
 
             #endregion
-
-            /* Copy the input values to the data struct. */
-            Data.FreeSpace = FreeSpace;
-            Data.Excludes = Excludes;
-            Data.Running = RunningState.RUNNING;
-            Data.RedrawScreen = 0;
 
             #region SpaceHogs
 
@@ -5440,10 +5377,14 @@ namespace MSDefragLib
                     ShowLogMessage(1, "NtfsDisableLastAccessUpdate is active, ignoring LastAccessTime for SpaceHogs.");
 		        }
             }
+
+            Data.SpaceHogs = spaceHogs;
+
             #endregion
 
-            /* If a Path is specified then call DefragOnePath() for that path. Otherwise call
-             * DefragMountpoints() for every disk in the system. */
+            // If a Path is specified then call DefragOnePath() for that path.
+            // Otherwise call DefragMountpoints() for every disk in the system.
+
             if (!String.IsNullOrEmpty(Path))
             {
                 DefragOnePath(Path, Mode);
@@ -5480,49 +5421,48 @@ namespace MSDefragLib
 
 			        free(Drives);
 		        }
-
-        //		jkGui->ClearScreen(Data.DebugMsg[38]);
 	        }
 */
-            Data.Running = RunningState.STOPPED;
+            Data.Running = RunningState.Stopped;
         }
 
         public void ResendAllClusters()
         {
-            ShowChangedClusters(0, Data.TotalClusters);
+            //ShowChangedClusters(0, Data.TotalClusters);
         }
 
         #region StopJKDefrag
 
         /// <summary>
-        /// Stop the defragger.
-        /// Wait for a maximum of TimeOut milliseconds for the 
-        /// defragger to stop. If TimeOut is zero then wait indefinitely.
+        /// This function stops the defragger.
+        /// 
+        /// Wait for a maximum of TimeOut milliseconds for the defragger to stop.
+        /// If TimeOut is zero then wait indefinitely.
         /// If TimeOut is negative then immediately return without waiting.
         /// </summary>
         public void StopJkDefrag(int TimeOut)
         {
-	        /* Sanity check. */
-	        if (Data.Running != RunningState.RUNNING) 
+	        // Sanity check.
+
+            if (Data.Running != RunningState.Running) 
                 return;
 
-	        /* All loops in the library check if the Running variable is set to
-	        RUNNING. If not then the loop will exit. In effect this will stop
-	        the defragger. */
-	        Data.Running = RunningState.STOPPING;
+	        // All loops in the library check if the Running variable is set to RUNNING.
+            // If not then the loop will exit. In effect this will stop the defragger.
 
-	        /* Wait for a maximum of TimeOut milliseconds for the defragger to stop.
-	        If TimeOut is zero then wait indefinitely. If TimeOut is negative then
-	        immediately return without waiting. */
+            Data.Running = RunningState.Stopping;
+
+	        // Wait for a maximum of TimeOut milliseconds for the defragger to stop.
+	        // If TimeOut is zero then wait indefinitely.
+            // If TimeOut is negative then immediately return without waiting.
+
 	        int TimeWaited = 0;
 
-	        while (TimeWaited <= TimeOut)
+            while (TimeWaited <= TimeOut && (Data.Running != RunningState.Stopped))
 	        {
-		        if (Data.Running == RunningState.STOPPED) break;
-
 		        Thread.Sleep(100);
 
-		        if (TimeOut > 0) TimeWaited = TimeWaited + 100;
+		        if (TimeOut > 0) TimeWaited += 100;
 	        }
         }
 
@@ -5530,22 +5470,14 @@ namespace MSDefragLib
 
         #region EventHandling
 
-        public void ShowLogMessage(UInt32 level, String output)
+        public void ShowLogMessage(Int16 level, String message)
         {
-            //MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
-
-            //if (level < 6)
-            //    OnShowLogMessage(e);
+            m_defragEventDispatcher.AddLogMessage(level, message);
         }
 
         public void ShowProgress(Double progress, Double all)
         {
             m_defragEventDispatcher.UpdateProgress(progress, all);
-        }
-
-        public void UpdateDiskMap(IList<ClusterState> clusters)
-        {
-            m_defragEventDispatcher.AddChangedClusters(clusters);
         }
 
         private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, eClusterState newState)
@@ -5562,13 +5494,6 @@ namespace MSDefragLib
             }
 
             ShowFilteredClusters(clusterBegin, clusterEnd);
-        }
-
-        public void ShowChangedClusters(UInt64 clusterStart, UInt64 clusterEnd)
-        {
-            IList<ClusterState> clusters = diskMap.GetClusters(clusterStart, clusterEnd);
-
-            m_defragEventDispatcher.AddChangedClusters(clusters);
         }
 
         public void ShowFilteredClusters(UInt64 clusterStart, UInt64 clusterEnd)

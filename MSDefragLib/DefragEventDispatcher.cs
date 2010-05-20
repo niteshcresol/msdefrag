@@ -12,9 +12,8 @@ namespace MSDefragLib
 
         public DefragEventDispatcher()
         {
-            //progressStatus = 0.0;
-            changedClusters = new List<ClusterState>();
             filteredClusters = new List<MapClusterState>();
+            logMessages = new List<LogMessage>();
         }
 
         #endregion
@@ -24,17 +23,6 @@ namespace MSDefragLib
         public void UpdateProgress(Double progress, Double all)
         {
             progressStatus = (all != 0) ? progress / all : 0.0;
-        }
-
-        public void AddChangedClusters(IList<ClusterState> clusters)
-        {
-            lock (changedClusters)
-            {
-                foreach (ClusterState cluster in clusters)
-                {
-                    changedClusters.Add(cluster);
-                }
-            }
         }
 
         public void AddFilteredClusters(IList<MapClusterState> clusters)
@@ -48,9 +36,14 @@ namespace MSDefragLib
             }
         }
 
-        //public void AddLogMessage(Int16 level, String message)
-        //{
-        //}
+        public void AddLogMessage(Int16 level, String message)
+        {
+            lock (logMessages)
+            {
+                LogMessage logMessage = new LogMessage(level, message);
+                logMessages.Add(logMessage);
+            }
+        }
 
         public Int16 NumberFilteredClusters
         {
@@ -62,28 +55,43 @@ namespace MSDefragLib
 
         #region Events
 
-        public event EventHandler<ProgressEventArgs> ProgressEvent;
-        //public event UpdateDiskMapEventHandler UpdateDiskMapEvent;
-        public event EventHandler<FilteredClusterEventArgs> UpdateFilteredDiskMapEvent;
-
         public void StartEventDispatcher()
         {
             try
             {
+                Int16 waitTime = 0;
+                Int16 MaxWaitTime = 999;
+
+                Int16 SleepTimer = 300;
+                Int16 MinCluster = 400;
+
                 while (true)
                 {
-                    Thread.Sleep(300);
+                    Thread.Sleep(SleepTimer);
 
                     SendProgressEvent();
-                    //SendLogMessages();
-                    //UpdateDiskMap();
-                    UpdateFilteredDiskMap();
+                    SendLogMessages();
+
+                    if (filteredClusters.Count > MinCluster || waitTime > MaxWaitTime)
+                    {
+                        UpdateFilteredDiskMap();
+
+                        waitTime = 0;
+                    }
+                    else
+                    {
+                        waitTime += SleepTimer;
+                    }
                 }
             }
             catch (ThreadInterruptedException)
             {
             }
         }
+
+        public event EventHandler<ProgressEventArgs> ProgressEvent;
+        public event EventHandler<FilteredClusterEventArgs> UpdateFilteredDiskMapEvent;
+        public event EventHandler<LogMessagesEventArgs> UpdateLogMessagesEvent;
 
         private void SendProgressEvent()
         {
@@ -94,22 +102,6 @@ namespace MSDefragLib
                 ProgressEvent(this, e);
             }
         }
-
-        //private void UpdateDiskMap()
-        //{
-        //    lock (changedClusters)
-        //    {
-        //        if (changedClusters.Count > 0)
-        //        {
-        //            IList<ClusterState> oldList = changedClusters;
-
-        //            changedClusters = new List<ClusterState>();
-        //            ChangedClusterEventArgs e = new ChangedClusterEventArgs(oldList);
-
-        //            UpdateDiskMapEvent(this, e);
-        //        }
-        //    }
-        //}
 
         private void UpdateFilteredDiskMap()
         {
@@ -127,17 +119,29 @@ namespace MSDefragLib
             }
         }
 
-        //private void SendLogMessages()
-        //{
-        //}
+        private void SendLogMessages()
+        {
+            lock (logMessages)
+            {
+                if (logMessages.Count > 0)
+                {
+                    IList<LogMessage> oldList = logMessages;
+
+                    logMessages = new List<LogMessage>();
+                    LogMessagesEventArgs e = new LogMessagesEventArgs(oldList);
+
+                    UpdateLogMessagesEvent(this, e);
+                }
+            }
+        }
 
         #endregion
 
         #region Variables
 
         private Double progressStatus;
-        private List<ClusterState> changedClusters;
         private List<MapClusterState> filteredClusters;
+        private List<LogMessage> logMessages;
 
         #endregion
     }
@@ -159,40 +163,32 @@ namespace MSDefragLib
             Progress = (Double)(value * 100);
         }
     }
-
-    public class ChangedClusterEventArgs : EventArgs
-    {
-        private IList<ClusterState> clusters;
-
-        public IList<ClusterState> Clusters
-        {
-            get
-            {
-                return clusters;
-            }
-        }
-
-        public ChangedClusterEventArgs(IList<ClusterState> list)
-        {
-            clusters = list;
-        }
-    }
-
     public class FilteredClusterEventArgs : EventArgs
     {
         private IList<MapClusterState> clusters;
 
         public IList<MapClusterState> Clusters
         {
-            get
-            {
-                return clusters;
-            }
+            get { return clusters; }
         }
 
         public FilteredClusterEventArgs(IList<MapClusterState> list)
         {
             clusters = list;
+        }
+    }
+    public class LogMessagesEventArgs : EventArgs
+    {
+        public LogMessagesEventArgs(IList<LogMessage> list)
+        {
+            messages = list;
+        }
+
+        private IList<LogMessage> messages;
+
+        public IList<LogMessage> Messages
+        {
+            get { return messages; }
         }
     }
 

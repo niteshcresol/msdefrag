@@ -31,9 +31,9 @@ namespace MSDefragLib.Defragmenter
         {
             defragEventDispatcher = new DefragEventDispatcher();
 
-            Data = new DefragmenterState();
+            Data = new DefragmenterState(10, null, null);
 
-            Data.Running = RunningState.RUNNING;
+            Data.Running = RunningState.Running;
             Data.TotalClusters = 400000;
 
             diskMap = new DiskMap((Int32)Data.TotalClusters);
@@ -45,57 +45,48 @@ namespace MSDefragLib.Defragmenter
 
             Int32 maxNumTest = 450025;
 
-            for (int testNumber = 0; testNumber < maxNumTest; testNumber++)
+            for (int testNumber = 0; (Data.Running == RunningState.Running) && (testNumber < maxNumTest); testNumber++)
             {
                 UInt64 clusterBegin = (UInt64)(rnd.Next((Int32)Data.TotalClusters));
-                UInt64 clusterEnd = (UInt64)(rnd.Next((Int32)clusterBegin, (Int32)clusterBegin + 50000));
-
-                if (clusterEnd > Data.TotalClusters)
-                {
-                    clusterEnd = Data.TotalClusters;
-                }
-
-                if (Data.Running != RunningState.RUNNING)
-                {
-                    break;
-                }
+                UInt64 clusterEnd  = Math.Min((UInt64)(rnd.Next((Int32)clusterBegin, (Int32)clusterBegin + 50000)), Data.TotalClusters);
 
                 eClusterState col = (eClusterState)rnd.Next((Int32)eClusterState.MaxValue);
 
-                for (UInt64 clusterNum = clusterBegin; (Data.Running == RunningState.RUNNING) && (clusterNum < clusterEnd); clusterNum++)
+                for (UInt64 clusterNum = clusterBegin; (Data.Running == RunningState.Running) && (clusterNum < clusterEnd); clusterNum++)
                 {
                     diskMap.SetClusterState(clusterNum, col);
                 }
 
-                //ShowChangedClusters(clusterBegin, clusterEnd);
                 ShowFilteredClusters(clusterBegin, clusterEnd);
                 ShowProgress(testNumber, maxNumTest);
 
                  Thread.Sleep(1);
             }
 
-            Data.Running = RunningState.STOPPED;
+            Data.Running = RunningState.Stopped;
         }
 
         public override void FinishDefragmentation(Int32 timeoutMs)
         {
-            /* Sanity check. */
-            if (Data.Running != RunningState.RUNNING)
+            // Sanity check
+
+            if (Data.Running != RunningState.Running)
                 return;
 
-            /* All loops in the library check if the Running variable is set to
-            RUNNING. If not then the loop will exit. In effect this will stop
-            the defragger. */
-            Data.Running = RunningState.STOPPING;
+            // All loops in the library check if the Running variable is set to Running.
+            // If not then the loop will exit. In effect this will stop the defragger.
 
-            /* Wait for a maximum of TimeOut milliseconds for the defragger to stop.
-            If TimeOut is zero then wait indefinitely. If TimeOut is negative then
-            immediately return without waiting. */
+            Data.Running = RunningState.Stopping;
+
+            // Wait for a maximum of TimeOut milliseconds for the defragger to stop.
+            // If TimeOut is zero then wait indefinitely.
+            // If TimeOut is negative then immediately return without waiting.
+
             int TimeWaited = 0;
 
             while (TimeWaited <= timeoutMs)
             {
-                if (Data.Running == RunningState.STOPPED)
+                if (Data.Running == RunningState.Stopped)
                     break;
 
                 Thread.Sleep(100);
@@ -105,7 +96,7 @@ namespace MSDefragLib.Defragmenter
 
         public override void ResendAllClusters()
         {
-            ShowChangedClusters(0, Data.TotalClusters);
+            //ShowChangedClusters(0, Data.TotalClusters);
         }
 
         public override UInt64 NumClusters
@@ -123,13 +114,6 @@ namespace MSDefragLib.Defragmenter
         //        LogMessage(this, e);
         //    }
         //}
-
-        public void ShowChangedClusters(UInt64 clusterBegin, UInt64 clusterEnd)
-        {
-            IList<ClusterState> clusters = diskMap.GetClusters(clusterBegin, clusterEnd);
-
-            defragEventDispatcher.AddChangedClusters(clusters);
-        }
 
         public void ShowFilteredClusters(UInt64 clusterBegin, UInt64 clusterEnd)
         {

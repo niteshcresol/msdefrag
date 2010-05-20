@@ -65,13 +65,13 @@ namespace MSDefragLib
         }
 
         /* Example: "\\?\Volume{08439462-3004-11da-bbca-806d6172696f}" */
-        private String VolumeName;
+        //private String VolumeName;
 
-        public String VolumeNameSlash
-        {
-            // Example: "\\?\Volume{08439462-3004-11da-bbca-806d6172696f}\"
-            get { return VolumeName + @"\"; }
-        }
+        //public String VolumeNameSlash
+        //{
+        //    // Example: "\\?\Volume{08439462-3004-11da-bbca-806d6172696f}\"
+        //    get { return VolumeName + @"\"; }
+        //}
 
         /// <summary>
         /// Returns the filesystem of this volume

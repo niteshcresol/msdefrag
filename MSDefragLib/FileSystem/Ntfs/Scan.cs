@@ -57,15 +57,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
         }
 
-        public void ShowDebug(UInt32 level, String output)
+        public void ShowDebug(Int16 level, String output)
         {
-            MSScanNtfsEventArgs e = new MSScanNtfsEventArgs(level, output);
-
-            if (level < 6)
-            {
-                //Console.Out.WriteLine(output);
-                OnShowDebug(e);
-            }
+            _lib.m_defragEventDispatcher.AddLogMessage(level, output);
         }
 
         /// <summary>
@@ -428,7 +422,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (RefInode == inodeData.Inode) continue;
 
                 // Show debug message.
-                //ShowDebug(6, "    List attribute: " + attributeList.Type.GetStreamTypeName());
+                ShowDebug(6, "    List attribute: " + attributeList.Type.GetStreamTypeName());
                 //ShowDebug(6, String.Format("      m_lowestVcn = {0:G}, RefInode = {1:G}, InodeSequence = {2:G}, m_instance = {3:G}",
                 //      attributeList.m_lowestVcn, RefInode, attributeList.m_fileReferenceNumber.m_sequenceNumber, attributeList.m_instance));
 
@@ -1093,7 +1087,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             using (_lib.Data.Disk)
             {
-                if (_lib.Data.Running != RunningState.RUNNING)
+                if (_lib.Data.Running != RunningState.Running)
                 {
                     ItemTree.Delete(_lib.Data.ItemTree);
                     _lib.Data.ItemTree = null;

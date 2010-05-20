@@ -50,7 +50,7 @@ namespace MSDefragLib.Defragmenter
 
         public override void FinishDefragmentation(Int32 timeoutMs)
         {
-            if ((lib.Data != null) && (lib.Data.Running == RunningState.RUNNING))
+            if ((lib.Data != null) && (lib.Data.Running == RunningState.Running))
             {
                 lib.StopJkDefrag(timeoutMs);
             }

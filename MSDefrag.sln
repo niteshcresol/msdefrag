@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSDefrag", "MSDefrag\MSDefrag.csproj", "{BB7279DA-B9B0-4507-96D9-34B116A5011C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSDefragLib", "MSDefragLib\MSDefragLib.csproj", "{EB340059-DCA9-4256-9643-5B066185EB5F}"

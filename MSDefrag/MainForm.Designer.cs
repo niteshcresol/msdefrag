@@ -35,6 +35,7 @@
             this.progressBar = new System.Windows.Forms.ToolStripProgressBar();
             this.progressBarText = new System.Windows.Forms.ToolStripStatusLabel();
             this.progressBarStatistics = new System.Windows.Forms.ToolStripStatusLabel();
+            this.LogMessageLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripContainer1 = new System.Windows.Forms.ToolStripContainer();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolButtonStartDefrag = new System.Windows.Forms.ToolStripButton();
@@ -69,7 +70,8 @@
             this.toolStripStatusLabel1,
             this.progressBar,
             this.progressBarText,
-            this.progressBarStatistics});
+            this.progressBarStatistics,
+            this.LogMessageLabel});
             this.statusStrip1.Location = new System.Drawing.Point(0, 0);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(830, 22);
@@ -97,9 +99,15 @@
             // 
             // progressBarStatistics
             // 
+            this.progressBarStatistics.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.None;
             this.progressBarStatistics.Name = "progressBarStatistics";
-            this.progressBarStatistics.Size = new System.Drawing.Size(71, 17);
+            this.progressBarStatistics.Size = new System.Drawing.Size(0, 17);
             this.progressBarStatistics.Text = "Frame skip: 0";
+            // 
+            // LogMessageLabel
+            // 
+            this.LogMessageLabel.Name = "LogMessageLabel";
+            this.LogMessageLabel.Size = new System.Drawing.Size(0, 17);
             // 
             // toolStripContainer1
             // 
@@ -184,8 +192,8 @@
             this.Controls.Add(this.toolStripContainer1);
             this.Name = "MainForm";
             this.Text = "Marko\'s Defragmentation Tool";
-            this.ResizeBegin += new System.EventHandler(this.OnResizeBegin);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.OnGuiClosing);
+            this.ResizeBegin += new System.EventHandler(this.OnResizeBegin);
             this.ResizeEnd += new System.EventHandler(this.OnResizeEnd);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.statusStrip1.ResumeLayout(false);
@@ -216,6 +224,7 @@
         private System.Windows.Forms.ToolStripProgressBar progressBar;
         private System.Windows.Forms.ToolStripButton toolButtonStopDefrag;
         private System.Windows.Forms.ToolStripStatusLabel progressBarStatistics;
+        private System.Windows.Forms.ToolStripStatusLabel LogMessageLabel;
     }
 }
 

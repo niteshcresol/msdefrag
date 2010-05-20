@@ -77,6 +77,11 @@ namespace MSDefragLib
 
         public void RemoveClusterState(eClusterState state)
         {
+            if (state == eClusterState.Mft || state == eClusterState.Unmovable)
+            {
+                return;
+            }
+
             numClusterStates[(Int32)state]--;
 
             if (numClusterStates[(Int32)state] < 0)

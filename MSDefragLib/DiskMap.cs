@@ -44,13 +44,6 @@ namespace MSDefragLib
             clusterData.Add(cluster);
         }
 
-        public IList<ClusterState> GetClusters(UInt64 clusterBegin, UInt64 clusterEnd)
-        {
-            IList<ClusterState> clusters = clusterData.GetRange((Int32)clusterBegin, (Int32)(clusterEnd - clusterBegin));
-
-            return clusters;
-        }
-
         public IList<MapClusterState> GetFilteredClusters(UInt64 clusterBegin, UInt64 clusterEnd)
         {
             Int32 filterBegin = 0;
@@ -59,7 +52,18 @@ namespace MSDefragLib
             filterBegin = (Int32)(clusterBegin / clustersPerFilter);
             filterEnd = (Int32)(clusterEnd / clustersPerFilter);
 
-            IList<MapClusterState> clusters = filteredClusterData.GetRange((Int32)filterBegin, (Int32)(filterEnd - filterBegin));
+            IList<MapClusterState> clusters = new List<MapClusterState>();
+            //filteredClusterData.GetRange((Int32)filterBegin, (Int32)(filterEnd - filterBegin));
+
+            foreach (MapClusterState cluster in filteredClusterData)
+            {
+                if (cluster.Dirty)
+                {
+                    clusters.Add(cluster);
+
+                    cluster.Dirty = false;
+                }
+            }
 
             return clusters;
         }
@@ -80,6 +84,8 @@ namespace MSDefragLib
                 {
                     filteredClusterData[filterIdx].AddClusterState(clusterData[cluster].State);
                 }
+
+                filteredClusterData[filterIdx].Dirty = true;
             }
         }
 
@@ -92,10 +98,22 @@ namespace MSDefragLib
 
             eClusterState state = clusterData[(Int32)idxCluster].State;
 
-            filteredClusterData[filterIdx].RemoveClusterState(state);
-            filteredClusterData[filterIdx].AddClusterState(newState);
+            if (state != newState)
+            {
+                eClusterState maxState = filteredClusterData[filterIdx].MaxState;
 
-            clusterData[(Int32)idxCluster].State = newState;
+                filteredClusterData[filterIdx].RemoveClusterState(state);
+                filteredClusterData[filterIdx].AddClusterState(newState);
+
+                eClusterState newMaxState = filteredClusterData[filterIdx].MaxState;
+
+                if (maxState != newMaxState)
+                {
+                    filteredClusterData[filterIdx].Dirty = true;
+                }
+
+                clusterData[(Int32)idxCluster].State = newState;
+            }
         }
 
         private Int32 totalClusters;

@@ -5,6 +5,7 @@ using System.Text;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using MSDefragLib;
+using System.Windows.Forms;
 
 namespace MSDefrag
 {
@@ -16,9 +17,9 @@ namespace MSDefrag
         private static Int32 borderWidth = 2;
 
         private static Color ColorUnmovable = Color.Yellow;
-        private static Color ColorAllocated = Color.LightGray;
+        private static Color ColorAllocated = Color.LightBlue;
         private static Color ColorBusy = Color.Blue;
-        private static Color ColorFree = Color.White;
+        private static Color ColorFree = Color.Gray;
         private static Color ColorFragmented = Color.Orange;
         private static Color ColorMft = Color.Pink;
         private static Color ColorSpaceHog = Color.DarkCyan;
@@ -28,11 +29,13 @@ namespace MSDefrag
 
         #region Constructor
 
-        public DiskBitmap(Int32 width, Int32 height, Int32 squareSize, UInt64 numClusters)
+        public DiskBitmap(PictureBox picture, Int32 square, UInt64 numClusters)
         {
+            DiskPicture = picture;
+            squareSize = square;
             NumClusters = numClusters;
 
-            Initialize(width, height, squareSize);
+            Initialize();
         }
 
         public void Dispose()
@@ -72,9 +75,9 @@ namespace MSDefrag
 
         #region Initialization
 
-        private void Initialize(Int32 width, Int32 height, Int32 sqSize)
+        private void Initialize()
         {
-            InitializeDiskMap(width, height, sqSize);
+            InitializeDiskMap();
 
             InitColors();
             InitBrushes();
@@ -83,9 +86,12 @@ namespace MSDefrag
             InitMapSquares();
         }
 
-        private void InitializeDiskMap(Int32 width, Int32 height, Int32 sqSize)
+        private void InitializeDiskMap()
         {
-            squareSize = sqSize > 1 ? sqSize - 1 : 1;
+            Int32 height = DiskPicture.Height;
+            Int32 width = DiskPicture.Width;
+
+            squareSize = squareSize > 1 ? squareSize - 1 : 1;
 
             Int32 availableWidth = width - borderOffset * 2 - borderWidth * 2;
             Int32 availableHeight = height - borderOffset * 2 - borderWidth * 2;
@@ -103,6 +109,8 @@ namespace MSDefrag
             offsetY = borderOffsetY + borderWidth;
 
             bitmap = new Bitmap(width, height);
+
+            DiskPicture.Image = bitmap;
 
             graphics = Graphics.FromImage(bitmap);
 
@@ -145,6 +153,8 @@ namespace MSDefrag
             graphics.DrawLine(Pens.DarkGray,
                 borderOffsetX + borderWidth - 1, borderOffsetY + mapHeight - borderWidth,
                 borderOffsetX + borderWidth - 1, borderOffsetY + borderWidth - 1);
+
+            DiskPicture.Invalidate();
         }
 
         private void InitColors()
@@ -265,13 +275,9 @@ namespace MSDefrag
 
             mapSquares = new List<MapSquare>(NumSquares);
 
-            //Double numClustersInSquare = NumClusters / (UInt64)NumSquares;
-
-            for (Int16 ii = 0; ii < NumSquares; ii++)
+            for (Int16 ii = 0; ii < NumSquares + 1; ii++)
             {
-                //UInt64 clusterBegin = (UInt64)(ii * numClustersInSquare);
-                //UInt64 clusterEnd = (UInt64)(clusterBegin + numClustersInSquare - 1);
-                mapSquares.Add(new MapSquare(/*ii, clusterBegin,clusterEnd*/));
+                mapSquares.Add(new MapSquare(ii));
             }
 
             DrawMapSquares(0, NumSquares);
@@ -313,34 +319,6 @@ namespace MSDefrag
         /// <summary>
         /// This function parses whole cluster list and updates square information.
         /// </summary>
-        public void AddChangedClusters(IList<ClusterState>clusters)
-        {
-            Double numClustersInSquare = (Double)((Double)NumClusters / (Double)NumSquares);
-
-            lock (mapSquares)
-            {
-                foreach (ClusterState cluster in clusters)
-                {
-                    UInt64 clusterIndex = cluster.Index;
-
-                    Int32 mapSquareIndex = (Int32)(clusterIndex / numClustersInSquare);
-
-                    MapSquare mapSquare = mapSquares[mapSquareIndex];
-
-                    //mapSquare.numClusterStates[(Int32)cluster.State]++;
-
-                    mapSquare.maxClusterState = cluster.State;
-
-                    //mapSquare.SetMaxColor();
-
-                    mapSquare.Dirty = true;
-                }
-            }
-        }
-
-        /// <summary>
-        /// This function parses whole cluster list and updates square information.
-        /// </summary>
         public void AddFilteredClusters(IList<MapClusterState> clusters)
         {
             lock (mapSquares)
@@ -349,9 +327,16 @@ namespace MSDefrag
                 {
                     MapSquare mapSquare = mapSquares[(Int32)cluster.Index];
 
-                    mapSquare.maxClusterState = cluster.MaxState;
+                    if (mapSquare.maxClusterState != cluster.MaxState)
+                    {
+                        mapSquare.maxClusterState = cluster.MaxState;
+                        mapSquare.Dirty = true;
+                    }
+                }
 
-                    mapSquare.Dirty = true;
+                if (SystemBusy == false)
+                {
+                    DrawMapSquares(0, numSquares);
                 }
             }
         }
@@ -362,22 +347,44 @@ namespace MSDefrag
         {
             lock (mapSquares)
             {
-                for (Int32 ii = indexBegin; ii < indexEnd; ii++)
+                List<MapSquare> dirtyMapSquares =
+                    (from a in mapSquares
+                     where a.Dirty == true && a.SquareIndex >= indexBegin && a.SquareIndex < indexEnd
+                     select a).ToList();
+
+                foreach (MapSquare mapSquare in dirtyMapSquares)
                 {
-                    Int32 posX = (Int32)(ii % NumX);
-                    Int32 posY = (Int32)(ii / NumX);
+                    Int32 squareIndex = mapSquare.SquareIndex;
+                    Point squarePosition = new Point((Int32)(squareIndex % NumX), (Int32)(squareIndex / NumX));
+                    Int32 squareMapBitmapIndex = (Int32)mapSquares[squareIndex].maxClusterState;
 
-                    Int32 squareMapBitmapIndex = (Int32)mapSquares[ii].maxClusterState;
+                    Rectangle rc = new Rectangle(offsetX + squarePosition.X * squareSize, offsetY + squarePosition.Y * squareSize, squareSize, squareSize);
 
-                    if (mapSquares[ii].Dirty == true)
-                    {
-                        graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex],
-                            offsetX + posX * squareSize, offsetY + posY * squareSize);
+                    graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex], rc.Left, rc.Top);
 
-                        mapSquares[ii].Dirty = false;
-                    }
+                    mapSquare.Dirty = false;
+                    DiskPicture.Invalidate(rc);
                 }
+
+                //for (Int32 ii = indexBegin; ii < indexEnd; ii++)
+                //{
+                //    Int32 posX = (Int32)(ii % NumX);
+                //    Int32 posY = (Int32)(ii / NumX);
+
+                //    Int32 squareMapBitmapIndex = (Int32)mapSquares[ii].maxClusterState;
+
+                //    if (mapSquares[ii].Dirty == true)
+                //    {
+                //        Rectangle rc = new Rectangle(offsetX + posX * squareSize, offsetY + posY * squareSize, squareSize, squareSize);
+
+                //        graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex], rc.Left, rc.Top);
+
+                //        mapSquares[ii].Dirty = false;
+                //    }
+                //}
             }
+
+            //DiskPicture.Invalidate();
         }
 
         public void DrawAllMapSquares()
@@ -385,11 +392,18 @@ namespace MSDefrag
             DrawMapSquares(0, NumSquares);
         }
 
+        public void SetBusy(Boolean busy)
+        {
+            SystemBusy = busy;
+        }
+
         #endregion
 
         #region Variables
 
         #region Gui
+
+        private PictureBox DiskPicture;
 
         private Int32 numSquares;
         public Int32 NumSquares { get { return numSquares; } }
@@ -415,6 +429,8 @@ namespace MSDefrag
 
         public Bitmap bitmap;
         private Graphics graphics;
+
+        private Boolean SystemBusy;
 
         #endregion
 

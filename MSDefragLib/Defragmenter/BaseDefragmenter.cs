@@ -10,24 +10,26 @@ namespace MSDefragLib.Defragmenter
     {
         #region IDefragmenter Members
 
-        private Thread defragThread;
-        private Thread eventDispatcherThread;
-
         public event EventHandler<ProgressEventArgs> ProgressEvent
         {
             add { defragEventDispatcher.ProgressEvent += value; }
             remove { defragEventDispatcher.ProgressEvent -= value; }
         }
-        //public event UpdateDiskMapEventHandler UpdateDiskMapEvent
-        //{
-        //    add { defragEventDispatcher.UpdateDiskMapEvent += value; }
-        //    remove { defragEventDispatcher.UpdateDiskMapEvent -= value; }
-        //}
+
         public event EventHandler<FilteredClusterEventArgs> UpdateFilteredDiskMapEvent
         {
             add { defragEventDispatcher.UpdateFilteredDiskMapEvent += value; }
             remove { defragEventDispatcher.UpdateFilteredDiskMapEvent -= value; }
         }
+
+        public event EventHandler<LogMessagesEventArgs> LogMessageEvent
+        {
+            add { defragEventDispatcher.UpdateLogMessagesEvent += value; }
+            remove { defragEventDispatcher.UpdateLogMessagesEvent -= value; }
+        }
+
+        private Thread defragThread;
+        private Thread eventDispatcherThread;
 
         public abstract void BeginDefragmentation(string parameter);
         public abstract void FinishDefragmentation(int timeoutMS);
