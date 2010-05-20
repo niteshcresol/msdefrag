@@ -44,7 +44,7 @@ namespace MSDefragLib.Defragmenter
 
         public override void BeginDefragmentation(string parameter)
         {
-            lib.RunJkDefrag(@"C:\*", 2, 10, null, null);
+            lib.RunJkDefrag(@"C:\temp\*", 2, 10, null, null);
             //lib.RunJkDefrag(@"T:\*", 2, 10, null, null);
         }
 

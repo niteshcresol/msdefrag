@@ -363,7 +363,7 @@ namespace MSDefrag
                     graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex], rc.Left, rc.Top);
 
                     mapSquare.Dirty = false;
-                    DiskPicture.Invalidate(rc);
+                    //DiskPicture.Invalidate(rc);
                 }
 
                 //for (Int32 ii = indexBegin; ii < indexEnd; ii++)
@@ -384,7 +384,7 @@ namespace MSDefrag
                 //}
             }
 
-            //DiskPicture.Invalidate();
+            DiskPicture.Invalidate();
         }
 
         public void DrawAllMapSquares()

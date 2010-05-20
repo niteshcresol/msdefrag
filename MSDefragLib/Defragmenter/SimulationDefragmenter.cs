@@ -36,23 +36,23 @@ namespace MSDefragLib.Defragmenter
             Data.Running = RunningState.Running;
             Data.TotalClusters = 400000;
 
-            diskMap = new DiskMap((Int32)Data.TotalClusters);
+            diskMap = new DiskMap((UInt32)Data.TotalClusters);
         }
 
         public override void BeginDefragmentation(string parameter)
         {
             Random rnd = new Random();
 
-            Int32 maxNumTest = 450025;
+            UInt32 maxNumTest = 450025;
 
-            for (int testNumber = 0; (Data.Running == RunningState.Running) && (testNumber < maxNumTest); testNumber++)
+            for (UInt32 testNumber = 0; (Data.Running == RunningState.Running) && (testNumber < maxNumTest); testNumber++)
             {
-                UInt64 clusterBegin = (UInt64)(rnd.Next((Int32)Data.TotalClusters));
-                UInt64 clusterEnd  = Math.Min((UInt64)(rnd.Next((Int32)clusterBegin, (Int32)clusterBegin + 50000)), Data.TotalClusters);
+                UInt32 clusterBegin = (UInt32)(rnd.Next((Int32)Data.TotalClusters));
+                UInt32 clusterEnd = Math.Min((UInt32)(rnd.Next((Int32)clusterBegin, (Int32)clusterBegin + 50000)), (UInt32)Data.TotalClusters);
 
                 eClusterState col = (eClusterState)rnd.Next((Int32)eClusterState.MaxValue);
 
-                for (UInt64 clusterNum = clusterBegin; (Data.Running == RunningState.Running) && (clusterNum < clusterEnd); clusterNum++)
+                for (UInt32 clusterNum = clusterBegin; (Data.Running == RunningState.Running) && (clusterNum < clusterEnd); clusterNum++)
                 {
                     diskMap.SetClusterState(clusterNum, col);
                 }
@@ -117,7 +117,7 @@ namespace MSDefragLib.Defragmenter
 
         public void ShowFilteredClusters(UInt64 clusterBegin, UInt64 clusterEnd)
         {
-            IList<MapClusterState> clusters = diskMap.GetFilteredClusters(clusterBegin, clusterEnd);
+            IList<MapClusterState> clusters = diskMap.GetFilteredClusters((UInt32)clusterBegin, (UInt32)clusterEnd);
 
             defragEventDispatcher.AddFilteredClusters(clusters);
         }

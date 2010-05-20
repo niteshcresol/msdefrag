@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MSDefragLib
 {
-    public enum eClusterState : int
+    public enum eClusterState
     {
         Free = 0,
         Allocated,
@@ -24,16 +24,16 @@ namespace MSDefragLib
     /// </summary>
     public class ClusterState
     {
-        public ClusterState(UInt64 clusterIndex, eClusterState newState)
+        public ClusterState(UInt32 clusterIndex, eClusterState newState)
         {
             index = clusterIndex;
             state = newState;
             isDirty = true;
         }
 
-        private UInt64 index;
+        private UInt32 index;
 
-        public UInt64 Index { get { return index; } }
+        public UInt32 Index { get { return index; } }
 
         private eClusterState state;
 

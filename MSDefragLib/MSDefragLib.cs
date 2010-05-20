@@ -1155,7 +1155,7 @@ namespace MSDefragLib
 
             if (diskMap == null)
             {
-                diskMap = new DiskMap((Int32)Data.TotalClusters);
+                diskMap = new DiskMap((UInt32)Data.TotalClusters);
             }
 
             do
@@ -5488,7 +5488,7 @@ namespace MSDefragLib
                 return;
             }
 
-            for (UInt64 jj = clusterBegin; jj < clusterEnd; jj++)
+            for (UInt32 jj = (UInt32)clusterBegin; jj < clusterEnd; jj++)
             {
                 diskMap.SetClusterState(jj, newState);
             }
@@ -5498,7 +5498,8 @@ namespace MSDefragLib
 
         public void ShowFilteredClusters(UInt64 clusterStart, UInt64 clusterEnd)
         {
-            IList<MapClusterState> clusters = diskMap.GetFilteredClusters(clusterStart, clusterEnd);
+            IList<MapClusterState> clusters = diskMap.GetFilteredClusters((UInt32)clusterStart, (UInt32)clusterEnd);
+            //IList<MapClusterState> clusters = diskMap.GetFilteredClusters(clusterStart, clusterEnd);
 
             m_defragEventDispatcher.AddFilteredClusters(clusters);
         }
