@@ -11,18 +11,6 @@ using MSDefragLib.IO;
 
 namespace MSDefragLib.FileSystem.Ntfs
 {
-    public class MSScanNtfsEventArgs : EventArgs
-    {
-        public UInt32 m_level;
-        public String m_message;
-
-        public MSScanNtfsEventArgs(UInt32 level, String message)
-        {
-            m_level = level;
-            m_message = message;
-        }
-    }
-
     class Scan
     {
         const UInt64 MFTBUFFERSIZE = 256 * 1024;
@@ -45,21 +33,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             return String.Format("[Scan {0}]", _lib.Data.Disk.MountPoint);
         }
 
-        public delegate void ShowDebugHandler(object sender, EventArgs e);
-
-        public event ShowDebugHandler ShowDebugEvent;
-
-        protected virtual void OnShowDebug(EventArgs e)
-        {
-            if (ShowDebugEvent != null)
-            {
-                ShowDebugEvent(this, e);
-            }
-        }
-
         public void ShowDebug(Int16 level, String output)
         {
-            _lib.m_defragEventDispatcher.AddLogMessage(level, output);
+            _lib.ShowLogMessage(level, output);
         }
 
         /// <summary>
@@ -67,6 +43,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// </summary>
         /// <param name="expression"></param>
         /// <param name="message"></param>
+        /// <param name="throwException"></param>
         public void ErrorCheck(Boolean expression, String message, Boolean throwException)
         {
             if (expression && throwException)
@@ -99,7 +76,8 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             UInt32 record = BitConverter.ToUInt32(buffer.Bytes, 0);
 
-            /* If this is not a FILE record then return FALSE. */
+            // If this is not a FILE record then return FALSE
+
             if (record != 0x454c4946)
             {
                 ShowDebug(2, "This is not a valid MFT record, it does not begin with FILE (maybe trying to read past the end?).");
@@ -109,6 +87,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             // Walk through all the sectors and restore the last 2 bytes with the value
             // from the Usa array. If we encounter bad sector data then return with false. 
+
             UInt16Array BufferW = buffer.ToUInt16Array(0, buffer.GetLength());
 
             RecordHeader RecordHeader = RecordHeader.Parse(Helper.BinaryReader(buffer));
@@ -120,6 +99,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             for (UInt16 i = 1; i < RecordHeader.UsaCount; i++)
             {
                 // Check if we are inside the buffer.
+
                 if (index * sizeof(UInt16) >= (Int64)BufLength)
                 {
                     ShowDebug(0, "Warning: USA data indicates that data is missing, the MFT may be corrupt.");
@@ -127,7 +107,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 // Check if the last 2 bytes of the sector contain the Update Sequence Number.
-                // If not then return FALSE.
+
                 if (BufferW.GetValue(index) != UpdateSequenceArray.GetValue(0))
                 {
                     ShowDebug(0, "Error: USA fixup word is not equal to the Update Sequence Number, the MFT may be corrupt.");
@@ -135,6 +115,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 // Replace the last 2 bytes in the sector with the value from the Usa array.
+
                 BufferW.SetValue(index, UpdateSequenceArray.GetValue(i));
 
                 index += Increment;
@@ -168,43 +149,48 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ErrorCheck((runData == null) || (runDataLength == 0), "Sanity check failed!", true);
 
-            // We have to round up the WantedLength to the nearest sector. For some
-            // reason or other Microsoft has decided that raw reading from disk can
-            // only be done by whole sector, even though ReadFile() accepts it's
-            // parameters in bytes.
-            //
+            // We have to round up the WantedLength to the nearest sector.
+            // For some reason or other Microsoft has decided that raw reading from disk can
+            // only be done by whole sector, even though ReadFile() accepts its parameters in bytes.
+
             if (wantedLength % diskInfo.BytesPerSector > 0)
             {
                 wantedLength += diskInfo.BytesPerSector - wantedLength % diskInfo.BytesPerSector;
             }
+
             if (wantedLength >= UInt32.MaxValue)
             {
                 ShowDebug(2, String.Format("    Cannot read {0:G} bytes, maximum is {1:G}.", wantedLength, UInt32.MaxValue));
                 return null;
             }
+
             ByteArray Buffer = new ByteArray((Int64)wantedLength);
 
             // Walk through the RunData and read the requested data from disk.
+
             Int64 Lcn = 0;
             UInt64 Vcn = 0;
 
             UInt64 runLength;
             Int64 runOffset;
+
             while (RunData.Parse(runData, out runLength, out runOffset))
             {
                 Lcn += runOffset;
 
                 // Ignore virtual extents.
+
                 if (runOffset == 0)
                     continue;
 
                 // I don't think the RunLength can ever be zero, but just in case.
+
                 if (runLength == 0)
                     continue;
 
-                // Determine how many and which bytes we want to read. If we don't need
-                // any bytes from this extent then loop.
-                //
+                // Determine how many and which bytes we want to read.
+                // If we don't need any bytes from this extent then loop.
+
                 UInt64 ExtentVcn = Vcn * diskInfo.BytesPerCluster;
                 UInt64 ExtentLcn = (UInt64)((UInt64)Lcn * diskInfo.BytesPerCluster);
 
@@ -229,7 +215,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (ExtentLength == 0) continue;
 
                 // Read the data from the disk. If error then return FALSE.
-                //
+
                 ShowDebug(6, String.Format("    Reading {0:G} bytes from Lcn={1:G} into offset={2:G}",
                     ExtentLength, ExtentLcn / diskInfo.BytesPerCluster,
                     ExtentVcn - offset));
@@ -346,6 +332,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             if (fileName != null) 
                 Length += fileName.Length;
+
             if (streamName != null)
                 Length += streamName.Length;
 
@@ -354,13 +341,17 @@ namespace MSDefragLib.FileSystem.Ntfs
             if (Length == 3) return (null);
 
             StringBuilder p1 = new StringBuilder();
+
             if (!String.IsNullOrEmpty(fileName))
                 p1.Append(fileName);
+
             p1.Append(":");
 
             if (!String.IsNullOrEmpty(streamName))
                 p1.Append(streamName);
+
             p1.Append(":");
+
             p1.Append(type.GetStreamTypeName());
 
             return p1.ToString();
@@ -1070,8 +1061,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (_lib.Data.PhaseDone % 50 == 0)
                 {
                     _lib.ShowProgress((Double)(_lib.Data.PhaseDone), (Double)_lib.Data.PhaseTodo);
-//                    UpdateProgress((Double)((Double)(_lib.Data.PhaseDone) / (Double)_lib.Data.PhaseTodo));
-//                    ShowDebug(1, "Done: " + _lib.Data.PhaseDone + "/" + _lib.Data.PhaseTodo);
+                    ShowDebug(1, "Done: " + _lib.Data.PhaseDone + "/" + _lib.Data.PhaseTodo);
                 }
 
                 InodeNumber++;

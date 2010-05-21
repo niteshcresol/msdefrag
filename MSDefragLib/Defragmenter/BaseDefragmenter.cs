@@ -10,6 +10,8 @@ namespace MSDefragLib.Defragmenter
     {
         #region IDefragmenter Members
 
+        #region Events
+
         public event EventHandler<ProgressEventArgs> ProgressEvent
         {
             add { defragEventDispatcher.ProgressEvent += value; }
@@ -28,6 +30,8 @@ namespace MSDefragLib.Defragmenter
             remove { defragEventDispatcher.UpdateLogMessagesEvent -= value; }
         }
 
+        #endregion
+
         private Thread defragThread;
         private Thread eventDispatcherThread;
 
@@ -35,8 +39,8 @@ namespace MSDefragLib.Defragmenter
         public abstract void FinishDefragmentation(int timeoutMS);
 
         public abstract UInt64 NumClusters { get; set; }
-
         public abstract void ResendAllClusters();
+        public abstract void SetNumFilteredClusters(UInt32 num);
 
         public abstract DefragEventDispatcher defragEventDispatcher { get; set; }
 

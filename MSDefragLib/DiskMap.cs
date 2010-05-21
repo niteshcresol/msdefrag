@@ -7,23 +7,36 @@ namespace MSDefragLib
 {
     class DiskMap
     {
+        private const Boolean UseDictionary = false;
+
         public DiskMap(UInt32 numClusters)
         {
             // Initialize clusters
 
             totalClusters = numClusters;
 
-            clusterData2 = new Dictionary<UInt32, ClusterState>();
-            //clusterData = new List<ClusterState>(numClusters);
+            if (UseDictionary)
+            {
+                clusterData2 = new Dictionary<UInt32, ClusterState>();
+            }
+            else
+            {
+                clusterData = new List<ClusterState>((Int32)numClusters);
 
-            //for (UInt64 ii = 0; ii < (UInt64)totalClusters; ii++)
-            //{
-            //    AddCluster(ii, eClusterState.Free);
-            //}
+                for (UInt32 ii = 0; ii < (UInt32)totalClusters; ii++)
+                {
+                    AddCluster(ii, eClusterState.Free);
+                }
+            }
 
             // Initialize filtered clusters
+            SetNumFilteredClusters(5733);
+        }
 
-            numFilteredClusters = 5733;
+        public void SetNumFilteredClusters(UInt32 num)
+        {
+            numFilteredClusters = num;
+
             filteredClusterData2 = new Dictionary<UInt32, MapClusterState>();
             //filteredClusterData = new List<MapClusterState>(numFilteredClusters);
 
@@ -38,43 +51,66 @@ namespace MSDefragLib
             clustersPerFilter = (Double)totalClusters / (Double)numFilteredClusters;
 
             // Initialize filters with current values
-
             ReparseClusters();
         }
 
         public void AddCluster(UInt32 idxCluster, eClusterState state)
         {
             ClusterState cluster = new ClusterState(idxCluster, state);
-            //clusterData.Add(cluster);
-            clusterData2[idxCluster] = cluster;
+
+            if (UseDictionary)
+            {
+                clusterData2[idxCluster] = cluster;
+            }
+            else
+            {
+                clusterData.Add(cluster);
+            }
         }
 
         public IList<MapClusterState> GetFilteredClusters(UInt32 clusterBegin, UInt32 clusterEnd)
         {
-            UInt64 filterBegin = 0;
-            UInt64 filterEnd = 1;
+            List<MapClusterState> clusters;
 
-            filterBegin = (UInt64)(clusterBegin / clustersPerFilter);
-            filterEnd = (UInt64)(clusterEnd / clustersPerFilter);
+            lock (filteredClusterData2)
+            {
+                UInt64 filterBegin = 0;
+                UInt64 filterEnd = 1;
 
-            //IList<MapClusterState> clusters = new List<MapClusterState>();
-            ////filteredClusterData.GetRange((Int32)filterBegin, (Int32)(filterEnd - filterBegin));
+                filterBegin = (UInt64)(clusterBegin / clustersPerFilter);
+                filterEnd = (UInt64)(clusterEnd / clustersPerFilter);
 
-            //foreach (MapClusterState cluster in filteredClusterData)
-            //{
-            //    if (cluster.Dirty)
-            //    {
-            //        clusters.Add(cluster);
+                //IList<MapClusterState> clusters = new List<MapClusterState>();
+                ////filteredClusterData.GetRange((Int32)filterBegin, (Int32)(filterEnd - filterBegin));
 
-            //        cluster.Dirty = false;
-            //    }
-            //}
+                //foreach (MapClusterState cluster in filteredClusterData)
+                //{
+                //    if (cluster.Dirty)
+                //    {
+                //        clusters.Add(cluster);
 
-            List<MapClusterState> clusters =
-                (from a in filteredClusterData2
-                //(from a in filteredClusterData
-                 where a.Value.Dirty == true && a.Value.Index >= filterBegin && a.Value.Index < filterEnd
-                 select a.Value).ToList();
+                //        cluster.Dirty = false;
+                //    }
+                //}
+
+
+                if (UseDictionary)
+                {
+                    clusters =
+                    (from a in filteredClusterData2
+                     //(from a in filteredClusterData
+                     where a.Value.Dirty == true && a.Value.Index >= filterBegin && a.Value.Index <= filterEnd
+                     select a.Value).ToList();
+                }
+                else
+                {
+                    clusters =
+                    (from a in filteredClusterData2
+                     //(from a in filteredClusterData
+                     where a.Value.Dirty == true && a.Value.Index >= filterBegin && a.Value.Index <= filterEnd
+                     select a.Value).ToList();
+                }
+            }
 
             return clusters;
         }
@@ -84,82 +120,110 @@ namespace MSDefragLib
             UInt32 filterBegin = 0;
             UInt32 filterEnd = numFilteredClusters;
 
-            for (UInt32 filterIdx = filterBegin; filterIdx <= filterEnd; filterIdx++)
+            lock (filteredClusterData2)
             {
-                UInt32 clusterBegin = (UInt32)(filterIdx * clustersPerFilter);
-                UInt32 clusterEnd = (UInt32)(clusterBegin + clustersPerFilter);
 
-                filteredClusterData2[filterIdx].ResetClusterStates();
-                //filteredClusterData[filterIdx].ResetClusterStates();
-
-                for (UInt32 cluster = clusterBegin; cluster < clusterEnd && cluster < totalClusters; cluster++)
+                for (UInt32 filterIdx = filterBegin; filterIdx <= filterEnd; filterIdx++)
                 {
-                    eClusterState state = eClusterState.Free;
+                    UInt32 clusterBegin = (UInt32)(filterIdx * clustersPerFilter);
+                    UInt32 clusterEnd = (UInt32)(clusterBegin + clustersPerFilter);
 
-                    if (clusterData2.ContainsKey(cluster))
+                    filteredClusterData2[filterIdx].ResetClusterStates();
+                    //filteredClusterData[filterIdx].ResetClusterStates();
+
+                    for (UInt32 cluster = clusterBegin; cluster < clusterEnd && cluster < totalClusters; cluster++)
                     {
-                        state = clusterData2[cluster].State;
-                    }
-                    filteredClusterData2[filterIdx].AddClusterState(state);
-                    //filteredClusterData[filterIdx].AddClusterState(state);
-                    //filteredClusterData[filterIdx].AddClusterState(clusterData[cluster].State);
-                }
+                        eClusterState state = eClusterState.Free;
 
-                filteredClusterData2[filterIdx].Dirty = true;
-                //filteredClusterData[filterIdx].Dirty = true;
+                        if (UseDictionary)
+                        {
+                            if (clusterData2.ContainsKey(cluster))
+                            {
+                                state = clusterData2[cluster].State;
+                            }
+                        }
+                        else
+                        {
+                            state = clusterData[(Int32)cluster].State;
+                        }
+
+                        filteredClusterData2[filterIdx].AddClusterState(state);
+                        //filteredClusterData[filterIdx].AddClusterState(state);
+                    }
+
+                    filteredClusterData2[filterIdx].Dirty = true;
+                    //filteredClusterData[filterIdx].Dirty = true;
+                }
             }
         }
 
         public void SetClusterState(UInt32 idxCluster, eClusterState newState)
         {
-
-            UInt32 filterIdx = (UInt32)(idxCluster / (UInt32)clustersPerFilter);
-
-            if (filterIdx > numFilteredClusters) filterIdx = numFilteredClusters;
-
-            eClusterState state = eClusterState.Busy;
-
-            if (clusterData2.ContainsKey(idxCluster))
+            lock (filteredClusterData2)
             {
-                state = clusterData2[idxCluster].State;
-            }
-            else
-            {
-                AddCluster(idxCluster, eClusterState.Free);
-            }
 
-            //eClusterState state = clusterData[(Int32)idxCluster].State;
+                UInt32 filterIdx = (UInt32)(idxCluster / (UInt32)clustersPerFilter);
 
-            if (state != newState)
-            {
-                eClusterState maxState = filteredClusterData2[filterIdx].MaxState;
-                //eClusterState maxState = filteredClusterData[filterIdx].MaxState;
+                if (filterIdx > numFilteredClusters)
+                    filterIdx = numFilteredClusters;
 
-                filteredClusterData2[filterIdx].RemoveClusterState(state);
-                //filteredClusterData[filterIdx].RemoveClusterState(state);
-                filteredClusterData2[filterIdx].AddClusterState(newState);
-                //filteredClusterData[filterIdx].AddClusterState(newState);
+                eClusterState state = eClusterState.Busy;
 
-                eClusterState newMaxState = filteredClusterData2[filterIdx].MaxState;
-                //eClusterState newMaxState = filteredClusterData[filterIdx].MaxState;
-
-                if (maxState != newMaxState)
+                if (UseDictionary)
                 {
-                    filteredClusterData2[filterIdx].Dirty = true;
-                    //filteredClusterData[filterIdx].Dirty = true;
+                    if (clusterData2.ContainsKey(idxCluster))
+                    {
+                        state = clusterData2[idxCluster].State;
+                    }
+                    else
+                    {
+                        AddCluster(idxCluster, eClusterState.Free);
+                    }
+                }
+                else
+                {
+                    state = clusterData[(Int32)idxCluster].State;
                 }
 
-                clusterData2[idxCluster].State = newState;
-                //clusterData[(Int32)idxCluster].State = newState;
+                //eClusterState state = clusterData[(Int32)idxCluster].State;
+
+                if (state != newState)
+                {
+                    eClusterState maxState = filteredClusterData2[filterIdx].MaxState;
+                    //eClusterState maxState = filteredClusterData[filterIdx].MaxState;
+
+                    filteredClusterData2[filterIdx].RemoveClusterState(state);
+                    //filteredClusterData[filterIdx].RemoveClusterState(state);
+                    filteredClusterData2[filterIdx].AddClusterState(newState);
+                    //filteredClusterData[filterIdx].AddClusterState(newState);
+
+                    eClusterState newMaxState = filteredClusterData2[filterIdx].MaxState;
+                    //eClusterState newMaxState = filteredClusterData[filterIdx].MaxState;
+
+                    if (maxState != newMaxState)
+                    {
+                        filteredClusterData2[filterIdx].Dirty = true;
+                        //filteredClusterData[filterIdx].Dirty = true;
+                    }
+
+                    if (UseDictionary)
+                    {
+                        clusterData2[idxCluster].State = newState;
+                    }
+                    else
+                    {
+                        clusterData[(Int32)idxCluster].State = newState;
+                    }
+                }
             }
         }
 
         private UInt32 totalClusters;
         //private Int32 totalClusters;
-        public UInt32 numFilteredClusters;
+        private  UInt32 numFilteredClusters;
         Double clustersPerFilter;
 
-        //List<ClusterState> clusterData;
+        List<ClusterState> clusterData;
         Dictionary<UInt32, MapClusterState> filteredClusterData2;
         //List<MapClusterState> filteredClusterData;
         Dictionary<UInt32, ClusterState> clusterData2;

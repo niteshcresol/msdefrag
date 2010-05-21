@@ -30,18 +30,6 @@ namespace MSDefragLib.Defragmenter
 
         #region IDefragmenter Members
 
-        //public override event LogMessageHandler LogMessage
-        //{
-        //    add
-        //    {
-        //        lib.LogMessageEvent += value;
-        //    }
-        //    remove
-        //    {
-        //        lib.LogMessageEvent -= value;
-        //    }
-        //}
-
         public override void BeginDefragmentation(string parameter)
         {
             lib.RunJkDefrag(@"C:\temp\*", 2, 10, null, null);
@@ -53,6 +41,14 @@ namespace MSDefragLib.Defragmenter
             if ((lib.Data != null) && (lib.Data.Running == RunningState.Running))
             {
                 lib.StopJkDefrag(timeoutMs);
+            }
+        }
+
+        public override void SetNumFilteredClusters(UInt32 num)
+        {
+            if (lib != null)
+            {
+                lib.SetNumFilteredClusters(num);
             }
         }
 
@@ -73,6 +69,7 @@ namespace MSDefragLib.Defragmenter
 
             set {}
         }
+
         #endregion
     }
 }

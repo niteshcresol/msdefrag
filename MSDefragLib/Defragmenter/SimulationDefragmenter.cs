@@ -105,6 +105,11 @@ namespace MSDefragLib.Defragmenter
             set {}
         }
 
+        public override void SetNumFilteredClusters(UInt32 num)
+        {
+            diskMap.SetNumFilteredClusters(num);
+        }
+
         #endregion
 
         //private void OnLogMessage(EventArgs e)

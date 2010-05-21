@@ -47,14 +47,13 @@ namespace MSDefragLib
 
         private Scan m_scanNtfs;
 
-        public DefragEventDispatcher m_defragEventDispatcher;
+        private DefragEventDispatcher m_defragEventDispatcher;
 
         public MSDefragLib(DefragEventDispatcher defragEventDispatcher)
         {
             m_defragEventDispatcher = defragEventDispatcher;
 
             m_scanNtfs = new Scan(this);
-            //m_scanNtfs.ShowDebugEvent += new Scan.ShowDebugHandler(ScanNtfsEventHandler);
         }
 
         /*
@@ -1101,15 +1100,14 @@ namespace MSDefragLib
 				        }
 			        }
 
-			        /* Colorize the segment. */
-                    DrawCluster(fragment.Lcn + SegmentBegin - RealVcn,
-                        fragment.Lcn + SegmentEnd - RealVcn,Color);
+			        // Colorize the segment.
+                    DrawCluster(fragment.Lcn + SegmentBegin - RealVcn, fragment.Lcn + SegmentEnd - RealVcn,Color);
 
-			        /* Next segment. */
+			        // Next segment
 			        SegmentBegin = SegmentEnd;
 		        }
 
-		        /* Next fragment. */
+		        // Next fragment
 		        RealVcn += fragment.Length;
 	        }
         }
@@ -1144,10 +1142,8 @@ namespace MSDefragLib
                 return;
             }
 
-            /* Clear screen. */
-            //m_jkGui->ClearScreen(NULL);
+            // Show the map of all the clusters in use
 
-            /* Show the map of all the clusters in use. */
             UInt64 Lcn = 0;
             UInt64 ClusterStart = 0;
 
@@ -1275,12 +1271,12 @@ namespace MSDefragLib
                 DrawCluster(Data.MftExcludes[i].Start, Data.MftExcludes[i].End, eClusterState.Mft);
             }
 
-            /* Colorize all the files on the screen.
-                Note: the "$BadClus" file on NTFS disks maps the entire disk, so we have to
-                ignore it. */
-            for (Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
+            // Colorize all the files on the screen.
+            //
+            //  Note: the "$BadClus" file on NTFS disks maps the entire disk, so we have to ignore it.
+
+            for (Item = ItemTree.TreeSmallest(Data.ItemTree); (Data.Running == RunningState.Running) && Item != null; Item = ItemTree.TreeNext(Item))
             {
-                if (Data.Running != RunningState.Running) break;
                 if (Data.RedrawScreen != 2) break;
 
                 if ((Item.LongFilename != null) &&
@@ -5499,9 +5495,13 @@ namespace MSDefragLib
         public void ShowFilteredClusters(UInt64 clusterStart, UInt64 clusterEnd)
         {
             IList<MapClusterState> clusters = diskMap.GetFilteredClusters((UInt32)clusterStart, (UInt32)clusterEnd);
-            //IList<MapClusterState> clusters = diskMap.GetFilteredClusters(clusterStart, clusterEnd);
 
             m_defragEventDispatcher.AddFilteredClusters(clusters);
+        }
+
+        public void SetNumFilteredClusters(UInt32 num)
+        {
+            diskMap.SetNumFilteredClusters(num);
         }
 
         #endregion

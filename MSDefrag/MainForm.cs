@@ -29,7 +29,7 @@ namespace MSDefrag
 
         private void ResetBitmapDisplay()
         {
-            diskBitmap = new DiskBitmap(pictureBox1, 10, Defragmenter.NumClusters);;
+            diskBitmap = new DiskBitmap(pictureBox1, 10, Defragmenter.NumClusters);
         }
 
         #endregion
@@ -87,6 +87,14 @@ namespace MSDefrag
 
         private void UpdateLogMessage(IList<LogMessage> list)
         {
+            foreach (LogMessage message in list)
+            {
+                if (message.LogLevel < 6)
+                {
+                    Console.WriteLine(DateTime.Now.ToShortTimeString() + "\t Log [" + message.LogLevel + "] : " + message.Message);
+                }
+            }
+
             LogMessageLabel.Text = "<" + list.Last().LogLevel.ToString() + "> " + list.Last().Message;
         }
 
@@ -160,14 +168,28 @@ namespace MSDefrag
             StopDefragmentation();
         }
 
+        private Size pictureSize;
+
         private void OnResizeBegin(object sender, EventArgs e)
         {
-            diskBitmap.SetBusy(true);
+            pictureSize = pictureBox1.Size;
+
+            if (diskBitmap != null)
+                diskBitmap.SetBusy(true);
         }
 
         private void OnResizeEnd(object sender, EventArgs e)
         {
-            diskBitmap.SetBusy(false);
+            Size newPictureSize = pictureBox1.Size;
+
+            //if (pictureSize.Height != newPictureSize.Height || pictureSize.Width != newPictureSize.Width)
+            //{
+            //    diskBitmap = new DiskBitmap(pictureBox1, 10, Defragmenter.NumClusters);
+            //    Defragmenter.SetNumFilteredClusters((UInt32)diskBitmap.NumSquares);
+            //}
+
+            if (diskBitmap != null)
+                diskBitmap.SetBusy(false);
         }
 
         #endregion
