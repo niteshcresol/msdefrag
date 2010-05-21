@@ -57,18 +57,18 @@ namespace MSDefragLib.Defragmenter
             lib.ResendAllClusters();
         }
 
-        public override UInt64 NumClusters
-        {
-            get
-            {
-                if (lib.Data != null)
-                    return lib.Data.TotalClusters;
-                else
-                    return 0;
-            }
+        //public override UInt64 NumClusters
+        //{
+        //    get
+        //    {
+        //        if (lib.Data != null)
+        //            return lib.Data.TotalClusters;
+        //        else
+        //            return 0;
+        //    }
 
-            set {}
-        }
+        //    set {}
+        //}
 
         #endregion
     }

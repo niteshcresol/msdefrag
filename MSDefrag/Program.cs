@@ -21,7 +21,7 @@ namespace MSDefrag
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Unhandled exception!", ex.ToString(), MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, MessageBoxOptions.RightAlign);
+                MessageBox.Show(ex.ToString(), "Unhandled exception!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

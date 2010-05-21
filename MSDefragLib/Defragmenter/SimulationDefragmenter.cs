@@ -14,14 +14,8 @@ namespace MSDefragLib.Defragmenter
 
         public override DefragEventDispatcher defragEventDispatcher
         {
-            get
-            {
-                return m_eventDispatcher;
-            }
-            set
-            {
-                m_eventDispatcher = value;
-            }
+            get { return m_eventDispatcher; }
+            set { m_eventDispatcher = value; }
         }
 
         private DefragmenterState Data;
@@ -99,12 +93,6 @@ namespace MSDefragLib.Defragmenter
             //ShowChangedClusters(0, Data.TotalClusters);
         }
 
-        public override UInt64 NumClusters
-        {
-            get { return Data.TotalClusters; }
-            set {}
-        }
-
         public override void SetNumFilteredClusters(UInt32 num)
         {
             diskMap.SetNumFilteredClusters(num);
@@ -112,30 +100,18 @@ namespace MSDefragLib.Defragmenter
 
         #endregion
 
-        //private void OnLogMessage(EventArgs e)
-        //{
-        //    if (LogMessage != null)
-        //    {
-        //        LogMessage(this, e);
-        //    }
-        //}
-
         public void ShowFilteredClusters(UInt64 clusterBegin, UInt64 clusterEnd)
         {
             IList<MapClusterState> clusters = diskMap.GetFilteredClusters((UInt32)clusterBegin, (UInt32)clusterEnd);
 
             defragEventDispatcher.AddFilteredClusters(clusters);
         }
-        /*
-        public void ShowLogMessage(UInt32 level, String message)
+
+        public void ShowLogMessage(Int16 level, String message)
         {
-            //if (level < 6)
-            //{
-            //    FileSystem.Ntfs.MSScanNtfsEventArgs e = new FileSystem.Ntfs.MSScanNtfsEventArgs(level, output);
-            //    OnLogMessage(e);
-            //}
+            defragEventDispatcher.AddLogMessage(level, message);
         }
-        */
+
         public void ShowProgress(Double progress, Double all)
         {
             defragEventDispatcher.UpdateProgress(progress, all);

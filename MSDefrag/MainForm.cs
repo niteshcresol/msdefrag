@@ -29,7 +29,9 @@ namespace MSDefrag
 
         private void ResetBitmapDisplay()
         {
-            diskBitmap = new DiskBitmap(pictureBox1, 10, Defragmenter.NumClusters);
+            pictureBox1.Initialize(10);
+
+            Defragmenter.SetNumFilteredClusters((UInt32)pictureBox1.NumSquares);
         }
 
         #endregion
@@ -38,10 +40,10 @@ namespace MSDefrag
 
         private void AddFilteredClustersToQueue(IList<MSDefragLib.MapClusterState> filteredClusters)
         {
-            if (filteredClusters == null || diskBitmap == null)
+            if (filteredClusters == null)
                 return;
 
-            diskBitmap.AddFilteredClusters(filteredClusters);
+            pictureBox1.AddFilteredClusters(filteredClusters);
         }
 
         #endregion
@@ -174,8 +176,7 @@ namespace MSDefrag
         {
             pictureSize = pictureBox1.Size;
 
-            if (diskBitmap != null)
-                diskBitmap.SetBusy(true);
+            pictureBox1.SetBusy(true);
         }
 
         private void OnResizeEnd(object sender, EventArgs e)
@@ -188,8 +189,7 @@ namespace MSDefrag
             //    Defragmenter.SetNumFilteredClusters((UInt32)diskBitmap.NumSquares);
             //}
 
-            if (diskBitmap != null)
-                diskBitmap.SetBusy(false);
+            pictureBox1.SetBusy(false);
         }
 
         #endregion
@@ -203,8 +203,6 @@ namespace MSDefrag
             defragTypeDefragmentation = 0,
             defragTypeSimulation
         }
-
-        DiskBitmap diskBitmap;
 
         #endregion
     }

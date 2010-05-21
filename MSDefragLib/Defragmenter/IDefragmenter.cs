@@ -18,7 +18,7 @@ namespace MSDefragLib
 
         void SetNumFilteredClusters(UInt32 num);
 
-        UInt64 NumClusters { get; set; }
+        //UInt64 NumClusters { get; set; }
 
         DefragEventDispatcher defragEventDispatcher { get; set; }
     }

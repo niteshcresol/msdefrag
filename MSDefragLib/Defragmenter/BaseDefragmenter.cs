@@ -38,7 +38,7 @@ namespace MSDefragLib.Defragmenter
         public abstract void BeginDefragmentation(string parameter);
         public abstract void FinishDefragmentation(int timeoutMS);
 
-        public abstract UInt64 NumClusters { get; set; }
+        //public abstract UInt64 NumClusters { get; set; }
         public abstract void ResendAllClusters();
         public abstract void SetNumFilteredClusters(UInt32 num);
 

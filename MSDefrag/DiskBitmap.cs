@@ -9,7 +9,7 @@ using System.Windows.Forms;
 
 namespace MSDefrag
 {
-    class DiskBitmap : IDisposable
+    class DiskBitmap : PictureBox
     {
         #region Settings
 
@@ -29,16 +29,11 @@ namespace MSDefrag
 
         #region Constructor
 
-        public DiskBitmap(PictureBox picture, Int32 square, UInt64 numClusters)
+        public DiskBitmap()
         {
-            DiskPicture = picture;
-            squareSize = square;
-            NumClusters = numClusters;
-
-            Initialize();
         }
 
-        public void Dispose()
+        public void Dispose44()
         {
             foreach (SolidBrush br in solidBrushes)
             {
@@ -75,9 +70,11 @@ namespace MSDefrag
 
         #region Initialization
 
-        private void Initialize()
+        public void Initialize(Int32 square)
         {
-            InitializeDiskMap();
+            squareSize = square;
+
+            InitializeDiskMap(square);
 
             InitColors();
             InitBrushes();
@@ -86,12 +83,12 @@ namespace MSDefrag
             InitMapSquares();
         }
 
-        private void InitializeDiskMap()
+        public void InitializeDiskMap(Int32 square)
         {
-            Int32 height = DiskPicture.Height;
-            Int32 width = DiskPicture.Width;
+            Int32 height = Height;
+            Int32 width = Width;
 
-            squareSize = squareSize > 1 ? squareSize - 1 : 1;
+            squareSize = square > 1 ? square - 1 : 1;
 
             Int32 availableWidth = width - borderOffset * 2 - borderWidth * 2;
             Int32 availableHeight = height - borderOffset * 2 - borderWidth * 2;
@@ -110,7 +107,7 @@ namespace MSDefrag
 
             bitmap = new Bitmap(width, height);
 
-            DiskPicture.Image = bitmap;
+            Image = bitmap;
 
             graphics = Graphics.FromImage(bitmap);
 
@@ -154,7 +151,7 @@ namespace MSDefrag
                 borderOffsetX + borderWidth - 1, borderOffsetY + mapHeight - borderWidth,
                 borderOffsetX + borderWidth - 1, borderOffsetY + borderWidth - 1);
 
-            DiskPicture.Invalidate();
+            Invalidate();
         }
 
         private void InitColors()
@@ -384,7 +381,7 @@ namespace MSDefrag
                 //}
             }
 
-            DiskPicture.Invalidate();
+            Invalidate();
         }
 
         public void DrawAllMapSquares()
@@ -402,8 +399,6 @@ namespace MSDefrag
         #region Variables
 
         #region Gui
-
-        private PictureBox DiskPicture;
 
         private Int32 numSquares;
         public Int32 NumSquares { get { return numSquares; } }
@@ -437,8 +432,6 @@ namespace MSDefrag
         #region Other
 
         private List<MapSquare> mapSquares;
-
-        private UInt64 NumClusters;
 
         #endregion
 
