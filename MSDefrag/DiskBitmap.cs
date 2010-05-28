@@ -33,48 +33,15 @@ namespace MSDefrag
         {
         }
 
-        public void Dispose44()
-        {
-            foreach (SolidBrush br in solidBrushes)
-            {
-                br.Dispose();
-            }
-
-            foreach (LinearGradientBrush br in linearHorizontalGradientBrushes)
-            {
-                br.Dispose();
-            }
-
-            foreach (LinearGradientBrush br in linearVerticalGradientBrushes)
-            {
-                br.Dispose();
-            }
-
-            foreach (LinearGradientBrush br in linearForwardDiagonalGradientBrushes)
-            {
-                br.Dispose();
-            }
-
-            foreach (Bitmap b in mapSquareBitmaps)
-            {
-                b.Dispose();
-            }
-
-            bitmap.Dispose();
-            graphics.Dispose();
-
-            GC.SuppressFinalize(this);
-        }
-
         #endregion
 
         #region Initialization
 
-        public void Initialize(Int32 square)
+        public void Initialize(GuiSettings guiSettings)
         {
-            squareSize = square;
+            squareSize = guiSettings.SquareSize;
 
-            InitializeDiskMap(square);
+            InitializeDiskMap(squareSize);
 
             InitColors();
             InitBrushes();
@@ -113,7 +80,7 @@ namespace MSDefrag
 
             Rectangle rec = new Rectangle(borderOffsetX, borderOffsetY, mapWidth, mapHeight);
 
-            LinearGradientBrush brush = new LinearGradientBrush(rec, Color.Black, Color.Black, LinearGradientMode.ForwardDiagonal);
+            LinearGradientBrush brush = new LinearGradientBrush(rec, Color.Black, Color.White, LinearGradientMode.ForwardDiagonal);
 
             graphics.FillRectangle(brush, rec);
 

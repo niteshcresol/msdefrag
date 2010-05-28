@@ -7,10 +7,12 @@ namespace MSDefragLib
 {
     class DiskMap
     {
-        private const Boolean UseDictionary = false;
+        private Boolean UseDictionary;
 
         public DiskMap(UInt32 numClusters)
         {
+            UseDictionary = false;
+
             // Initialize clusters
 
             totalClusters = numClusters;
@@ -37,25 +39,21 @@ namespace MSDefragLib
         {
             numFilteredClusters = num;
 
-            lock (filteredClusterData2)
+            filteredClusterData2 = new Dictionary<UInt32, MapClusterState>();
+            //filteredClusterData = new List<MapClusterState>(numFilteredClusters);
+
+            for (UInt32 ii = 0; ii <= numFilteredClusters; ii++)
             {
+                MapClusterState cluster = new MapClusterState((UInt64)ii);
 
-                filteredClusterData2 = new Dictionary<UInt32, MapClusterState>();
-                //filteredClusterData = new List<MapClusterState>(numFilteredClusters);
-
-                for (UInt32 ii = 0; ii <= numFilteredClusters; ii++)
-                {
-                    MapClusterState cluster = new MapClusterState((UInt64)ii);
-
-                    filteredClusterData2.Add(ii, cluster);
-                    //filteredClusterData.Add(cluster);
-                }
-
-                clustersPerFilter = (Double)totalClusters / (Double)numFilteredClusters;
-
-                // Initialize filters with current values
-                ReparseClusters();
+                filteredClusterData2.Add(ii, cluster);
+                //filteredClusterData.Add(cluster);
             }
+
+            clustersPerFilter = (Double)totalClusters / (Double)numFilteredClusters;
+
+            // Initialize filters with current values
+            ReparseClusters();
         }
 
         public void AddCluster(UInt32 idxCluster, eClusterState state)
