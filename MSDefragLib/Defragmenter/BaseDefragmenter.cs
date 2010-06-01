@@ -8,7 +8,56 @@ namespace MSDefragLib.Defragmenter
 {
     public abstract class BaseDefragmenter : IDefragmenter
     {
-        #region IDefragmenter Members
+        #region EventDispatcher
+
+        public DefragEventDispatcher defragEventDispatcher { get; set; }
+
+        public BaseDefragmenter()
+        {
+            defragEventDispatcher = new DefragEventDispatcher();
+        }
+
+        public void ShowLogMessage(Int16 level, String message)
+        {
+            defragEventDispatcher.AddLogMessage(level, message);
+        }
+
+        public void ShowFilteredClusters(UInt64 clusterBegin, UInt64 clusterEnd)
+        {
+            IList<MapClusterState> clusters = diskMap.GetFilteredClusters((UInt32)clusterBegin, (UInt32)clusterEnd);
+
+            defragEventDispatcher.AddFilteredClusters(clusters);
+        }
+
+        public void ShowProgress(Double progress, Double all)
+        {
+            defragEventDispatcher.UpdateProgress(progress, all);
+        }
+
+        public void ResendAllClusters()
+        {
+            if (diskMap == null || defragEventDispatcher == null)
+            {
+                return;
+            }
+
+            IList<MapClusterState> clusters = diskMap.GetAllFilteredClusters();
+            defragEventDispatcher.AddFilteredClusters(clusters);
+        }
+
+        public void Pause()
+        {
+            defragEventDispatcher.Pause = true;
+        }
+
+        public void Continue()
+        {
+            defragEventDispatcher.Continue = true;
+
+            ResendAllClusters();
+        }
+
+        #endregion
 
         #region Events
 
@@ -32,19 +81,13 @@ namespace MSDefragLib.Defragmenter
 
         #endregion
 
+        #region Threading
+
         private Thread defragThread;
         private Thread eventDispatcherThread;
 
         public abstract void BeginDefragmentation(string parameter);
         public abstract void FinishDefragmentation(int timeoutMS);
-
-        //public abstract UInt64 NumClusters { get; set; }
-        public abstract void ResendAllClusters();
-        public abstract void SetNumFilteredClusters(UInt32 num);
-
-        public abstract DefragEventDispatcher defragEventDispatcher { get; set; }
-
-        //public abstract event LogMessageHandler LogMessage;
 
         public void StartDefragmentation(string parameter)
         {
@@ -57,16 +100,6 @@ namespace MSDefragLib.Defragmenter
             eventDispatcherThread.Priority = ThreadPriority.Normal;
 
             eventDispatcherThread.Start();
-        }
-
-        private void Defrag()
-        {
-            BeginDefragmentation(@"C:\*");
-        }
-
-        private void EventDispatcher()
-        {
-            defragEventDispatcher.StartEventDispatcher();
         }
 
         public void StopDefragmentation(int timeoutMs)
@@ -84,6 +117,58 @@ namespace MSDefragLib.Defragmenter
                 eventDispatcherThread.Interrupt();
                 eventDispatcherThread.Join();
             }
+        }
+
+        private void Defrag()
+        {
+            BeginDefragmentation(@"C:\*");
+        }
+
+        private void EventDispatcher()
+        {
+            defragEventDispatcher.StartEventDispatcher();
+        }
+
+        #endregion
+
+        #region DiskMap
+
+        public abstract DiskMap diskMap { get; set; }
+
+        public UInt32 NumFilteredClusters
+        {
+            get
+            {
+                if (diskMap != null)
+                {
+                    return diskMap.NumFilteredClusters;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+
+            set
+            {
+                if (diskMap != null)
+                {
+                    diskMap.NumFilteredClusters = value;
+                    ResendAllClusters();
+                }
+            }
+        }
+
+        public void DisplayCluster(UInt64 clusterBegin, UInt64 clusterEnd, eClusterState newState)
+        {
+            if (diskMap == null)
+            {
+                return;
+            }
+
+            diskMap.SetClusterState((UInt32)clusterBegin, (UInt32)clusterEnd, newState, defragEventDispatcher.Pause == false);
+
+            ShowFilteredClusters(clusterBegin, clusterEnd);
         }
 
         #endregion

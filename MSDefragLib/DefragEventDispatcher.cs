@@ -57,6 +57,9 @@ namespace MSDefragLib
 
         public void StartEventDispatcher()
         {
+            Pause = false;
+            Continue = false;
+
             try
             {
                 Int16 waitTime = 0;
@@ -105,6 +108,20 @@ namespace MSDefragLib
 
         private void UpdateFilteredDiskMap()
         {
+            if (Continue == true)
+            {
+                //filteredClusters = new List<MapClusterState>();
+
+                Pause = false;
+                Continue = false;
+            }
+
+            if (Pause == true)
+            {
+                filteredClusters = new List<MapClusterState>();
+                return;
+            }
+
             lock (filteredClusters)
             {
                 if (filteredClusters.Count > 0)
@@ -142,6 +159,9 @@ namespace MSDefragLib
         private Double progressStatus;
         private List<MapClusterState> filteredClusters;
         private List<LogMessage> logMessages;
+
+        public Boolean Pause;
+        public Boolean Continue;
 
         #endregion
     }

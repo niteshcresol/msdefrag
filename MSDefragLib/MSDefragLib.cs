@@ -35,6 +35,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using MSDefragLib.FileSystem.Ntfs;
 using System.Timers;
+using MSDefragLib.Defragmenter;
 
 namespace MSDefragLib
 {
@@ -47,14 +48,16 @@ namespace MSDefragLib
 
         private Scan m_scanNtfs;
 
-        private DefragEventDispatcher m_defragEventDispatcher;
+        private BaseDefragmenter defragmenter;
 
-        public MSDefragLib(DefragEventDispatcher defragEventDispatcher)
+        public MSDefragLib(BaseDefragmenter parent)
         {
-            m_defragEventDispatcher = defragEventDispatcher;
+            defragmenter = parent;
 
             m_scanNtfs = new Scan(this);
         }
+
+        #region messages
 
         /*
             All the text strings used by the defragger library.
@@ -123,6 +126,8 @@ namespace MSDefragLib
 	        /* 56 */   "I am a spacehog in zone 1 or 2.",
 	        /* 57 */   "Ignoring volume '%s' because it is not a harddisk."
         };
+
+        #endregion
 
         /// <summary>
         /// Return a string with the error message for GetLastError().
@@ -1101,7 +1106,7 @@ namespace MSDefragLib
 			        }
 
 			        // Colorize the segment.
-                    DrawCluster(fragment.Lcn + SegmentBegin - RealVcn, fragment.Lcn + SegmentEnd - RealVcn,Color);
+                    defragmenter.DisplayCluster(fragment.Lcn + SegmentBegin - RealVcn, fragment.Lcn + SegmentEnd - RealVcn, Color);
 
 			        // Next segment
 			        SegmentBegin = SegmentEnd;
@@ -1213,15 +1218,15 @@ namespace MSDefragLib
                             (Lcn == Data.MftExcludes[1].End) ||
                             (Lcn == Data.MftExcludes[2].End))
                         {
-                            DrawCluster(ClusterStart,Lcn,eClusterState.Unmovable);
+                            defragmenter.DisplayCluster(ClusterStart, Lcn, eClusterState.Unmovable);
                         }
                         else if (PrevInUse == false)
                         {
-                            DrawCluster(ClusterStart,Lcn,eClusterState.Free);
+                            defragmenter.DisplayCluster(ClusterStart, Lcn, eClusterState.Free);
                         }
                         else
                         {
-                            DrawCluster(ClusterStart,Lcn,eClusterState.Allocated);
+                            defragmenter.DisplayCluster(ClusterStart, Lcn, eClusterState.Allocated);
                         }
 
                         InUse = true;
@@ -1231,13 +1236,13 @@ namespace MSDefragLib
 
                     if ((PrevInUse == false) && (InUse != false))
                     {          /* Free */
-                        DrawCluster(ClusterStart, Lcn, eClusterState.Free);
+                        defragmenter.DisplayCluster(ClusterStart, Lcn, eClusterState.Free);
                         ClusterStart = Lcn;
                     }
 
                     if ((PrevInUse != false) && (InUse == false))
                     {          /* In use */
-                        DrawCluster(ClusterStart, Lcn, eClusterState.Allocated);
+                        defragmenter.DisplayCluster(ClusterStart, Lcn, eClusterState.Allocated);
                         ClusterStart = Lcn;
                     }
 
@@ -1253,12 +1258,12 @@ namespace MSDefragLib
             {
                 if (PrevInUse == false)
                 {          /* Free */
-                    DrawCluster(ClusterStart, Lcn, eClusterState.Free);
+                    defragmenter.DisplayCluster(ClusterStart, Lcn, eClusterState.Free);
                 }
 
                 if (PrevInUse != false)
                 {          /* In use */
-                    DrawCluster(ClusterStart, Lcn, eClusterState.Allocated);
+                    defragmenter.DisplayCluster(ClusterStart, Lcn, eClusterState.Allocated);
                 }
             }
 
@@ -1268,7 +1273,7 @@ namespace MSDefragLib
                 if (Data.RedrawScreen != 2) break;
                 if (Data.MftExcludes[i].Start <= 0) continue;
 
-                DrawCluster(Data.MftExcludes[i].Start, Data.MftExcludes[i].End, eClusterState.Mft);
+                defragmenter.DisplayCluster(Data.MftExcludes[i].Start, Data.MftExcludes[i].End, eClusterState.Mft);
             }
 
             // Colorize all the files on the screen.
@@ -3193,7 +3198,7 @@ namespace MSDefragLib
 	        /* Update the diskmap with the CLUSTER_COLORS. */
             Data.PhaseDone = Data.PhaseTodo;
 
-            DrawCluster(0, Data.TotalClusters, eClusterState.Free);
+            defragmenter.DisplayCluster(0, Data.TotalClusters, eClusterState.Free);
 
 	        /* Setup the progress counter and the file/dir counters. */
             Data.PhaseDone = 0;
@@ -3340,7 +3345,7 @@ namespace MSDefragLib
 	        /* Force the percentage to 100%. */
             Data.PhaseDone = Data.PhaseTodo;
 
-            DrawCluster(0,0,0);
+            defragmenter.DisplayCluster(0, 0, 0);
 
 	        /* Calculate the begin of the zone's. */
 	        CalculateZones();
@@ -5422,11 +5427,6 @@ namespace MSDefragLib
             Data.Running = RunningState.Stopped;
         }
 
-        public void ResendAllClusters()
-        {
-            //ShowChangedClusters(0, Data.TotalClusters);
-        }
-
         #region StopJKDefrag
 
         /// <summary>
@@ -5468,40 +5468,12 @@ namespace MSDefragLib
 
         public void ShowLogMessage(Int16 level, String message)
         {
-            m_defragEventDispatcher.AddLogMessage(level, message);
+            defragmenter.ShowLogMessage(level, message);
         }
 
         public void ShowProgress(Double progress, Double all)
         {
-            m_defragEventDispatcher.UpdateProgress(progress, all);
-        }
-
-        private void DrawCluster(UInt64 clusterBegin, UInt64 clusterEnd, eClusterState newState)
-        {
-            if ((clusterBegin < 0) || (clusterBegin > Data.TotalClusters) ||
-                (clusterEnd < 0) || (clusterEnd > Data.TotalClusters))
-            {
-                return;
-            }
-
-            for (UInt32 jj = (UInt32)clusterBegin; jj < clusterEnd; jj++)
-            {
-                diskMap.SetClusterState(jj, newState);
-            }
-
-            ShowFilteredClusters(clusterBegin, clusterEnd);
-        }
-
-        public void ShowFilteredClusters(UInt64 clusterStart, UInt64 clusterEnd)
-        {
-            IList<MapClusterState> clusters = diskMap.GetFilteredClusters((UInt32)clusterStart, (UInt32)clusterEnd);
-
-            m_defragEventDispatcher.AddFilteredClusters(clusters);
-        }
-
-        public void SetNumFilteredClusters(UInt32 num)
-        {
-            diskMap.SetNumFilteredClusters(num);
+            defragmenter.ShowProgress(progress, all);
         }
 
         #endregion
@@ -5511,7 +5483,7 @@ namespace MSDefragLib
         public DefragmenterState Data
         { get; set; }
 
-        DiskMap diskMap;
+        public DiskMap diskMap;
 
         #endregion
     }

@@ -114,6 +114,7 @@
     <Compile Include="MapClusterState.cs" />
     <Compile Include="MSDefragLib.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SimulationLib.cs" />
     <Compile Include="Wildcard.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

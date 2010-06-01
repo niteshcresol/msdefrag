@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MSDefragLib
 {
-    class DiskMap
+    public class DiskMap
     {
         private Boolean UseDictionary;
 
@@ -31,29 +31,46 @@ namespace MSDefragLib
                 }
             }
 
-            // Initialize filtered clusters
-            SetNumFilteredClusters(5733);
+            NumFilteredClusters = 5733;
         }
 
-        public void SetNumFilteredClusters(UInt32 num)
+        public UInt32 NumFilteredClusters
         {
-            numFilteredClusters = num;
-
-            filteredClusterData2 = new Dictionary<UInt32, MapClusterState>();
-            //filteredClusterData = new List<MapClusterState>(numFilteredClusters);
-
-            for (UInt32 ii = 0; ii <= numFilteredClusters; ii++)
+            get { return numFilteredClusters; }
+            set
             {
-                MapClusterState cluster = new MapClusterState((UInt64)ii);
+                numFilteredClusters = value;
 
-                filteredClusterData2.Add(ii, cluster);
-                //filteredClusterData.Add(cluster);
+                if (filteredClusterData2 == null)
+                {
+                    filteredClusterData2 = new Dictionary<UInt32, MapClusterState>();
+                }
+                else
+                {
+                    lock (filteredClusterData2)
+                    {
+                        filteredClusterData2 = new Dictionary<UInt32, MapClusterState>();
+                    }
+                }
+
+                //filteredClusterData = new List<MapClusterState>(numFilteredClusters);
+
+                lock (filteredClusterData2)
+                {
+                    for (UInt32 ii = 0; ii <= numFilteredClusters; ii++)
+                    {
+                        MapClusterState cluster = new MapClusterState((UInt64)ii);
+
+                        filteredClusterData2.Add(ii, cluster);
+                        //filteredClusterData.Add(cluster);
+                    }
+                }
+
+                clustersPerFilter = (Double)totalClusters / (Double)numFilteredClusters;
+
+                // Initialize filters with current values
+                ReparseClusters();
             }
-
-            clustersPerFilter = (Double)totalClusters / (Double)numFilteredClusters;
-
-            // Initialize filters with current values
-            ReparseClusters();
         }
 
         public void AddCluster(UInt32 idxCluster, eClusterState state)
@@ -117,45 +134,93 @@ namespace MSDefragLib
             return clusters;
         }
 
+        public IList<MapClusterState> GetAllFilteredClusters()
+        {
+            List<MapClusterState> clusters;
+
+            lock (filteredClusterData2)
+            {
+                UInt64 filterBegin = 0;
+                UInt64 filterEnd = numFilteredClusters;
+
+                if (UseDictionary)
+                {
+                    clusters =
+                    (from a in filteredClusterData2
+                     //(from a in filteredClusterData
+                     where a.Value.Index >= filterBegin && a.Value.Index <= filterEnd
+                     select a.Value).ToList();
+                }
+                else
+                {
+                    clusters =
+                    (from a in filteredClusterData2
+                     //(from a in filteredClusterData
+                     where a.Value.Index >= filterBegin && a.Value.Index <= filterEnd
+                     select a.Value).ToList();
+                }
+            }
+
+            return clusters;
+        }
+
         private void ReparseClusters()
         {
             UInt32 filterBegin = 0;
             UInt32 filterEnd = numFilteredClusters;
 
-            for (UInt32 filterIdx = filterBegin; filterIdx <= filterEnd; filterIdx++)
+            lock (filteredClusterData2)
             {
-                UInt32 clusterBegin = (UInt32)(filterIdx * clustersPerFilter);
-                UInt32 clusterEnd = (UInt32)(clusterBegin + clustersPerFilter);
 
-                filteredClusterData2[filterIdx].ResetClusterStates();
-                //filteredClusterData[filterIdx].ResetClusterStates();
-
-                for (UInt32 cluster = clusterBegin; cluster < clusterEnd && cluster < totalClusters; cluster++)
+                for (UInt32 filterIdx = filterBegin; filterIdx <= filterEnd; filterIdx++)
                 {
-                    eClusterState state = eClusterState.Free;
+                    UInt32 clusterBegin = (UInt32)(filterIdx * clustersPerFilter);
+                    UInt32 clusterEnd = (UInt32)(clusterBegin + clustersPerFilter);
 
-                    if (UseDictionary)
+                    filteredClusterData2[filterIdx].ResetClusterStates();
+                    //filteredClusterData[filterIdx].ResetClusterStates();
+
+                    for (UInt32 cluster = clusterBegin; cluster < clusterEnd && cluster < totalClusters; cluster++)
                     {
-                        if (clusterData2.ContainsKey(cluster))
+                        eClusterState state = eClusterState.Free;
+
+                        if (UseDictionary)
                         {
-                            state = clusterData2[cluster].State;
+                            if (clusterData2.ContainsKey(cluster))
+                            {
+                                state = clusterData2[cluster].State;
+                            }
                         }
-                    }
-                    else
-                    {
-                        state = clusterData[(Int32)cluster].State;
+                        else
+                        {
+                            state = clusterData[(Int32)cluster].State;
+                        }
+
+                        filteredClusterData2[filterIdx].AddClusterState(state);
+                        //filteredClusterData[filterIdx].AddClusterState(state);
                     }
 
-                    filteredClusterData2[filterIdx].AddClusterState(state);
-                    //filteredClusterData[filterIdx].AddClusterState(state);
+                    filteredClusterData2[filterIdx].Dirty = true;
+                    //filteredClusterData[filterIdx].Dirty = true;
                 }
-
-                filteredClusterData2[filterIdx].Dirty = true;
-                //filteredClusterData[filterIdx].Dirty = true;
             }
         }
 
-        public void SetClusterState(UInt32 idxCluster, eClusterState newState)
+        public void SetClusterState(UInt32 clusterBegin, UInt32 clusterEnd, eClusterState newState, Boolean updateFilteredClusters)
+        {
+            if ((clusterBegin < 0) || (clusterBegin > totalClusters) ||
+                (clusterEnd < 0) || (clusterEnd > totalClusters))
+            {
+                return;
+            }
+
+            for (UInt32 idxCluster = clusterBegin; idxCluster < clusterEnd; idxCluster++)
+            {
+                SetClusterState(idxCluster, newState, updateFilteredClusters);
+            }
+        }
+
+        public void SetClusterState(UInt32 idxCluster, eClusterState newState, Boolean updateFilteredClusters)
         {
             lock (filteredClusterData2)
             {
@@ -187,21 +252,27 @@ namespace MSDefragLib
 
                 if (state != newState)
                 {
-                    eClusterState maxState = filteredClusterData2[filterIdx].MaxState;
-                    //eClusterState maxState = filteredClusterData[filterIdx].MaxState;
-
-                    filteredClusterData2[filterIdx].RemoveClusterState(state);
-                    //filteredClusterData[filterIdx].RemoveClusterState(state);
-                    filteredClusterData2[filterIdx].AddClusterState(newState);
-                    //filteredClusterData[filterIdx].AddClusterState(newState);
-
-                    eClusterState newMaxState = filteredClusterData2[filterIdx].MaxState;
-                    //eClusterState newMaxState = filteredClusterData[filterIdx].MaxState;
-
-                    if (maxState != newMaxState)
+                    try
                     {
-                        filteredClusterData2[filterIdx].Dirty = true;
-                        //filteredClusterData[filterIdx].Dirty = true;
+                        eClusterState maxState = filteredClusterData2[filterIdx].MaxState;
+                        //eClusterState maxState = filteredClusterData[filterIdx].MaxState;
+
+                        filteredClusterData2[filterIdx].RemoveClusterState(state);
+                        //filteredClusterData[filterIdx].RemoveClusterState(state);
+                        filteredClusterData2[filterIdx].AddClusterState(newState);
+                        //filteredClusterData[filterIdx].AddClusterState(newState);
+
+                        eClusterState newMaxState = filteredClusterData2[filterIdx].MaxState;
+                        //eClusterState newMaxState = filteredClusterData[filterIdx].MaxState;
+
+                        if (maxState != newMaxState)
+                        {
+                            filteredClusterData2[filterIdx].Dirty = true;
+                            //filteredClusterData[filterIdx].Dirty = true;
+                        }
+                    }
+                    catch (System.Collections.Generic.KeyNotFoundException)
+                    {
                     }
 
                     if (UseDictionary)
@@ -217,7 +288,6 @@ namespace MSDefragLib
         }
 
         private UInt32 totalClusters;
-        //private Int32 totalClusters;
         private  UInt32 numFilteredClusters;
         Double clustersPerFilter;
 

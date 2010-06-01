@@ -36,7 +36,7 @@ namespace MSDefrag
         {
             diskBitmap.Initialize(GuiSettings);
 
-            Defragmenter.SetNumFilteredClusters((UInt32)diskBitmap.NumSquares);
+            Defragmenter.NumFilteredClusters = (UInt32)diskBitmap.NumSquares;
         }
 
         #endregion
@@ -186,10 +186,8 @@ namespace MSDefrag
         {
             pictureSize = diskBitmap.Size;
 
-            //Defragmenter.Pause();
-
+            Defragmenter.Pause();
             diskBitmap.SetBusy(true);
-
         }
 
         private void OnResizeEnd(object sender, EventArgs e)
@@ -199,10 +197,10 @@ namespace MSDefrag
             if (pictureSize.Height != newPictureSize.Height || pictureSize.Width != newPictureSize.Width)
             {
                 diskBitmap.Initialize(GuiSettings);
-                //Defragmenter.SetNumFilteredClusters((UInt32)diskBitmap.NumSquares);
-                //Defragmenter.Continue();
+                Defragmenter.NumFilteredClusters = (UInt32)diskBitmap.NumSquares;
             }
 
+            Defragmenter.Continue();
             diskBitmap.SetBusy(false);
         }
 

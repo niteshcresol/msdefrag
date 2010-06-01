@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -7,26 +6,12 @@ namespace MSDefragLib.Defragmenter
 {
     internal class DiskDefragmenter : BaseDefragmenter
     {
-        private DefragEventDispatcher m_defragEventDispatcher = new DefragEventDispatcher();
-
-        public override DefragEventDispatcher defragEventDispatcher
+        public DiskDefragmenter()
         {
-            get
-            {
-                return m_defragEventDispatcher;
-            }
-            set
-            {
-                m_defragEventDispatcher = value;
-            }
+            lib = new MSDefragLib(this);
         }
 
         private MSDefragLib lib;
-
-        public DiskDefragmenter()
-        {
-            lib = new MSDefragLib(m_defragEventDispatcher);
-        }
 
         #region IDefragmenter Members
 
@@ -44,31 +29,11 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public override void SetNumFilteredClusters(UInt32 num)
+        public override DiskMap diskMap
         {
-            if (lib != null)
-            {
-                lib.SetNumFilteredClusters(num);
-            }
+            set { }
+            get { return lib.diskMap; }
         }
-
-        public override void ResendAllClusters()
-        {
-            lib.ResendAllClusters();
-        }
-
-        //public override UInt64 NumClusters
-        //{
-        //    get
-        //    {
-        //        if (lib.Data != null)
-        //            return lib.Data.TotalClusters;
-        //        else
-        //            return 0;
-        //    }
-
-        //    set {}
-        //}
 
         #endregion
     }

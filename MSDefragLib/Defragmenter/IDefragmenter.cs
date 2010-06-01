@@ -5,8 +5,6 @@ using System.Text;
 
 namespace MSDefragLib
 {
-    //public delegate void LogMessageHandler(object sender, EventArgs e);
-
     public interface IDefragmenter
     {
         event EventHandler<FilteredClusterEventArgs> UpdateFilteredDiskMapEvent;
@@ -16,10 +14,10 @@ namespace MSDefragLib
         void StartDefragmentation(String parameter);
         void StopDefragmentation(Int32 timeoutMs);
 
-        void SetNumFilteredClusters(UInt32 num);
-
-        //UInt64 NumClusters { get; set; }
-
         DefragEventDispatcher defragEventDispatcher { get; set; }
+        UInt32 NumFilteredClusters { get; set; }
+
+        void Pause();
+        void Continue();
     }
 }
