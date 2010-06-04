@@ -182,8 +182,6 @@
             this.diskBitmap.Location = new System.Drawing.Point(0, 0);
             this.diskBitmap.Margin = new System.Windows.Forms.Padding(0);
             this.diskBitmap.Name = "pictureBox1";
-            this.diskBitmap.NumX = 10;
-            this.diskBitmap.NumY = 4;
             this.diskBitmap.Size = new System.Drawing.Size(830, 577);
             this.diskBitmap.TabIndex = 0;
             this.diskBitmap.TabStop = false;

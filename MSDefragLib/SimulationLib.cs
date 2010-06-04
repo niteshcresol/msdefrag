@@ -20,7 +20,7 @@ namespace MSDefragLib
             Data.Running = RunningState.Running;
             Data.TotalClusters = 400000;
 
-            diskMap = new DiskMap((UInt32)Data.TotalClusters);
+            diskMap = new DiskMap((Int32)Data.TotalClusters);
         }
 
         public void RunSimulation()
@@ -31,8 +31,8 @@ namespace MSDefragLib
 
             for (UInt32 testNumber = 0; (Data.Running == RunningState.Running) && (testNumber < maxNumTest); testNumber++)
             {
-                UInt32 clusterBegin = (UInt32)(rnd.Next((Int32)Data.TotalClusters));
-                UInt32 clusterEnd = Math.Min((UInt32)(rnd.Next((Int32)clusterBegin, (Int32)clusterBegin + 50000)), (UInt32)Data.TotalClusters);
+                Int32 clusterBegin = (Int32)(rnd.Next((Int32)Data.TotalClusters));
+                Int32 clusterEnd = Math.Min((Int32)(rnd.Next(clusterBegin, clusterBegin + 50000)), (Int32)Data.TotalClusters);
 
                 eClusterState col = (eClusterState)rnd.Next((Int32)eClusterState.MaxValue);
 

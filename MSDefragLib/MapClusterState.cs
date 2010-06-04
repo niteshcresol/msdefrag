@@ -7,7 +7,7 @@ namespace MSDefragLib
 {
     public class MapClusterState
     {
-        public MapClusterState(UInt64 clusterIndex)
+        public MapClusterState(Int32 clusterIndex)
         {
             index = clusterIndex;
             isDirty = true;
@@ -20,9 +20,9 @@ namespace MSDefragLib
             }
         }
 
-        private UInt64 index;
+        private Int32 index;
 
-        public UInt64 Index
+        public Int32 Index
         {
             get { return index; }
         }
@@ -105,6 +105,7 @@ namespace MSDefragLib
             get { return isDirty; }
             set { isDirty = value; }
         }
+
         Int32[] numClusterStates;
     }
 }

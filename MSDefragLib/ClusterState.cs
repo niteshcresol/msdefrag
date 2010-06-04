@@ -24,16 +24,16 @@ namespace MSDefragLib
     /// </summary>
     public class ClusterState
     {
-        public ClusterState(UInt32 clusterIndex, eClusterState newState)
+        public ClusterState(Int32 clusterIndex, eClusterState newState)
         {
             index = clusterIndex;
             state = newState;
             isDirty = true;
         }
 
-        private UInt32 index;
+        private Int32 index;
 
-        public UInt32 Index { get { return index; } }
+        public Int32 Index { get { return index; } }
 
         private eClusterState state;
 

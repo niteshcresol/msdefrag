@@ -22,9 +22,9 @@ namespace MSDefragLib.Defragmenter
             defragEventDispatcher.AddLogMessage(level, message);
         }
 
-        public void ShowFilteredClusters(UInt64 clusterBegin, UInt64 clusterEnd)
+        public void ShowFilteredClusters(Int32 clusterBegin, Int32 clusterEnd)
         {
-            IList<MapClusterState> clusters = diskMap.GetFilteredClusters((UInt32)clusterBegin, (UInt32)clusterEnd);
+            IList<MapClusterState> clusters = diskMap.GetFilteredClusters(clusterBegin, clusterEnd);
 
             defragEventDispatcher.AddFilteredClusters(clusters);
         }
@@ -135,7 +135,7 @@ namespace MSDefragLib.Defragmenter
 
         public abstract DiskMap diskMap { get; set; }
 
-        public UInt32 NumFilteredClusters
+        public Int32 NumFilteredClusters
         {
             get
             {
@@ -159,14 +159,14 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public void DisplayCluster(UInt64 clusterBegin, UInt64 clusterEnd, eClusterState newState)
+        public void DisplayCluster(Int32 clusterBegin, Int32 clusterEnd, eClusterState newState)
         {
             if (diskMap == null)
             {
                 return;
             }
 
-            diskMap.SetClusterState((UInt32)clusterBegin, (UInt32)clusterEnd, newState, defragEventDispatcher.Pause == false);
+            diskMap.SetClusterState(clusterBegin, clusterEnd, newState, defragEventDispatcher.Pause == false);
 
             ShowFilteredClusters(clusterBegin, clusterEnd);
         }

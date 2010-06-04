@@ -22,7 +22,7 @@ namespace MSDefrag
         {
             InitializeComponent();
 
-            GuiSettings = new MSDefrag.GuiSettings(10);
+            GuiSettings = new MSDefrag.GuiSettings(12);
 
             DefragSettings = new DefragmentationSettings();
             DefragSettings.Path = "C:\\*";
@@ -36,7 +36,10 @@ namespace MSDefrag
         {
             diskBitmap.Initialize(GuiSettings);
 
-            Defragmenter.NumFilteredClusters = (UInt32)diskBitmap.NumSquares;
+            if (Defragmenter != null)
+            {
+                Defragmenter.NumFilteredClusters = diskBitmap.NumSquares;
+            }
         }
 
         #endregion
@@ -186,8 +189,11 @@ namespace MSDefrag
         {
             pictureSize = diskBitmap.Size;
 
-            Defragmenter.Pause();
-            diskBitmap.SetBusy(true);
+            if (Defragmenter != null)
+            {
+                Defragmenter.Pause();
+            }
+            //diskBitmap.SetBusy(true);
         }
 
         private void OnResizeEnd(object sender, EventArgs e)
@@ -196,12 +202,14 @@ namespace MSDefrag
 
             if (pictureSize.Height != newPictureSize.Height || pictureSize.Width != newPictureSize.Width)
             {
-                diskBitmap.Initialize(GuiSettings);
-                Defragmenter.NumFilteredClusters = (UInt32)diskBitmap.NumSquares;
+                ResetBitmapDisplay();
             }
 
-            Defragmenter.Continue();
-            diskBitmap.SetBusy(false);
+            if (Defragmenter != null)
+            {
+                Defragmenter.Continue();
+            }
+            //diskBitmap.SetBusy(false);
         }
 
         #endregion
