@@ -26,55 +26,43 @@ namespace MSDefrag
         {
             lock (BitmapSettings)
             {
-                squareSize = guiSettings.SquareSize;
+                BitmapSettings.Initialize(Width, Height, guiSettings.SquareSize);
 
-                InitializeDiskMap(squareSize);
-
-                BitmapSettings.InitColors();
-                BitmapSettings.InitBrushes();
-                BitmapSettings.InitMapSquareBitmaps();
-                BitmapSettings.InitMapSquares();
+                InitializeDiskMap();
 
                 DrawMapSquares(0, BitmapSettings.NumSquares);
             }
         }
 
-        public void InitializeDiskMap(Int32 square)
+        public void InitializeDiskMap()
         {
-            BitmapSettings.InitializeDiskMap(Width, Height, square);
-
             Image = BitmapSettings.bitmap;
 
             graphics = Graphics.FromImage(BitmapSettings.bitmap);
 
-            Rectangle rec = new Rectangle(BitmapSettings.borderOffsetX, BitmapSettings.borderOffsetY, BitmapSettings.mapWidth, BitmapSettings.mapHeight);
+            Rectangle drawingArea = BitmapSettings.DrawingArea;
 
-            LinearGradientBrush brush = new LinearGradientBrush(rec, Color.Black, Color.White, LinearGradientMode.ForwardDiagonal);
-
-            graphics.FillRectangle(brush, rec);
+            LinearGradientBrush brush = new LinearGradientBrush(drawingArea, Color.Black, Color.White, LinearGradientMode.ForwardDiagonal);
+            graphics.FillRectangle(brush, drawingArea);
 
             Pen hiPen = Pens.White;
             Pen loPen = Pens.DarkGray;
 
             // Outside border
-            Rectangle outRec = new Rectangle(rec.Left, rec.Top, rec.Width - 1, rec.Height - 1);
-
-            graphics.DrawLine(hiPen, outRec.Left, outRec.Top, outRec.Right, outRec.Top);
-            graphics.DrawLine(loPen, outRec.Right, outRec.Top, outRec.Right, outRec.Bottom);
-            graphics.DrawLine(loPen, outRec.Right, outRec.Bottom, outRec.Left, outRec.Bottom);
-            graphics.DrawLine(hiPen, outRec.Left, outRec.Bottom, outRec.Left, outRec.Top);
+            Draw3DRectangle(BitmapSettings.OutsideBorder, hiPen, loPen);
 
             // Inside border
-            Rectangle inRec = new Rectangle(
-                rec.Left + DiskBitmapSettings.borderWidth - 1, rec.Top + DiskBitmapSettings.borderWidth - 1,
-                rec.Width - DiskBitmapSettings.borderWidth * 2 + 1, rec.Height - DiskBitmapSettings.borderWidth * 2 + 1);
-
-            graphics.DrawLine(loPen, inRec.Left, inRec.Top, inRec.Right, inRec.Top);
-            graphics.DrawLine(hiPen, inRec.Right, inRec.Top, inRec.Right, inRec.Bottom);
-            graphics.DrawLine(hiPen, inRec.Right, inRec.Bottom, inRec.Left, inRec.Bottom);
-            graphics.DrawLine(loPen, inRec.Left, inRec.Bottom, inRec.Left, inRec.Top);
+            Draw3DRectangle(BitmapSettings.InsideBorder, loPen, hiPen);
 
             Invalidate();
+        }
+
+        private void Draw3DRectangle(Rectangle rectangle, Pen highlightPen, Pen shadowPen)
+        {
+            graphics.DrawLine(highlightPen, rectangle.Left, rectangle.Top, rectangle.Right, rectangle.Top);
+            graphics.DrawLine(shadowPen, rectangle.Right, rectangle.Top, rectangle.Right, rectangle.Bottom);
+            graphics.DrawLine(shadowPen, rectangle.Right, rectangle.Bottom, rectangle.Left, rectangle.Bottom);
+            graphics.DrawLine(highlightPen, rectangle.Left, rectangle.Bottom, rectangle.Left, rectangle.Top);
         }
 
         #endregion
@@ -84,6 +72,11 @@ namespace MSDefrag
         /// </summary>
         public void AddFilteredClusters(IList<MapClusterState> clusters)
         {
+            if (SystemBusy == true)
+            {
+                return;
+            }
+
             lock (BitmapSettings)
             {
                 BitmapSettings.AddFilteredClusters(clusters);
@@ -95,27 +88,23 @@ namespace MSDefrag
 
         private void DrawMapSquares(Int32 indexBegin, Int32 indexEnd)
         {
-            List<MapSquare> dirtyMapSquares = BitmapSettings.GetDirtySquares(indexBegin, indexEnd);
-
-            foreach (MapSquare mapSquare in dirtyMapSquares)
+            if (SystemBusy == true)
             {
-                Int32 squareIndex = mapSquare.SquareIndex;
-                Point squarePosition = new Point((Int32)(squareIndex % BitmapSettings.NumX), (Int32)(squareIndex / BitmapSettings.NumX));
-                Int32 squareMapBitmapIndex = (Int32)BitmapSettings.mapSquares[squareIndex].maxClusterState;
-
-                Rectangle rc = new Rectangle(BitmapSettings.offsetX + squarePosition.X * BitmapSettings.squareSize, BitmapSettings.offsetY + squarePosition.Y * BitmapSettings.squareSize, BitmapSettings.squareSize, BitmapSettings.squareSize);
-
-                graphics.DrawImageUnscaled(BitmapSettings.mapSquareBitmaps[squareMapBitmapIndex], rc.Left, rc.Top);
-
-                mapSquare.Dirty = false;
-                //DiskPicture.Invalidate(rc);
+                return;
             }
+
+            BitmapSettings.DrawMapSquares(graphics, indexBegin, indexEnd);
 
             Invalidate();
         }
 
         public void DrawAllMapSquares()
         {
+            if (SystemBusy == true)
+            {
+                return;
+            }
+
             lock (BitmapSettings)
             {
                 DrawMapSquares(0, BitmapSettings.NumSquares);
@@ -137,17 +126,11 @@ namespace MSDefrag
 
         #region Variables
 
-        #region Gui
-
         private DiskBitmapSettings BitmapSettings;
-
-        private Int32 squareSize;
 
         private Graphics graphics;
 
         private Boolean SystemBusy;
-
-        #endregion
 
         #endregion
     }

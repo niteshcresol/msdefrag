@@ -185,7 +185,6 @@
             this.diskBitmap.Size = new System.Drawing.Size(830, 577);
             this.diskBitmap.TabIndex = 0;
             this.diskBitmap.TabStop = false;
-            this.diskBitmap.SizeChanged += new System.EventHandler(this.OnDiskBitmapSizeChanged);
             // 
             // MainForm
             // 

@@ -21,7 +21,7 @@ namespace MSDefrag
         private static Color ColorUnmovable = Color.Yellow;
         private static Color ColorAllocated = Color.LightBlue;
         private static Color ColorBusy = Color.Blue;
-        private static Color ColorFree = Color.Gray;
+        private static Color ColorFree = Color.LightGray;
         private static Color ColorFragmented = Color.Orange;
         private static Color ColorMft = Color.Pink;
         private static Color ColorSpaceHog = Color.DarkCyan;
@@ -61,6 +61,15 @@ namespace MSDefrag
         #endregion
 
         #region Initialize
+
+        public void Initialize(Int32 width, Int32 height, Int32 square)
+        {
+            InitializeDiskMap(width, height, square);
+            InitColors();
+            InitBrushes();
+            InitMapSquareBitmaps();
+            InitMapSquares();
+        }
 
         public void InitializeDiskMap(Int32 width, Int32 height, Int32 square)
         {
@@ -148,7 +157,7 @@ namespace MSDefrag
             {
                 Rectangle rec = new Rectangle(0, 0, squareSize, squareSize);
 
-                linearVerticalGradientBrushes[ii] = GetLinearGradientBrushFromColor(col, true, rec, 0, 100, LinearGradientMode.Vertical);
+                linearVerticalGradientBrushes[ii] = GetLinearGradientBrushFromColor(col, true, rec, 0, 30, LinearGradientMode.Vertical);
 
                 ii++;
             }
@@ -259,13 +268,48 @@ namespace MSDefrag
         {
             List<MapSquare> dirtyMapSquares = 
                 (from a in mapSquares
-                 where a.Dirty == true && a.SquareIndex >= indexBegin && a.SquareIndex < indexEnd
+                 where a.Dirty == true && a.SquareIndex >= indexBegin && a.SquareIndex < indexEnd && a.SquareIndex <= NumSquares
                  select a).ToList();
 
             return dirtyMapSquares;
         }
 
+        public void DrawMapSquares(Graphics graphics, Int32 indexBegin, Int32 indexEnd)
+        {
+            List<MapSquare> dirtyMapSquares = GetDirtySquares(indexBegin, indexEnd);
+
+            foreach (MapSquare mapSquare in dirtyMapSquares)
+            {
+                Int32 squareIndex = mapSquare.SquareIndex;
+                Point squarePosition = new Point((Int32)(squareIndex % NumX), (Int32)(squareIndex / NumX));
+                Int32 squareMapBitmapIndex = (Int32)mapSquares[squareIndex].maxClusterState;
+
+                Rectangle rc = new Rectangle(offsetX + squarePosition.X * squareSize, offsetY + squarePosition.Y * squareSize, squareSize, squareSize);
+
+                graphics.DrawImageUnscaled(mapSquareBitmaps[squareMapBitmapIndex], rc.Left, rc.Top);
+
+                mapSquare.Dirty = false;
+            }
+        }
 
         public List<MapSquare> mapSquares;
+
+        public Rectangle DrawingArea
+        {
+            set { }
+            get { return new Rectangle(borderOffsetX, borderOffsetY, mapWidth, mapHeight); }
+        }
+
+        public Rectangle OutsideBorder
+        {
+            set { }
+            get { return new Rectangle(borderOffsetX, borderOffsetY, mapWidth - 1, mapHeight - 1); }
+        }
+
+        public Rectangle InsideBorder
+        {
+            set { }
+            get { return new Rectangle(borderOffsetX + borderWidth - 1, borderOffsetY + borderWidth - 1, mapWidth - borderWidth * 2 + 1, mapHeight - borderWidth * 2 + 1); }
+        }
     }
 }

@@ -7,9 +7,9 @@ namespace MSDefrag
 {
     class GuiSettings
     {
-        public GuiSettings(UInt16 sqSize)
+        public GuiSettings()
         {
-            SquareSize = sqSize;
+            SquareSize = 12;
         }
 
         public UInt16 SquareSize;

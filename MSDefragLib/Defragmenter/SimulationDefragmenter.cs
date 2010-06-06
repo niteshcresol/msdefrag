@@ -17,7 +17,10 @@ namespace MSDefragLib.Defragmenter
 
         public override void BeginDefragmentation(string parameter)
         {
-            lib.RunSimulation();
+            if (lib != null)
+            {
+                lib.RunSimulation();
+            }
         }
 
         public override void FinishDefragmentation(Int32 timeoutMs)

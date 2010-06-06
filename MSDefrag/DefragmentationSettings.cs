@@ -7,6 +7,11 @@ namespace MSDefrag
 {
     class DefragmentationSettings
     {
+        public DefragmentationSettings()
+        {
+            Path = "C:\\*";
+        }
+
         public String Path;
     }
 }
