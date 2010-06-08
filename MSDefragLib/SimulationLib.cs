@@ -29,6 +29,12 @@ namespace MSDefragLib
 
             UInt32 maxNumTest = 450025;
 
+            //defragmenter.DisplayCluster(0, 10000, eClusterState.Fragmented);
+            //defragmenter.DisplayCluster(10001, 20000, eClusterState.Busy);
+            //defragmenter.DisplayCluster(20001, 30000, eClusterState.Mft);
+            //defragmenter.DisplayCluster(30001, 40000, eClusterState.SpaceHog);
+            //defragmenter.DisplayCluster(40001, 50000, eClusterState.Allocated);
+
             for (UInt32 testNumber = 0; (Data.Running == RunningState.Running) && (testNumber < maxNumTest); testNumber++)
             {
                 Int32 clusterBegin = (Int32)(rnd.Next((Int32)Data.TotalClusters));
@@ -37,10 +43,9 @@ namespace MSDefragLib
                 eClusterState col = (eClusterState)rnd.Next((Int32)eClusterState.MaxValue);
 
                 defragmenter.DisplayCluster(clusterBegin, clusterEnd, col);
-
                 defragmenter.ShowProgress(testNumber, maxNumTest);
 
-                Thread.Sleep(1);
+                Thread.Sleep(0);
             }
 
             Data.Running = RunningState.Stopped;

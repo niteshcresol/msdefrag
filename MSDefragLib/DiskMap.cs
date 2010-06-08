@@ -50,8 +50,8 @@ namespace MSDefragLib
                 filterBegin = (Int32)(clusterBegin / clustersPerFilter);
                 filterEnd = (Int32)(clusterEnd / clustersPerFilter);
 
-                //clusters = DiskFilteredDetails.GetDirtyClusters(filterBegin, filterEnd);
-                clusters = DiskFilteredDetails.GetAllClusters();
+                clusters = DiskFilteredDetails.GetDirtyClusters(filterBegin, filterEnd);
+                //clusters = DiskFilteredDetails.GetAllClusters();
             }
 
             return clusters;
@@ -117,7 +117,7 @@ namespace MSDefragLib
                         return;
 
                     Int32 clusterBegin2 = (Int32)(filterIdx * clustersPerFilter);
-                    Int32 clusterEnd2 = (Int32)(clusterBegin + clustersPerFilter);
+                    Int32 clusterEnd2 = (Int32)(clusterBegin2 + clustersPerFilter);
 
                     DiskFilteredDetails.ResetClusterStates(filterIdx);
 
