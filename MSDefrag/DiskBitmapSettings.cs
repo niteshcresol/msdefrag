@@ -208,7 +208,7 @@ namespace MSDefrag
         {
             mapSquares = new List<MapSquare>(NumSquares);
 
-            for (Int16 ii = 0; ii <= NumSquares; ii++)
+            for (Int16 ii = 0; ii < NumSquares; ii++)
             {
                 mapSquares.Add(new MapSquare(ii));
             }
@@ -254,6 +254,9 @@ namespace MSDefrag
         {
             foreach (MapClusterState cluster in clusters)
             {
+                if (cluster.Index >= mapSquares.Count)
+                    continue;
+
                 MapSquare mapSquare = mapSquares[cluster.Index];
 
                 if (mapSquare.maxClusterState != cluster.MaxState)
@@ -264,21 +267,15 @@ namespace MSDefrag
             }
         }
 
-        public List<MapSquare> GetDirtySquares(Int32 indexBegin, Int32 indexEnd)
-        {
-            List<MapSquare> dirtyMapSquares = 
-                (from a in mapSquares
-                 where a.Dirty == true && a.SquareIndex >= indexBegin && a.SquareIndex < indexEnd && a.SquareIndex <= NumSquares
-                 select a).ToList();
-
-            return dirtyMapSquares;
-        }
-
         public void DrawMapSquares(Graphics graphics, Int32 indexBegin, Int32 indexEnd)
         {
-            List<MapSquare> dirtyMapSquares = GetDirtySquares(indexBegin, indexEnd);
+            //List<MapSquare> dirtyMapSquares = 
+            //    (from a in mapSquares
+            //     where a.Dirty == true
+            //     //where a.Dirty == true && a.SquareIndex >= indexBegin && a.SquareIndex < indexEnd && a.SquareIndex <= NumSquares
+            //     select a).ToList();
 
-            foreach (MapSquare mapSquare in dirtyMapSquares)
+            foreach (MapSquare mapSquare in mapSquares)
             {
                 Int32 squareIndex = mapSquare.SquareIndex;
                 Point squarePosition = new Point((Int32)(squareIndex % NumX), (Int32)(squareIndex / NumX));
@@ -291,8 +288,6 @@ namespace MSDefrag
                 mapSquare.Dirty = false;
             }
         }
-
-        public List<MapSquare> mapSquares;
 
         public Rectangle DrawingArea
         {
@@ -311,5 +306,7 @@ namespace MSDefrag
             set { }
             get { return new Rectangle(borderOffsetX + borderWidth - 1, borderOffsetY + borderWidth - 1, mapWidth - borderWidth * 2 + 1, mapHeight - borderWidth * 2 + 1); }
         }
+
+        public List<MapSquare> mapSquares;
     }
 }
