@@ -159,7 +159,7 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public void DisplayCluster(Int32 clusterBegin, Int32 clusterEnd, eClusterState newState)
+        public void SetClusterState(Int32 clusterBegin, Int32 clusterEnd, eClusterState newState)
         {
             if (diskMap == null)
             {

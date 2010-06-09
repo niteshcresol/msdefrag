@@ -831,7 +831,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 Item.Bytes = stream.Bytes;
 
                 //Item.Clusters = 0;
-                Item.Clusters = stream.Clusters;
+                Item.NumClusters = stream.Clusters;
 
                 Item.CreationTime = inodeData.CreationTime;
                 Item.MftChangeTime = inodeData.MftChangeTime;
@@ -896,14 +896,14 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 // Draw the item on the screen.
-                if (_lib.Data.RedrawScreen == 0)
-                {
+                //if (_lib.Data.RedrawScreen == 0)
+                //{
                     _lib.ColorizeItem(Item, 0, 0, false);
-                }
-                else
-                {
-                    _lib.ShowDiskmap();
-                }
+                //}
+                //else
+                //{
+                //    _lib.ShowDiskmap();
+                //}
             }
 
             return true;

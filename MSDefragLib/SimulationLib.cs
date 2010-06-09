@@ -42,7 +42,7 @@ namespace MSDefragLib
 
                 eClusterState col = (eClusterState)rnd.Next((Int32)eClusterState.MaxValue);
 
-                defragmenter.DisplayCluster(clusterBegin, clusterEnd, col);
+                defragmenter.SetClusterState(clusterBegin, clusterEnd, col);
                 defragmenter.ShowProgress(testNumber, maxNumTest);
 
                 Thread.Sleep(0);

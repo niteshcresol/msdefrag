@@ -53,7 +53,7 @@ namespace MSDefragLib
         public String ShortPath;                   /* Full path on disk, short filenames. */
 
         public UInt64 Bytes;                        /* Total number of bytes. */
-        public UInt64 Clusters;                     /* Total number of clusters. */
+        public UInt64 NumClusters;                     /* Total number of clusters. */
         public UInt64 CreationTime;                 /* 1 second = 10000000 */
         public UInt64 MftChangeTime;
         public UInt64 LastAccessTime;

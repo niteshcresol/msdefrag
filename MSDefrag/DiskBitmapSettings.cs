@@ -269,13 +269,13 @@ namespace MSDefrag
 
         public void DrawMapSquares(Graphics graphics, Int32 indexBegin, Int32 indexEnd)
         {
-            //List<MapSquare> dirtyMapSquares = 
-            //    (from a in mapSquares
-            //     where a.Dirty == true
-            //     //where a.Dirty == true && a.SquareIndex >= indexBegin && a.SquareIndex < indexEnd && a.SquareIndex <= NumSquares
-            //     select a).ToList();
+            List<MapSquare> dirtyMapSquares = 
+                (from a in mapSquares
+                 where a.Dirty == true
+                 //where a.Dirty == true && a.SquareIndex >= indexBegin && a.SquareIndex < indexEnd && a.SquareIndex <= NumSquares
+                 select a).ToList();
 
-            foreach (MapSquare mapSquare in mapSquares)
+            foreach (MapSquare mapSquare in dirtyMapSquares)
             {
                 Int32 squareIndex = mapSquare.SquareIndex;
                 Point squarePosition = new Point((Int32)(squareIndex % NumX), (Int32)(squareIndex / NumX));

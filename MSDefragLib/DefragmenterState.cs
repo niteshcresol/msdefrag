@@ -27,7 +27,7 @@ namespace MSDefragLib
             FreeSpace = freeSpace;
             Excludes = excludes;
 
-            RedrawScreen = 0;
+            //RedrawScreen = 0;
             Phase = 0;
 
             Disk = new Disk();
@@ -81,7 +81,7 @@ namespace MSDefragLib
 	    public UInt16 Phase;                             /* The current Phase (1...3). */
         public UInt16 Zone;                              /* The current Zone (0..2) for Phase 3. */
         public RunningState Running;                     /* If not RUNNING then stop defragging. */
-	    public int RedrawScreen;                         /* 0:no, 1:request, 2: busy. */
+//	    public int RedrawScreen;                         /* 0:no, 1:request, 2: busy. */
 	    public Boolean UseLastAccessTime;                /* If TRUE then use LastAccessTime for SpaceHogs. */
 	    public int CannotMoveDirs;                       /* If bigger than 20 then do not move dirs. */
 
