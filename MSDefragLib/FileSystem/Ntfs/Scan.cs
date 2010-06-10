@@ -986,7 +986,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             UInt64 MaxInode = bitmapFile.MaxInode;
 
             ItemStruct[] InodeArray = new ItemStruct[MaxInode];
-            InodeArray[0] = _lib.Data.ItemTree;
+            //InodeArray[0] = _lib.Data.ItemTree;
             ItemStruct Item = null;
 
             _lib.Data.PhaseDone = 0;
@@ -1078,23 +1078,23 @@ namespace MSDefragLib.FileSystem.Ntfs
                       (Int64)MaxInode * 1000 / (endTime - startTime).TotalMilliseconds));
             }
 
-            using (_lib.Data.Disk)
-            {
-                if (_lib.Data.Running != RunningState.Running)
-                {
-                    ItemTree.Delete(_lib.Data.ItemTree);
-                    _lib.Data.ItemTree = null;
-                    return false;
-                }
+            //using (_lib.Data.Disk)
+            //{
+            //    if (_lib.Data.Running != RunningState.Running)
+            //    {
+            //        ItemTree.Delete(_lib.Data.ItemTree);
+            //        _lib.Data.ItemTree = null;
+            //        return false;
+            //    }
 
-                // Setup the ParentDirectory in all the items with the info in the InodeArray.
-                for (Item = ItemTree.TreeSmallest(_lib.Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
-                {
-                    Item.ParentDirectory = (ItemStruct)InodeArray.GetValue((Int64)Item.ParentInode);
-                    if (Item.ParentInode == 5)
-                        Item.ParentDirectory = null;
-                }
-            }
+            //    // Setup the ParentDirectory in all the items with the info in the InodeArray.
+            //    for (Item = ItemTree.TreeSmallest(_lib.Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
+            //    {
+            //        Item.ParentDirectory = (ItemStruct)InodeArray.GetValue((Int64)Item.ParentInode);
+            //        if (Item.ParentInode == 5)
+            //            Item.ParentDirectory = null;
+            //    }
+            //}
             return true;
         }
     }

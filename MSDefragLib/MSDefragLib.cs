@@ -331,176 +331,27 @@ namespace MSDefragLib
 	        return(TreePrev(Here));
         }
 */
+        SortedList<UInt64, ItemStruct> itemList;
+
         /* Insert a record into the tree. The tree is sorted by LCN (Logical Cluster Number). */
         public void TreeInsert(ItemStruct newItem)
         {
-	        if (newItem == null) return;
+            if (itemList == null)
+            {
+                itemList = new SortedList<UInt64, ItemStruct>();
+            }
+
+	        if (newItem == null || newItem.Lcn == 0) return;
 
             UInt64 NewLcn = newItem.Lcn;
 
-	        /* Locate the place where the record should be inserted. */
-            ItemStruct Here = Data.ItemTree;
-            ItemStruct Ins = null;
+            itemList.Add(NewLcn, newItem);
 
-            int Found = 1;
-
-            UInt64 HereLcn;
-
-            while (Here != null)
-	        {
-		        Ins = Here;
-		        Found = 0;
-
-		        HereLcn = Here.Lcn;
-
-		        if (HereLcn > NewLcn)
-		        {
-			        Found = 1;
-			        Here = Here.Smaller;
-		        }
-		        else
-		        {
-			        if (HereLcn < NewLcn) Found = -1;
-
-			        Here = Here.Bigger;
-		        }
-	        }
-
-	        /* Insert the record. */
-	        newItem.Parent = Ins;
-	        newItem.Smaller = null;
-	        newItem.Bigger = null;
-
-	        if (Ins == null)
-	        {
-		        Data.ItemTree = newItem;
-	        }
-	        else
-	        {
-		        if (Found > 0)
-		        {
-			        Ins.Smaller = newItem;
-		        }
-		        else
-		        {
-			        Ins.Bigger = newItem;
-		        }
-	        }
-
-	        /* If there have been less than 1000 inserts then return. */
-	        Data.BalanceCount ++;
-
-	        if (Data.BalanceCount < 1000) return;
-
-	        /*  Balance the tree.
-	            It's difficult to explain what exactly happens here. For an excellent
-	            tutorial see:
-	            http://www.stanford.edu/~blp/avl/libavl.html/Balancing-a-BST.html  */
-
-	        Data.BalanceCount = 0;
-
-            /* Convert the tree into a vine. */
-            ItemStruct A = Data.ItemTree;
-            ItemStruct C = A;
-            ItemStruct B;
-
-            long Count = 0;
-
-	        while (A != null)
-	        {
-		        /* If A has no Bigger child then move down the tree. */
-                if (A.Bigger == null)
-		        {
-			        Count = Count + 1;
-			        C = A;
-			        A = A.Smaller;
-
-			        continue;
-		        }
-
-		        /* Rotate left at A. */
-		        B = A.Bigger;
-
-		        if (Data.ItemTree == A) Data.ItemTree = B;
-
-		        A.Bigger = B.Smaller;
-
-                if (A.Bigger != null) A.Bigger.Parent = A;
-
-		        B.Parent = A.Parent;
-
-                if (B.Parent != null)
-		        {
-			        if (B.Parent.Smaller == A)
-			        {
-				        B.Parent.Smaller = B;
-			        }
-			        else
-			        {
-				        A.Parent.Bigger = B;
-			        }
-		        }
-
-		        B.Smaller = A;
-		        A.Parent = B;
-
-		        /* Do again. */
-		        A = B;
-	        }
-
-	        /* Calculate the number of skips. */
-            long Skip = 1;
-
-	        while (Skip < Count + 2) Skip = (Skip << 1);
-
-	        Skip = Count + 1 - (Skip >> 1);
-
-	        /* Compress the tree. */
-            while (C != null)
-	        {
-		        if (Skip <= 0) C = C.Parent;
-
-		        A = C;
-
-		        while (A != null)
-		        {
-			        B = A;
-			        A = A.Parent;
-
-			        if (A == null) break;
-
-			        /* Rotate right at A. */
-                    if (Data.ItemTree == A) Data.ItemTree = B;
-
-			        A.Smaller = B.Bigger;
-
-			        if (A.Smaller != null) A.Smaller.Parent = A;
-
-			        B.Parent = A.Parent;
-
-                    if (B.Parent != null)
-			        {
-				        if (B.Parent.Smaller == A)
-				        {
-					        B.Parent.Smaller = B;
-				        }
-				        else
-				        {
-					        B.Parent.Bigger = B;
-				        }
-			        }
-
-			        A.Parent = B;
-			        B.Bigger = A;
-
-			        /* Next item. */
-			        A = B.Parent;
-
-			        /* If there were skips then leave if all done. */
-			        Skip = Skip - 1;
-			        if (Skip == 0) break;
-		        }
-	        }
+            foreach (UInt64 key in itemList.Keys)
+            {
+                ItemStruct st = itemList[key];
+            }
+            //defragmenter.diskMap.AddCluster(NewLcn, newItem);
         }
 /*
         / *
@@ -1199,19 +1050,19 @@ namespace MSDefragLib
             //
             //  Note: the "$BadClus" file on NTFS disks maps the entire disk, so we have to ignore it.
 
-            for (Item = ItemTree.TreeSmallest(Data.ItemTree); (Data.Running == RunningState.Running) && Item != null; Item = ItemTree.TreeNext(Item))
-            {
-                //if (Data.RedrawScreen != 2) break;
+            //for (Item = ItemTree.TreeSmallest(Data.ItemTree); (Data.Running == RunningState.Running) && Item != null; Item = ItemTree.TreeNext(Item))
+            //{
+            //    //if (Data.RedrawScreen != 2) break;
 
-                if ((Item.LongFilename != null) &&
-                    ((Item.LongFilename.CompareTo("$BadClus") == 0) ||
-                     (Item.LongFilename.CompareTo("$BadClus:$Bad:$DATA") == 0)))
-                {
-                    continue;
-                }
+            //    if ((Item.LongFilename != null) &&
+            //        ((Item.LongFilename.CompareTo("$BadClus") == 0) ||
+            //         (Item.LongFilename.CompareTo("$BadClus:$Bad:$DATA") == 0)))
+            //    {
+            //        continue;
+            //    }
 
-                ColorizeItem(Item, 0, 0, false);
-            }
+            //    ColorizeItem(Item, 0, 0, false);
+            //}
 
             /* Set the flag to "no". */
             //if (Data.RedrawScreen == 2) Data.RedrawScreen = 0;
@@ -1468,132 +1319,132 @@ namespace MSDefragLib
         */
         void CalculateZones()
         {
-	        ItemStruct Item;
+            //ItemStruct Item;
 
-            UInt64[] SizeOfMovableFiles/*[3]*/ = new UInt64[3];
-	        UInt64[] SizeOfUnmovableFragments/*[3]*/ = new UInt64[3];
-	        UInt64[] ZoneEnd/*[3]*/ = new UInt64[3];
-	        UInt64[] OldZoneEnd/*[3]*/ = new UInt64[3];
-	        UInt64 RealVcn;
+            //UInt64[] SizeOfMovableFiles/*[3]*/ = new UInt64[3];
+            //UInt64[] SizeOfUnmovableFragments/*[3]*/ = new UInt64[3];
+            //UInt64[] ZoneEnd/*[3]*/ = new UInt64[3];
+            //UInt64[] OldZoneEnd/*[3]*/ = new UInt64[3];
+            //UInt64 RealVcn;
 
-	        int Iterate;
-	        int i;
+            //int Iterate;
+            //int i;
 
-	        /* Calculate the number of clusters in movable items for every zone. */
-            for (int Zone = 0; Zone <= 2; Zone++)
-            {
-                SizeOfMovableFiles[Zone] = new UInt64();
-                SizeOfMovableFiles[Zone] = 0;
-            }
+            ///* Calculate the number of clusters in movable items for every zone. */
+            //for (int Zone = 0; Zone <= 2; Zone++)
+            //{
+            //    SizeOfMovableFiles[Zone] = new UInt64();
+            //    SizeOfMovableFiles[Zone] = 0;
+            //}
 
-            for (Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
-	        {
-		        if (Item.Unmovable == true) continue;
-		        if (Item.Exclude == true) continue;
-                if ((Item.IsDirectory == true) && (Data.CannotMoveDirs > 20)) continue;
+            //for (Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
+            //{
+            //    if (Item.Unmovable == true) continue;
+            //    if (Item.Exclude == true) continue;
+            //    if ((Item.IsDirectory == true) && (Data.CannotMoveDirs > 20)) continue;
 
-		        int Zone = 1;
-		        if (Item.SpaceHog == true) Zone = 2;
-		        if (Item.IsDirectory == true) Zone = 0;
+            //    int Zone = 1;
+            //    if (Item.SpaceHog == true) Zone = 2;
+            //    if (Item.IsDirectory == true) Zone = 0;
 
-		        SizeOfMovableFiles[Zone] = SizeOfMovableFiles[Zone] + Item.NumClusters;
-	        }
+            //    SizeOfMovableFiles[Zone] = SizeOfMovableFiles[Zone] + Item.NumClusters;
+            //}
 
-	        /* Iterate until the calculation does not change anymore, max 10 times. */
-	        for (int Zone = 0; Zone <= 2; Zone++)
-                SizeOfUnmovableFragments[Zone] = 0;
+            ///* Iterate until the calculation does not change anymore, max 10 times. */
+            //for (int Zone = 0; Zone <= 2; Zone++)
+            //    SizeOfUnmovableFragments[Zone] = 0;
 
-	        for (int Zone = 0; Zone <= 2; Zone++) 
-                OldZoneEnd[Zone] = 0;
+            //for (int Zone = 0; Zone <= 2; Zone++) 
+            //    OldZoneEnd[Zone] = 0;
 
-	        for (Iterate = 1; Iterate <= 10; Iterate++)
-	        {
-		        /* Calculate the end of the zones. */
-		        ZoneEnd[0] = SizeOfMovableFiles[0] + SizeOfUnmovableFragments[0] +
-                    (UInt64)(Data.TotalClusters * Data.FreeSpace / 100.0);
+            //for (Iterate = 1; Iterate <= 10; Iterate++)
+            //{
+            //    /* Calculate the end of the zones. */
+            //    ZoneEnd[0] = SizeOfMovableFiles[0] + SizeOfUnmovableFragments[0] +
+            //        (UInt64)(Data.TotalClusters * Data.FreeSpace / 100.0);
 
-		        ZoneEnd[1] = ZoneEnd[0] + SizeOfMovableFiles[1] + SizeOfUnmovableFragments[1] +
-                    (UInt64)(Data.TotalClusters * Data.FreeSpace / 100.0);
+            //    ZoneEnd[1] = ZoneEnd[0] + SizeOfMovableFiles[1] + SizeOfUnmovableFragments[1] +
+            //        (UInt64)(Data.TotalClusters * Data.FreeSpace / 100.0);
 
-		        ZoneEnd[2] = ZoneEnd[1] + SizeOfMovableFiles[2] + SizeOfUnmovableFragments[2];
+            //    ZoneEnd[2] = ZoneEnd[1] + SizeOfMovableFiles[2] + SizeOfUnmovableFragments[2];
 
-		        /* Exit if there was no change. */
-		        if ((OldZoneEnd[0] == ZoneEnd[0]) &&
-			        (OldZoneEnd[1] == ZoneEnd[1]) &&
-			        (OldZoneEnd[2] == ZoneEnd[2])) break;
+            //    /* Exit if there was no change. */
+            //    if ((OldZoneEnd[0] == ZoneEnd[0]) &&
+            //        (OldZoneEnd[1] == ZoneEnd[1]) &&
+            //        (OldZoneEnd[2] == ZoneEnd[2])) break;
 
-		        for (int Zone = 0; Zone <= 2; Zone++)
-                    OldZoneEnd[Zone] = ZoneEnd[Zone];
+            //    for (int Zone = 0; Zone <= 2; Zone++)
+            //        OldZoneEnd[Zone] = ZoneEnd[Zone];
 
-		        /* Show debug info. */
-        		ShowLogMessage(4, String.Format("Zone calculation, iteration {0:G}: 0 - {0:G} - {0:G} - {0:G}",
-                    Iterate, ZoneEnd[0], ZoneEnd[1], ZoneEnd[2]));
+            //    /* Show debug info. */
+            //    ShowLogMessage(4, String.Format("Zone calculation, iteration {0:G}: 0 - {0:G} - {0:G} - {0:G}",
+            //        Iterate, ZoneEnd[0], ZoneEnd[1], ZoneEnd[2]));
 
-                /* Reset the SizeOfUnmovableFragments array. We are going to (re)calculate these numbers
-		        based on the just calculates ZoneEnd's. */
-		        for (int Zone = 0; Zone <= 2; Zone++) 
-                    SizeOfUnmovableFragments[Zone] = 0;
+            //    /* Reset the SizeOfUnmovableFragments array. We are going to (re)calculate these numbers
+            //    based on the just calculates ZoneEnd's. */
+            //    for (int Zone = 0; Zone <= 2; Zone++) 
+            //        SizeOfUnmovableFragments[Zone] = 0;
 
-		        /* The MFT reserved areas are counted as unmovable data. */
-		        for (i = 0; i < 3; i++)
-		        {
-                    if (Data.MftExcludes[i].Start < ZoneEnd[0])
-			        {
-                        SizeOfUnmovableFragments[0] += Data.MftExcludes[i].End - Data.MftExcludes[i].Start;
-			        }
-                    else if (Data.MftExcludes[i].Start < ZoneEnd[1])
-			        {
-                        SizeOfUnmovableFragments[1] += Data.MftExcludes[i].End - Data.MftExcludes[i].Start;
-			        }
-                    else if (Data.MftExcludes[i].Start < ZoneEnd[2])
-			        {
-                        SizeOfUnmovableFragments[2] += Data.MftExcludes[i].End - Data.MftExcludes[i].Start;
-			        }
-		        }
+            //    /* The MFT reserved areas are counted as unmovable data. */
+            //    for (i = 0; i < 3; i++)
+            //    {
+            //        if (Data.MftExcludes[i].Start < ZoneEnd[0])
+            //        {
+            //            SizeOfUnmovableFragments[0] += Data.MftExcludes[i].End - Data.MftExcludes[i].Start;
+            //        }
+            //        else if (Data.MftExcludes[i].Start < ZoneEnd[1])
+            //        {
+            //            SizeOfUnmovableFragments[1] += Data.MftExcludes[i].End - Data.MftExcludes[i].Start;
+            //        }
+            //        else if (Data.MftExcludes[i].Start < ZoneEnd[2])
+            //        {
+            //            SizeOfUnmovableFragments[2] += Data.MftExcludes[i].End - Data.MftExcludes[i].Start;
+            //        }
+            //    }
 
-		        // Walk through all items and count the unmovable fragments. Ignore unmovable fragments
-		        // in the MFT zones, we have already counted the zones.
+            //    // Walk through all items and count the unmovable fragments. Ignore unmovable fragments
+            //    // in the MFT zones, we have already counted the zones.
 
-                for (Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
-		        {
-			        if ((Item.Unmovable == false) &&
-				        (Item.Exclude == false) &&
-                        ((Item.IsDirectory == false) || (Data.CannotMoveDirs <= 20))) continue;
+            //    for (Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
+            //    {
+            //        if ((Item.Unmovable == false) &&
+            //            (Item.Exclude == false) &&
+            //            ((Item.IsDirectory == false) || (Data.CannotMoveDirs <= 20))) continue;
 
-			        RealVcn = 0;
+            //        RealVcn = 0;
 
-			        foreach (Fragment fragment in Item.FragmentList)
-			        {
-				        if (fragment.IsLogical)
-				        {
-                            if (((fragment.Lcn < Data.MftExcludes[0].Start) || (fragment.Lcn >= Data.MftExcludes[0].End)) &&
-                                ((fragment.Lcn < Data.MftExcludes[1].Start) || (fragment.Lcn >= Data.MftExcludes[1].End)) &&
-                                ((fragment.Lcn < Data.MftExcludes[2].Start) || (fragment.Lcn >= Data.MftExcludes[2].End)))
-					        {
-						        if (fragment.Lcn < ZoneEnd[0])
-						        {
-							        SizeOfUnmovableFragments[0] += fragment.Length;
-						        }
-						        else if (fragment.Lcn < ZoneEnd[1])
-						        {
-							        SizeOfUnmovableFragments[1] += fragment.Length;
-						        }
-						        else if (fragment.Lcn < ZoneEnd[2])
-						        {
-							        SizeOfUnmovableFragments[2] += fragment.Length;
-						        }
-					        }
+            //        foreach (Fragment fragment in Item.FragmentList)
+            //        {
+            //            if (fragment.IsLogical)
+            //            {
+            //                if (((fragment.Lcn < Data.MftExcludes[0].Start) || (fragment.Lcn >= Data.MftExcludes[0].End)) &&
+            //                    ((fragment.Lcn < Data.MftExcludes[1].Start) || (fragment.Lcn >= Data.MftExcludes[1].End)) &&
+            //                    ((fragment.Lcn < Data.MftExcludes[2].Start) || (fragment.Lcn >= Data.MftExcludes[2].End)))
+            //                {
+            //                    if (fragment.Lcn < ZoneEnd[0])
+            //                    {
+            //                        SizeOfUnmovableFragments[0] += fragment.Length;
+            //                    }
+            //                    else if (fragment.Lcn < ZoneEnd[1])
+            //                    {
+            //                        SizeOfUnmovableFragments[1] += fragment.Length;
+            //                    }
+            //                    else if (fragment.Lcn < ZoneEnd[2])
+            //                    {
+            //                        SizeOfUnmovableFragments[2] += fragment.Length;
+            //                    }
+            //                }
 
-					        RealVcn += fragment.Length;
-				        }
-			        }
-		        }
-	        }
+            //                RealVcn += fragment.Length;
+            //            }
+            //        }
+            //    }
+            //}
 
-	        // Calculated the begin of the zones.
-            Data.Zones[0] = 0;
+            //// Calculated the begin of the zones.
+            //Data.Zones[0] = 0;
 
-            for (i = 1; i <= 3; i++) Data.Zones[i] = ZoneEnd[i - 1];
+            //for (i = 1; i <= 3; i++) Data.Zones[i] = ZoneEnd[i - 1];
         }
 /*
         / *
@@ -2312,213 +2163,213 @@ namespace MSDefragLib
         /* Update some numbers in the DefragData. */
         void CallShowStatus(int Phase, int Zone)
         {
-	        STARTING_LCN_INPUT_BUFFER BitmapParam = new STARTING_LCN_INPUT_BUFFER();
+        //    STARTING_LCN_INPUT_BUFFER BitmapParam = new STARTING_LCN_INPUT_BUFFER();
 
-	        int Index;
-	        int IndexMax;
+        //    int Index;
+        //    int IndexMax;
 
-	        Int64 Count;
-	        Int64 Factor;
-	        Int64 Sum;
+        //    Int64 Count;
+        //    Int64 Factor;
+        //    Int64 Sum;
 
-	        /* Count the number of free gaps on the disk. */
-            Data.CountGaps = 0;
-            Data.CountFreeClusters = 0;
-            Data.BiggestGap = 0;
-            Data.CountGapsLess16 = 0;
-            Data.CountClustersLess16 = 0;
+        //    /* Count the number of free gaps on the disk. */
+        //    Data.CountGaps = 0;
+        //    Data.CountFreeClusters = 0;
+        //    Data.BiggestGap = 0;
+        //    Data.CountGapsLess16 = 0;
+        //    Data.CountClustersLess16 = 0;
 
-            UInt64 Lcn = 0;
-            UInt64 ClusterStart = 0;
-            Boolean PrevInUse = true;
+        //    UInt64 Lcn = 0;
+        //    UInt64 ClusterStart = 0;
+        //    Boolean PrevInUse = true;
 
-            IO.IOWrapper.BitmapData bitmapData = null;
+        //    IO.IOWrapper.BitmapData bitmapData = null;
 
-	        do
-	        {
-		        /* Fetch a block of cluster data. */
-		        BitmapParam.StartingLcn = Lcn;
+        //    do
+        //    {
+        //        /* Fetch a block of cluster data. */
+        //        BitmapParam.StartingLcn = Lcn;
 
-                bitmapData = Data.Disk.VolumeBitmap;
+        //        bitmapData = Data.Disk.VolumeBitmap;
 
-                if (bitmapData.Buffer == null)
-                {
-                    break;
-                }
+        //        if (bitmapData.Buffer == null)
+        //        {
+        //            break;
+        //        }
 
-		        Lcn = bitmapData.StartingLcn;
+        //        Lcn = bitmapData.StartingLcn;
 
-		        Index = 0;
+        //        Index = 0;
 
-		        IndexMax = bitmapData.Buffer.Count;
+        //        IndexMax = bitmapData.Buffer.Count;
 
-                Boolean InUse = false;
-		        while (Index < IndexMax)
-		        {
-                    InUse = bitmapData.Buffer[Index];
+        //        Boolean InUse = false;
+        //        while (Index < IndexMax)
+        //        {
+        //            InUse = bitmapData.Buffer[Index];
 
-                    if (((Lcn >= Data.MftExcludes[0].Start) && (Lcn < Data.MftExcludes[0].End)) ||
-                        ((Lcn >= Data.MftExcludes[1].Start) && (Lcn < Data.MftExcludes[1].End)) ||
-                        ((Lcn >= Data.MftExcludes[2].Start) && (Lcn < Data.MftExcludes[2].End)))
-                    {
-					    InUse = true;
-			        }
+        //            if (((Lcn >= Data.MftExcludes[0].Start) && (Lcn < Data.MftExcludes[0].End)) ||
+        //                ((Lcn >= Data.MftExcludes[1].Start) && (Lcn < Data.MftExcludes[1].End)) ||
+        //                ((Lcn >= Data.MftExcludes[2].Start) && (Lcn < Data.MftExcludes[2].End)))
+        //            {
+        //                InUse = true;
+        //            }
 
-			        if ((PrevInUse == false) && (InUse != false))
-			        {
-                        Data.CountGaps ++;
-                        Data.CountFreeClusters += Lcn - ClusterStart;
+        //            if ((PrevInUse == false) && (InUse != false))
+        //            {
+        //                Data.CountGaps ++;
+        //                Data.CountFreeClusters += Lcn - ClusterStart;
 
-                        if (Data.BiggestGap < Lcn - ClusterStart) Data.BiggestGap = Lcn - ClusterStart;
+        //                if (Data.BiggestGap < Lcn - ClusterStart) Data.BiggestGap = Lcn - ClusterStart;
 
-				        if (Lcn - ClusterStart < 16)
-				        {
-                            Data.CountGapsLess16++;
-                            Data.CountClustersLess16 += Lcn - ClusterStart;
-				        }
-			        }
+        //                if (Lcn - ClusterStart < 16)
+        //                {
+        //                    Data.CountGapsLess16++;
+        //                    Data.CountClustersLess16 += Lcn - ClusterStart;
+        //                }
+        //            }
 
-			        if ((PrevInUse != false) && (InUse == false)) ClusterStart = Lcn;
+        //            if ((PrevInUse != false) && (InUse == false)) ClusterStart = Lcn;
 
-			        PrevInUse = InUse;
+        //            PrevInUse = InUse;
 
-    		        Index++;
-			        Lcn++;
-		        }
+        //            Index++;
+        //            Lcn++;
+        //        }
 
-	        } while ((bitmapData.Buffer != null) && (Lcn < bitmapData.StartingLcn + bitmapData.BitmapSize));
+        //    } while ((bitmapData.Buffer != null) && (Lcn < bitmapData.StartingLcn + bitmapData.BitmapSize));
 
-	        if (PrevInUse == false)
-	        {
-                Data.CountGaps ++;
-                Data.CountFreeClusters += Lcn - ClusterStart;
+        //    if (PrevInUse == false)
+        //    {
+        //        Data.CountGaps ++;
+        //        Data.CountFreeClusters += Lcn - ClusterStart;
 
-                if (Data.BiggestGap < Lcn - ClusterStart) Data.BiggestGap = Lcn - ClusterStart;
+        //        if (Data.BiggestGap < Lcn - ClusterStart) Data.BiggestGap = Lcn - ClusterStart;
 
-		        if (Lcn - ClusterStart < 16)
-		        {
-                    Data.CountGapsLess16 ++;
-                    Data.CountClustersLess16 += Lcn - ClusterStart;
-		        }
-	        }
+        //        if (Lcn - ClusterStart < 16)
+        //        {
+        //            Data.CountGapsLess16 ++;
+        //            Data.CountClustersLess16 += Lcn - ClusterStart;
+        //        }
+        //    }
 
-	        /* Walk through all files and update the counters. */
-            Data.CountDirectories = 0;
-            Data.CountAllFiles = 0;
-            Data.CountFragmentedItems = 0;
-            Data.CountAllBytes = 0;
-            Data.CountFragmentedBytes = 0;
-            Data.CountAllClusters = 0;
-            Data.CountFragmentedClusters = 0;
+        //    /* Walk through all files and update the counters. */
+        //    Data.CountDirectories = 0;
+        //    Data.CountAllFiles = 0;
+        //    Data.CountFragmentedItems = 0;
+        //    Data.CountAllBytes = 0;
+        //    Data.CountFragmentedBytes = 0;
+        //    Data.CountAllClusters = 0;
+        //    Data.CountFragmentedClusters = 0;
 
-            for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
-	        {
-		        if ((Item.LongFilename != null) &&
-			        (Item.LongFilename.Equals("$BadClus") ||
-			         Item.LongFilename.Equals("$BadClus:$Bad:$DATA")))
-		        {
-			        continue;
-		        }
+        //    //for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
+        //    //{
+        //    //    if ((Item.LongFilename != null) &&
+        //    //        (Item.LongFilename.Equals("$BadClus") ||
+        //    //         Item.LongFilename.Equals("$BadClus:$Bad:$DATA")))
+        //    //    {
+        //    //        continue;
+        //    //    }
 
-                Data.CountAllBytes += Item.Bytes;
-                Data.CountAllClusters += Item.NumClusters;
+        //    //    Data.CountAllBytes += Item.Bytes;
+        //    //    Data.CountAllClusters += Item.NumClusters;
 
-		        if (Item.IsDirectory == true)
-		        {
-                    Data.CountDirectories++;
-		        }
-		        else
-		        {
-                    Data.CountAllFiles++;
-		        }
+        //    //    if (Item.IsDirectory == true)
+        //    //    {
+        //    //        Data.CountDirectories++;
+        //    //    }
+        //    //    else
+        //    //    {
+        //    //        Data.CountAllFiles++;
+        //    //    }
 
-                if (Item.FragmentCount > 1)
-		        {
-                    Data.CountFragmentedItems++;
-                    Data.CountFragmentedBytes += Item.Bytes;
-                    Data.CountFragmentedClusters += Item.NumClusters;
-		        }
-	        }
+        //    //    if (Item.FragmentCount > 1)
+        //    //    {
+        //    //        Data.CountFragmentedItems++;
+        //    //        Data.CountFragmentedBytes += Item.Bytes;
+        //    //        Data.CountFragmentedClusters += Item.NumClusters;
+        //    //    }
+        //    //}
 
-	        /* Calculate the average distance between the end of any file to the begin of
-	        any other file. After reading a file the harddisk heads will have to move to
-	        the beginning of another file. The number is a measure of how fast files can
-	        be accessed.
+        //    /* Calculate the average distance between the end of any file to the begin of
+        //    any other file. After reading a file the harddisk heads will have to move to
+        //    the beginning of another file. The number is a measure of how fast files can
+        //    be accessed.
 
-	        For example these 3 files:
-	        File 1 begin = 107
-	        File 1 end = 312
-	        File 2 begin = 595
-	        File 2 end = 645
-	        File 3 begin = 917
-	        File 3 end = 923
+        //    For example these 3 files:
+        //    File 1 begin = 107
+        //    File 1 end = 312
+        //    File 2 begin = 595
+        //    File 2 end = 645
+        //    File 3 begin = 917
+        //    File 3 end = 923
 
-	        File 1 end - File 2 begin = 283
-	        File 1 end - File 3 begin = 605
-	        File 2 end - File 1 begin = 538
-	        File 2 end - File 3 begin = 272
-	        File 3 end - File 1 begin = 816
-	        File 3 end - File 2 begin = 328
-	        --> Average distance from end to begin = 473.6666
+        //    File 1 end - File 2 begin = 283
+        //    File 1 end - File 3 begin = 605
+        //    File 2 end - File 1 begin = 538
+        //    File 2 end - File 3 begin = 272
+        //    File 3 end - File 1 begin = 816
+        //    File 3 end - File 2 begin = 328
+        //    --> Average distance from end to begin = 473.6666
 
-	        The formula used is:
-	        N = number of files
-	        Bn = Begin of file n
-	        En = End of file n
-	        Average = ( (1-N)*(B1+E1) + (3-N)*(B2+E2) + (5-N)*(B3+E3) + .... + (2*N-1-N)*(BN+EN) ) / ( N * (N-1) )
+        //    The formula used is:
+        //    N = number of files
+        //    Bn = Begin of file n
+        //    En = End of file n
+        //    Average = ( (1-N)*(B1+E1) + (3-N)*(B2+E2) + (5-N)*(B3+E3) + .... + (2*N-1-N)*(BN+EN) ) / ( N * (N-1) )
 
-	        For the above example:
-	        Average = ( (1-3)*(107+312) + (3-3)*(595+645) + 5-3)*(917+923) ) / ( 3 * (3-1) ) = 473.6666
+        //    For the above example:
+        //    Average = ( (1-3)*(107+312) + (3-3)*(595+645) + 5-3)*(917+923) ) / ( 3 * (3-1) ) = 473.6666
 
-	        */
-	        Count = 0;
+        //    */
+        //    Count = 0;
 
-            for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
-	        {
-		        if ((Item.LongFilename == "$BadClus") ||
-			        (Item.LongFilename == "$BadClus:$Bad:$DATA"))
-		        {
-			        continue;
-		        }
+        //    for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
+        //    {
+        //        if ((Item.LongFilename == "$BadClus") ||
+        //            (Item.LongFilename == "$BadClus:$Bad:$DATA"))
+        //        {
+        //            continue;
+        //        }
 
-		        if (Item.NumClusters == 0) continue;
+        //        if (Item.NumClusters == 0) continue;
 
-		        Count++;
-	        }
+        //        Count++;
+        //    }
 
-	        if (Count > 1)
-	        {
-		        Factor = 1 - Count;
-		        Sum = 0;
+        //    if (Count > 1)
+        //    {
+        //        Factor = 1 - Count;
+        //        Sum = 0;
 
-                for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
-		        {
-                    if ((Item.LongFilename == "$BadClus") ||
-                        (Item.LongFilename == "$BadClus:$Bad:$DATA"))
-                    {
-                        continue;
-                    }
+        //        for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
+        //        {
+        //            if ((Item.LongFilename == "$BadClus") ||
+        //                (Item.LongFilename == "$BadClus:$Bad:$DATA"))
+        //            {
+        //                continue;
+        //            }
 
-			        if (Item.NumClusters == 0) continue;
+        //            if (Item.NumClusters == 0) continue;
 
-			        Sum += Factor * (Int64)((Item.Lcn * 2 + Item.NumClusters));
+        //            Sum += Factor * (Int64)((Item.Lcn * 2 + Item.NumClusters));
 
-			        Factor = Factor + 2;
-		        }
+        //            Factor = Factor + 2;
+        //        }
 
-                Data.AverageDistance = Sum / (double)(Count * (Count - 1));
-	        }
-	        else
-	        {
-                Data.AverageDistance = 0;
-	        }
+        //        Data.AverageDistance = Sum / (double)(Count * (Count - 1));
+        //    }
+        //    else
+        //    {
+        //        Data.AverageDistance = 0;
+        //    }
 
-            Data.Phase = (UInt16)Phase;
-            Data.Zone = (UInt16)Zone;
-            Data.PhaseDone = 0;
-            Data.PhaseTodo = 0;
+        //    Data.Phase = (UInt16)Phase;
+        //    Data.Zone = (UInt16)Zone;
+        //    Data.PhaseDone = 0;
+        //    Data.PhaseTodo = 0;
 
-        //	jkGui->ShowStatus(Data);
+        ////	jkGui->ShowStatus(Data);
         }
 
 /*
@@ -3118,153 +2969,153 @@ namespace MSDefragLib
             Data.PhaseDone = 0;
             Data.PhaseTodo = 0;
 
-            for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
-	        {
-                Data.PhaseTodo++;
-	        }
+            //for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
+            //{
+            //    Data.PhaseTodo++;
+            //}
 
             ShowDiskmap();
 
 	        // Walk through all the items one by one
 
-            for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
-	        {
-                if (Data.Running != RunningState.Running) break;
+            //for (ItemStruct Item = ItemTree.TreeSmallest(Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
+            //{
+            //    if (Data.Running != RunningState.Running) break;
 
-		        /* If requested then redraw the diskmap. */
-                ///*if (Data.RedrawScreen == 1) */ShowDiskmap();
-                ColorizeItem(Item, 0, 0, false);
+            //    /* If requested then redraw the diskmap. */
+            //    ///*if (Data.RedrawScreen == 1) */ShowDiskmap();
+            //    ColorizeItem(Item, 0, 0, false);
 
-		        /* Construct the full path's of the item. The MFT contains only the filename, plus
-		        a pointer to the directory. We have to construct the full paths's by joining
-		        all the names of the directories, and the name of the file. */
-                if (Item.LongPath == null) Item.LongPath = GetLongPath(Data, Item);
-                if (Item.ShortPath == null) Item.ShortPath = GetShortPath(Data, Item);
+            //    /* Construct the full path's of the item. The MFT contains only the filename, plus
+            //    a pointer to the directory. We have to construct the full paths's by joining
+            //    all the names of the directories, and the name of the file. */
+            //    if (Item.LongPath == null) Item.LongPath = GetLongPath(Data, Item);
+            //    if (Item.ShortPath == null) Item.ShortPath = GetShortPath(Data, Item);
 
-		        /* Save some memory if the short and long paths are the same. */
-		        if ((Item.LongPath != null) &&
-			        (Item.ShortPath != null) &&
-			        (Item.LongPath != Item.ShortPath) &&
-			        (Item.LongPath.CompareTo(Item.ShortPath)) == 0)
-		        {
-			        Item.ShortPath = Item.LongPath;
-		        }
+            //    /* Save some memory if the short and long paths are the same. */
+            //    if ((Item.LongPath != null) &&
+            //        (Item.ShortPath != null) &&
+            //        (Item.LongPath != Item.ShortPath) &&
+            //        (Item.LongPath.CompareTo(Item.ShortPath)) == 0)
+            //    {
+            //        Item.ShortPath = Item.LongPath;
+            //    }
 
-                if ((Item.LongPath == null) && (Item.ShortPath != null)) Item.LongPath = Item.ShortPath;
-                if ((Item.LongPath != null) && (Item.ShortPath == null)) Item.ShortPath = Item.LongPath;
+            //    if ((Item.LongPath == null) && (Item.ShortPath != null)) Item.LongPath = Item.ShortPath;
+            //    if ((Item.LongPath != null) && (Item.ShortPath == null)) Item.ShortPath = Item.LongPath;
 
-		        // For debugging only: compare the data with the output from the
-		        // FSCTL_GET_RETRIEVAL_POINTERS function call.
-		        //
-		        // CompareItems(Data,Item);
-		        //
+            //    // For debugging only: compare the data with the output from the
+            //    // FSCTL_GET_RETRIEVAL_POINTERS function call.
+            //    //
+            //    // CompareItems(Data,Item);
+            //    //
 
-		        // Apply the Mask and set the Exclude flag of all items that do not match.
+            //    // Apply the Mask and set the Exclude flag of all items that do not match.
 
-                if ((Wildcard.MatchMask(Item.LongPath, Data.IncludeMask) == false) &&
-                    (Wildcard.MatchMask(Item.ShortPath, Data.IncludeMask) == false))
-		        {
-			        Item.Exclude = true;
+            //    if ((Wildcard.MatchMask(Item.LongPath, Data.IncludeMask) == false) &&
+            //        (Wildcard.MatchMask(Item.ShortPath, Data.IncludeMask) == false))
+            //    {
+            //        Item.Exclude = true;
 
-			        ColorizeItem(Item,0,0,false);
-		        }
+            //        ColorizeItem(Item,0,0,false);
+            //    }
 
-		        // Determine if the item is to be excluded by comparing it's name with the Exclude masks.
+            //    // Determine if the item is to be excluded by comparing it's name with the Exclude masks.
 
-                if ((Item.Exclude == false) && (Data.Excludes != null))
-		        {
-                    for (i = 0; Data.Excludes[i] != null; i++)
-			        {
-                        if ((Wildcard.MatchMask(Item.LongPath, Data.Excludes[i]) == true) ||
-                            (Wildcard.MatchMask(Item.ShortPath, Data.Excludes[i]) == true))
-				        {
-					        Item.Exclude = true;
+            //    if ((Item.Exclude == false) && (Data.Excludes != null))
+            //    {
+            //        for (i = 0; Data.Excludes[i] != null; i++)
+            //        {
+            //            if ((Wildcard.MatchMask(Item.LongPath, Data.Excludes[i]) == true) ||
+            //                (Wildcard.MatchMask(Item.ShortPath, Data.Excludes[i]) == true))
+            //            {
+            //                Item.Exclude = true;
 
-					        ColorizeItem(Item,0,0,false);
+            //                ColorizeItem(Item,0,0,false);
 
-					        break;
-				        }
-			        }
-		        }
+            //                break;
+            //            }
+            //        }
+            //    }
 
-		        // Exclude my own logfile
+            //    // Exclude my own logfile
 
-		        if ((Item.Exclude == false) &&
-			        (Item.LongFilename != null) &&
-                    ((Item.LongFilename == "jkdefrag.log") ||
-                    (Item.LongFilename == "jkdefragcmd.log") ||
-                    (Item.LongFilename == "jkdefragscreensaver.log")))
-		        {
-			        Item.Exclude = true;
-			        ColorizeItem(Item,0,0,false);
-		        }
+            //    if ((Item.Exclude == false) &&
+            //        (Item.LongFilename != null) &&
+            //        ((Item.LongFilename == "jkdefrag.log") ||
+            //        (Item.LongFilename == "jkdefragcmd.log") ||
+            //        (Item.LongFilename == "jkdefragscreensaver.log")))
+            //    {
+            //        Item.Exclude = true;
+            //        ColorizeItem(Item,0,0,false);
+            //    }
 
-		        // The item is a SpaceHog if it's larger than 50 megabytes, or last access time is more 
-                // than 30 days ago, or if it's filename matches a SpaceHog mask
+            //    // The item is a SpaceHog if it's larger than 50 megabytes, or last access time is more 
+            //    // than 30 days ago, or if it's filename matches a SpaceHog mask
 
-		        if ((Item.Exclude == false) && (Item.IsDirectory == false))
-		        {
-                    if ((Data.UseDefaultSpaceHogs == true) && (Item.Bytes > 50 * 1024 * 1024))
-			        {
-				        Item.SpaceHog = true;
-			        }
-                    else if ((Data.UseDefaultSpaceHogs == true) && (Data.UseLastAccessTime == true) &&
-                            ((Int64)(Item.LastAccessTime + (Int64)(30 * 24 * 60 * 60) * 10000000) < SystemTime))
-                    {
-                        Item.SpaceHog = true;
-                    }
-                    else if (Data.SpaceHogs != null)
-                    {
-                        for (i = 0; i < Data.SpaceHogs.Count; i++)
-                        {
-                            if ((Wildcard.MatchMask(Item.LongPath, Data.SpaceHogs[i]) == true) ||
-                                (Wildcard.MatchMask(Item.ShortPath, Data.SpaceHogs[i]) == true))
-                            {
-                                Item.SpaceHog = true;
+            //    if ((Item.Exclude == false) && (Item.IsDirectory == false))
+            //    {
+            //        if ((Data.UseDefaultSpaceHogs == true) && (Item.Bytes > 50 * 1024 * 1024))
+            //        {
+            //            Item.SpaceHog = true;
+            //        }
+            //        else if ((Data.UseDefaultSpaceHogs == true) && (Data.UseLastAccessTime == true) &&
+            //                ((Int64)(Item.LastAccessTime + (Int64)(30 * 24 * 60 * 60) * 10000000) < SystemTime))
+            //        {
+            //            Item.SpaceHog = true;
+            //        }
+            //        else if (Data.SpaceHogs != null)
+            //        {
+            //            for (i = 0; i < Data.SpaceHogs.Count; i++)
+            //            {
+            //                if ((Wildcard.MatchMask(Item.LongPath, Data.SpaceHogs[i]) == true) ||
+            //                    (Wildcard.MatchMask(Item.ShortPath, Data.SpaceHogs[i]) == true))
+            //                {
+            //                    Item.SpaceHog = true;
 
-                                break;
-                            }
-                        }
-                    }
+            //                    break;
+            //                }
+            //            }
+            //        }
 
-			        if (Item.SpaceHog == true) ColorizeItem(Item,0,0,false);
-		        }
+            //        if (Item.SpaceHog == true) ColorizeItem(Item,0,0,false);
+            //    }
 
-		        // Special exception for "http://www.safeboot.com/". 
-                if (Wildcard.MatchMask(Item.LongPath, "*\\safeboot.fs") == true)
-                    Item.Unmovable = true;
+            //    // Special exception for "http://www.safeboot.com/". 
+            //    if (Wildcard.MatchMask(Item.LongPath, "*\\safeboot.fs") == true)
+            //        Item.Unmovable = true;
 
-		        // Special exception for Acronis OS Selector.
-                if (Wildcard.MatchMask(Item.LongPath, "?:\\bootwiz.sys") == true)
-                    Item.Unmovable = true;
+            //    // Special exception for Acronis OS Selector.
+            //    if (Wildcard.MatchMask(Item.LongPath, "?:\\bootwiz.sys") == true)
+            //        Item.Unmovable = true;
 
-                if (Wildcard.MatchMask(Item.LongPath, "*\\BOOTWIZ\\*") == true)
-                    Item.Unmovable = true;
+            //    if (Wildcard.MatchMask(Item.LongPath, "*\\BOOTWIZ\\*") == true)
+            //        Item.Unmovable = true;
 
-		        // Special exception for DriveCrypt by "http://www.securstar.com/".
-                if (Wildcard.MatchMask(Item.LongPath, "?:\\BootAuth?.sys") == true)
-                    Item.Unmovable = true;
+            //    // Special exception for DriveCrypt by "http://www.securstar.com/".
+            //    if (Wildcard.MatchMask(Item.LongPath, "?:\\BootAuth?.sys") == true)
+            //        Item.Unmovable = true;
 
-		        // Special exception for Symantec GoBack.
-                if (Wildcard.MatchMask(Item.LongPath, "*\\Gobackio.bin") == true)
-                    Item.Unmovable = true;
+            //    // Special exception for Symantec GoBack.
+            //    if (Wildcard.MatchMask(Item.LongPath, "*\\Gobackio.bin") == true)
+            //        Item.Unmovable = true;
 
-		        // The $BadClus file maps the entire disk and is always unmovable.
-		        if ((Item.LongFilename == "$BadClus") ||
-			        (Item.LongFilename == "$BadClus:$Bad:$DATA"))
-		        {
-			        Item.Unmovable = true;
-		        }
+            //    // The $BadClus file maps the entire disk and is always unmovable.
+            //    if ((Item.LongFilename == "$BadClus") ||
+            //        (Item.LongFilename == "$BadClus:$Bad:$DATA"))
+            //    {
+            //        Item.Unmovable = true;
+            //    }
 
-		        // Update the progress percentage.
-                Data.PhaseDone++;
+            //    // Update the progress percentage.
+            //    Data.PhaseDone++;
 
-                if (Data.PhaseDone % 50 == 0)
-                {
-                    ShowProgress((Double)(Data.PhaseDone), (Double)Data.PhaseTodo);
-                    ShowLogMessage(1, "Phase: " + Data.PhaseDone + " / " + Data.PhaseTodo);
-                }
-	        }
+            //    if (Data.PhaseDone % 50 == 0)
+            //    {
+            //        ShowProgress((Double)(Data.PhaseDone), (Double)Data.PhaseTodo);
+            //        ShowLogMessage(1, "Phase: " + Data.PhaseDone + " / " + Data.PhaseTodo);
+            //    }
+            //}
 
 	        // Force the percentage to 100%.
             Data.PhaseDone = Data.PhaseTodo;

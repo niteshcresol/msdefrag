@@ -32,7 +32,7 @@ namespace MSDefragLib
 
             Disk = new Disk();
 
-            ItemTree = null;
+            //ItemTree = null;
 
             BalanceCount = 0;
 
@@ -92,7 +92,7 @@ namespace MSDefragLib
 
 	    /* Tree in memory with information about all the files. */
 
-	    public ItemStruct ItemTree;
+//	    public ItemStruct ItemTree;
 	    public int BalanceCount;
 	    public List<String> Excludes;                     /* Array with exclude masks. */
 	    public Boolean UseDefaultSpaceHogs;               /* TRUE: use the built-in SpaceHogs. */
