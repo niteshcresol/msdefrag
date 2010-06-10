@@ -6,8 +6,7 @@ using System.Text;
 namespace MSDefragLib
 {
     /// <summary>
-    /// List in memory of all the files on disk, sorted
-    /// by LCN (Logical Cluster Number).
+    /// List in memory of all the files on disk, sorted by LCN (Logical Cluster Number).
     /// </summary>
     public class ItemStruct
     {
@@ -39,6 +38,73 @@ namespace MSDefragLib
             {
                 return FragmentList.FragmentCount;
             }
+        }
+
+        /// <summary>
+        /// Return true if the block in the item starting at Offset with Size clusters
+        /// is fragmented, otherwise return false.
+        /// 
+        /// Note: this function does not ask Windows for a fresh list of fragments,
+        ///       it only looks at cached information in memory.
+        /// </summary>
+        /// <param name="Item"></param>
+        /// <param name="Offset"></param>
+        /// <param name="Size"></param>
+        /// <returns></returns>
+        public Boolean IsFragmented(UInt64 Offset, UInt64 Size)
+        {
+            UInt64 FragmentBegin = 0;
+            UInt64 FragmentEnd = 0;
+            UInt64 NextLcn = 0;
+
+            // Walk through all fragments. If a fragment is found where either the begin or the end of 
+            // the fragment is inside the block then the file is fragmented and return true.
+
+            foreach (Fragment fragment in FragmentList)
+            {
+                // Virtual fragments do not occupy space on disk and do not count as fragments.
+                if (fragment.IsLogical == false)
+                    continue;
+
+                // Treat aligned fragments as a single fragment. Windows will frequently split files
+                // in fragments even though they are perfectly aligned on disk, especially system 
+                // files and very large files. The defragger treats these files as unfragmented.
+
+                if ((NextLcn != 0) && (fragment.Lcn != NextLcn))
+                {
+                    // If the fragment is above the block then return false, the block is not
+                    // fragmented and we don't have to scan any further.
+
+                    if (FragmentBegin >= Offset + Size)
+                        return false;
+
+                    // If the first cluster of the fragment is above the first cluster of the block,
+                    // or the last cluster of the fragment is before the last cluster of the block,
+                    // then the block is fragmented, return true.
+
+                    if ((FragmentBegin > Offset) || ((FragmentEnd - 1 >= Offset) && (FragmentEnd < Offset + Size)))
+                    {
+                        return true;
+                    }
+
+                    FragmentBegin = FragmentEnd;
+                }
+
+                FragmentEnd += fragment.Length;
+                NextLcn = fragment.NextLcn;
+            }
+
+            // Handle the last fragment.
+            if (FragmentBegin >= Offset + Size)
+                return false;
+
+            if ((FragmentBegin > Offset) || ((FragmentEnd - 1 >= Offset) && (FragmentEnd < Offset + Size)))
+            {
+                return true;
+            }
+
+            // Return false, the item is not fragmented inside the block.
+            return false;
         }
 
 

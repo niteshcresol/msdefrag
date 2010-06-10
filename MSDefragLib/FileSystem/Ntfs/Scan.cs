@@ -821,6 +821,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 // Create and fill a new item record in memory.
                 ItemStruct Item = new ItemStruct(stream);
+
                 Item.LongFilename = ConstructStreamName(inodeData.LongFilename, inodeData.ShortFilename, stream);
                 Item.LongPath = null;
 
@@ -949,17 +950,12 @@ namespace MSDefragLib.FileSystem.Ntfs
             ShowDebug(2, String.Format("  ClustersPerIndexRecord: {0:G}", diskInfo.ClustersPerIndexRecord));
 
             ShowDebug(2, String.Format("  MediaType: {0:X}", bootSector.MediaType));
-
             ShowDebug(2, String.Format("  VolumeSerialNumber: {0:X}", bootSector.Serial));
 
-            // Calculate the size of first 16 Inodes in the MFT. The Microsoft defragmentation
-            // API cannot move these inodes.
-            //
+            // Calculate the size of first 16 Inodes in the MFT. The Microsoft defragmentation API cannot move these inodes.
             _lib.Data.Disk.MftLockedClusters = diskInfo.BytesPerCluster / diskInfo.BytesPerMftRecord;
 
-            // Read the $MFT record from disk into memory, which is always the first record in
-            // the MFT.
-            //
+            // Read the $MFT record from disk into memory, which is always the first record in the MFT.
             UInt64 tempLcn = diskInfo.MftStartLcn * diskInfo.BytesPerCluster;
 
             ByteArray Buffer = new ByteArray((Int64)MFTBUFFERSIZE);
@@ -1002,11 +998,16 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             // Read and process all the records in the MFT. The records are read into a
             // buffer and then given one by one to the InterpretMftRecord() subroutine.
+
             UInt64 BlockStart = 0;
             UInt64 BlockEnd = 0;
             UInt64 InodeNumber = 0;
+
             foreach (bool bit in bitmapFile.Bits)
             {
+                if (_lib.Data.Running != RunningState.Running)
+                    break;
+
                 // Ignore the m_iNode if the bitmap says it's not in use.
                 if (!bit || (InodeNumber == 0))
                 {
@@ -1033,6 +1034,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                         diskInfo.InodeToCluster(InodeNumber));
 
                     UInt64 u1 = diskInfo.ClusterToInode(foundFragment.NextVcn);
+
                     if (BlockEnd > u1)
                         BlockEnd = u1;
 
@@ -1048,6 +1050,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 // Fixup the raw data of this m_iNode
                 UInt64 position = diskInfo.InodeToBytes(InodeNumber - BlockStart);
+
                 FixupRawMftdata(diskInfo,
                         Buffer.ToByteArray((Int64)position, Buffer.GetLength() - (Int64)(position)),
                         diskInfo.BytesPerMftRecord);
