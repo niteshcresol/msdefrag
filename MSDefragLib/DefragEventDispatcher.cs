@@ -27,6 +27,8 @@ namespace MSDefragLib
 
         public void AddFilteredClusters(IList<MapClusterState> clusters)
         {
+            if (clusters == null) return;
+
             lock (filteredClusters)
             {
                 foreach (MapClusterState cluster in clusters)

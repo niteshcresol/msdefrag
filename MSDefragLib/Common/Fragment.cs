@@ -9,9 +9,9 @@ namespace MSDefragLib
     /// <summary>
     /// List in memory of the fragments of a file.
     /// Add the size of the fragment to the total number of clusters.
-    /// There are two kinds of fragments: real and virtual. The latter do not
-    /// occupy clusters on disk, but are information used by compressed
-    /// and sparse files. 
+    /// There are two kinds of fragments: real and virtual.
+    /// The latter do not occupy clusters on disk, but are information
+    /// used by compressed and sparse files. 
     /// </summary>
     [DebuggerDisplay("Lcn={Lcn}, Vcn={Vcn}, Len={Length}")]
     public class Fragment

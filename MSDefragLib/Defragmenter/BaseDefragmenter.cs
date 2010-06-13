@@ -171,6 +171,18 @@ namespace MSDefragLib.Defragmenter
             ShowFilteredClusters(clusterBegin, clusterEnd);
         }
 
+        public void SetClusterState(ItemStruct item, eClusterState newState)
+        {
+            if (diskMap == null)
+            {
+                return;
+            }
+
+            diskMap.AddCluster(item, newState);
+
+            ShowFilteredClusters(0, diskMap.a);
+        }
+
         #endregion
     }
 }

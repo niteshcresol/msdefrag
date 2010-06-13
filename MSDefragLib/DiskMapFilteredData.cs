@@ -34,7 +34,8 @@ namespace MSDefragLib
 
         public void AddClusterState(Int32 index, eClusterState state)
         {
-            ClusterData[index].AddClusterState(state);
+            if ((index > 0) && (index < ClusterData.Count))
+                ClusterData[index].AddClusterState(state);
         }
 
         public void SetClusterDirty(Int32 index, Boolean dirty)

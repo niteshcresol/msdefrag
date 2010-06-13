@@ -42,11 +42,11 @@ namespace MSDefrag
 
             Rectangle drawingArea = BitmapSettings.DrawingArea;
 
-            LinearGradientBrush brush = new LinearGradientBrush(drawingArea, Color.Black, Color.White, LinearGradientMode.ForwardDiagonal);
+            LinearGradientBrush brush = new LinearGradientBrush(drawingArea, Color.Gray, Color.Silver, LinearGradientMode.ForwardDiagonal);
             graphics.FillRectangle(brush, drawingArea);
 
             Pen hiPen = Pens.White;
-            Pen loPen = Pens.DarkGray;
+            Pen loPen = Pens.Black;
 
             // Outside border
             Draw3DRectangle(BitmapSettings.OutsideBorder, hiPen, loPen);

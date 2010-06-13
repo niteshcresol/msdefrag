@@ -7,9 +7,12 @@ namespace MSDefragLib
 {
     public class DiskMap
     {
+        public Int32 a;
+
         public DiskMap(Int32 numClusters)
         {
-            DiskDetails = new DiskMapDetails(numClusters);
+            a = numClusters;
+            //DiskDetails = new DiskMapDetails(numClusters);
             DiskFilteredDetails = new DiskMapFilteredData(5733);
         }
 
@@ -30,22 +33,42 @@ namespace MSDefragLib
 
         public void AddCluster(Int32 idxCluster, eClusterState state)
         {
-            lock (DiskDetails)
+            //lock (DiskDetails)
+            //{
+            //    DiskDetails.AddCluster(idxCluster, state);
+            //}
+        }
+
+        public void AddCluster(ItemStruct item, eClusterState state)
+        {
+            Double clustersPerFilter = (Double)a / (Double)DiskFilteredDetails.TotalClusters;
+
+            foreach (Fragment fragment in item.FragmentList)
             {
-                DiskDetails.AddCluster(idxCluster, state);
+                if (fragment.IsVirtual)
+                    continue;
+
+                Int32 idxCluster = (Int32)(fragment.Lcn / clustersPerFilter);
+
+                DiskFilteredDetails.AddClusterState(idxCluster, state);
             }
+
+            //lock (DiskDetails)
+            //{
+            //    DiskDetails.AddCluster(idxCluster, state);
+            //}
         }
 
         public IList<MapClusterState> GetFilteredClusters(Int32 clusterBegin, Int32 clusterEnd)
         {
-            IList<MapClusterState> clusters;
+            IList<MapClusterState> clusters = null;
 
             lock (DiskFilteredDetails)
             {
                 Int32 filterBegin = 0;
                 Int32 filterEnd = 1;
 
-                Double clustersPerFilter = (Double)DiskDetails.TotalClusters / (Double)DiskFilteredDetails.TotalClusters;
+                Double clustersPerFilter = (Double)a / (Double)DiskFilteredDetails.TotalClusters;
 
                 filterBegin = (Int32)(clusterBegin / clustersPerFilter);
                 filterEnd = (Int32)(clusterEnd / clustersPerFilter);
@@ -59,7 +82,7 @@ namespace MSDefragLib
 
         public IList<MapClusterState> GetAllFilteredClusters()
         {
-            IList<MapClusterState> clusters;
+            IList<MapClusterState> clusters = null;
 
             lock (DiskFilteredDetails)
             {
@@ -71,42 +94,42 @@ namespace MSDefragLib
 
         private void ReparseClusters()
         {
-            lock (DiskDetails)
-            {
-                lock (DiskFilteredDetails)
-                {
-                    Int32 filterBegin = 0;
-                    Int32 filterEnd = DiskFilteredDetails.TotalClusters - 1;
+            //lock (DiskDetails)
+            //{
+            //    lock (DiskFilteredDetails)
+            //    {
+            //        Int32 filterBegin = 0;
+            //        Int32 filterEnd = DiskFilteredDetails.TotalClusters - 1;
 
-                    Double clustersPerFilter = (Double)DiskDetails.TotalClusters / (Double)DiskFilteredDetails.TotalClusters;
+            //        Double clustersPerFilter = (Double)DiskDetails.TotalClusters / (Double)DiskFilteredDetails.TotalClusters;
 
-                    for (Int32 filterIdx = filterBegin; filterIdx < filterEnd; filterIdx++)
-                    {
-                        Int32 clusterBegin = (Int32)(filterIdx * clustersPerFilter);
-                        Int32 clusterEnd = (Int32)(clusterBegin + clustersPerFilter);
+            //        for (Int32 filterIdx = filterBegin; filterIdx < filterEnd; filterIdx++)
+            //        {
+            //            Int32 clusterBegin = (Int32)(filterIdx * clustersPerFilter);
+            //            Int32 clusterEnd = (Int32)(clusterBegin + clustersPerFilter);
 
-                        DiskFilteredDetails.ResetClusterStates(filterIdx);
+            //            DiskFilteredDetails.ResetClusterStates(filterIdx);
 
-                        for (Int32 cluster = clusterBegin; cluster < clusterEnd && cluster < DiskDetails.TotalClusters; cluster++)
-                        {
-                            eClusterState state = eClusterState.Free;
+            //            for (Int32 cluster = clusterBegin; cluster < clusterEnd && cluster < DiskDetails.TotalClusters; cluster++)
+            //            {
+            //                eClusterState state = eClusterState.Free;
 
-                            state = DiskDetails.GetClusterState(cluster);
+            //                state = DiskDetails.GetClusterState(cluster);
 
-                            DiskFilteredDetails.AddClusterState(filterIdx,state);
-                        }
+            //                DiskFilteredDetails.AddClusterState(filterIdx,state);
+            //            }
 
-                        DiskFilteredDetails.SetClusterDirty(filterIdx, true);
-                    }
-                }
-            }
+            //            DiskFilteredDetails.SetClusterDirty(filterIdx, true);
+            //        }
+            //    }
+            //}
         }
 
-        private void ReparseClusters(Int32 clusterBegin, Int32 clusterEnd)
+        private void ReparseClusters(Int32 clusterBegin, Int32 clusterEnd, eClusterState state)
         {
-            lock (DiskFilteredDetails)
-            {
-                Double clustersPerFilter = (Double)DiskDetails.TotalClusters / (Double)DiskFilteredDetails.TotalClusters;
+            //lock (DiskFilteredDetails)
+            //{
+                Double clustersPerFilter = (Double)a / (Double)DiskFilteredDetails.TotalClusters;
 
                 Int32 filterBegin = (Int32)(clusterBegin / clustersPerFilter);
                 Int32 filterEnd = (Int32)(clusterEnd / clustersPerFilter);
@@ -116,39 +139,26 @@ namespace MSDefragLib
                     if ((filterIdx < 0) || (filterIdx >= DiskFilteredDetails.TotalClusters))
                         return;
 
-                    Int32 clusterBegin2 = (Int32)(filterIdx * clustersPerFilter);
-                    Int32 clusterEnd2 = (Int32)(clusterBegin2 + clustersPerFilter);
-
-                    DiskFilteredDetails.ResetClusterStates(filterIdx);
-
-                    for (Int32 cluster = clusterBegin2; cluster < clusterEnd2 && cluster < DiskDetails.TotalClusters; cluster++)
-                    {
-                        eClusterState state = eClusterState.Free;
-
-                        state = DiskDetails.GetClusterState(cluster);
-
-                        DiskFilteredDetails.AddClusterState(filterIdx, state);
-                    }
-
+                    DiskFilteredDetails.AddClusterState(filterIdx, state);
                     DiskFilteredDetails.SetClusterDirty(filterIdx, true);
                 }
-            }
+            //}
         }
 
         public void SetClusterState(Int32 clusterBegin, Int32 clusterEnd, eClusterState state, Boolean updateFilteredClusters)
         {
-            lock (DiskDetails)
-            {
-                DiskDetails.SetClusterState(clusterBegin, clusterEnd, state);
+            //lock (DiskDetails)
+            //{
+            //    DiskDetails.SetClusterState(clusterBegin, clusterEnd, state);
 
-                if (updateFilteredClusters)
-                {
-                    ReparseClusters(clusterBegin, clusterEnd);
-                }
-            }
+            //    if (updateFilteredClusters)
+            //    {
+                    ReparseClusters(clusterBegin, clusterEnd, state);
+            //    }
+            //}
         }
 
-        DiskMapDetails DiskDetails;
+        //DiskMapDetails DiskDetails;
         DiskMapFilteredData DiskFilteredDetails;
     }
 }

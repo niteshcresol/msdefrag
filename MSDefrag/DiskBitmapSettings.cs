@@ -16,7 +16,7 @@ namespace MSDefrag
         #region Settings
 
         public static Int32 borderOffset = 1;
-        public static Int32 borderWidth = 2;
+        public static Int32 borderWidth = 4;
 
         private static Color ColorUnmovable = Color.Yellow;
         private static Color ColorAllocated = Color.LightBlue;

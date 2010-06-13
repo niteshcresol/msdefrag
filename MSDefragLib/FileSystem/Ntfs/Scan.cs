@@ -126,8 +126,8 @@ namespace MSDefragLib.FileSystem.Ntfs
 
         /// <summary>
         /// Read the data that is specified in a RunData list from disk into memory,
-        /// skipping the first Offset bytes. Return a malloc'ed buffer with the data,
-        /// or null if error.
+        /// skipping the first Offset bytes.
+        /// Return a buffer with the data, or null if error.
         /// </summary>
         /// <param name="diskInfo"></param>
         /// <param name="runData"></param>
@@ -254,7 +254,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             Stream foundStream = inodeData.Streams.FirstOrDefault(x => (x.Name == streamName) && (x.Type.Type == streamType.Type));
             if (foundStream == null)
             {
-                ShowDebug(6, "    Creating new stream: '" + streamName + ":" + streamType.GetStreamTypeName() + "'");
+                //ShowDebug(6, "    Creating new stream: '" + streamName + ":" + streamType.GetStreamTypeName() + "'");
                 Stream newStream = new Stream(streamName, streamType);
                 newStream.Bytes = byteCount;
 
@@ -263,7 +263,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             }
             else
             {
-                ShowDebug(6, "    Appending rundata to existing stream: '" + streamName + ":" + streamType.GetStreamTypeName());
+                //ShowDebug(6, "    Appending rundata to existing stream: '" + streamName + ":" + streamType.GetStreamTypeName());
                 if (foundStream.Bytes == 0)
                     foundStream.Bytes = byteCount;
             }
@@ -413,7 +413,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (RefInode == inodeData.Inode) continue;
 
                 // Show debug message.
-                ShowDebug(6, "    List attribute: " + attributeList.Type.GetStreamTypeName());
+                //ShowDebug(6, "    List attribute: " + attributeList.Type.GetStreamTypeName());
                 //ShowDebug(6, String.Format("      m_lowestVcn = {0:G}, RefInode = {1:G}, InodeSequence = {2:G}, m_instance = {3:G}",
                 //      attributeList.m_lowestVcn, RefInode, attributeList.m_fileReferenceNumber.m_sequenceNumber, attributeList.m_instance));
 
@@ -425,12 +425,15 @@ namespace MSDefragLib.FileSystem.Ntfs
                 {
                     reader.BaseStream.Seek(position + offset + attributeList.NameOffset, SeekOrigin.Begin);
                     String p1 = Helper.ParseString(reader, attributeList.NameLength);
-                    ShowDebug(6, "      AttributeList name = '" + p1 + "'");
+                    //ShowDebug(6, "      AttributeList name = '" + p1 + "'");
                 }
 
                 // Find the fragment in the MFT that contains the referenced m_iNode.
                 Fragment foundFragment = inodeData.MftDataFragments.FindContaining(
                     diskInfo.InodeToCluster(RefInode));
+
+                if (foundFragment == null)
+                    continue;
 
                 // Fetch the record of the referenced m_iNode from disk.
                 UInt64 tempVcn = diskInfo.ClusterToBytes(foundFragment.Lcn) + diskInfo.InodeToBytes(RefInode);
@@ -462,14 +465,14 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 // Process the list of attributes in the m_iNode, by recursively calling the ProcessAttributes() subroutine.
-                ShowDebug(6, String.Format("      Processing m_iNode {0:G} m_instance {1:G}", RefInode, attributeList.Instance));
+                //ShowDebug(6, String.Format("      Processing m_iNode {0:G} m_instance {1:G}", RefInode, attributeList.Instance));
 
                 ProcessAttributes(diskInfo, inodeData,
                     Helper.BinaryReader(Buffer2, FileRecordHeader.AttributeOffset),
                     diskInfo.BytesPerMftRecord - FileRecordHeader.AttributeOffset,
                     attributeList.Instance, depth + 1);
 
-                ShowDebug(6, String.Format("      Finished processing m_iNode {0:G} m_instance {1:G}", RefInode, attributeList.Instance));
+                //ShowDebug(6, String.Format("      Finished processing m_iNode {0:G} m_instance {1:G}", RefInode, attributeList.Instance));
             }
         }
 
@@ -536,7 +539,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 // Show debug message.
-                ShowDebug(6, String.Format("  Attribute {0:G}: {1:G}", attribute.Number, attribute.Type.GetStreamTypeName()));
+                //ShowDebug(6, String.Format("  Attribute {0:G}: {1:G}", attribute.Number, attribute.Type.GetStreamTypeName()));
 
                 reader.BaseStream.Seek(position + offset, SeekOrigin.Begin);
                 if (attribute.IsNonResident)
@@ -573,7 +576,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     continue;
                 }
 
-                ShowDebug(6, String.Format("  Attribute {0:G}: {1:G}", attribute.Number, attribute.Type.GetStreamTypeName()));
+                //ShowDebug(6, String.Format("  Attribute {0:G}: {1:G}", attribute.Number, attribute.Type.GetStreamTypeName()));
 
                 reader.BaseStream.Seek(position + offset, SeekOrigin.Begin);
                 if (attribute.IsNonResident)
@@ -896,6 +899,9 @@ namespace MSDefragLib.FileSystem.Ntfs
                     inodeArray.SetValue(Item, (Int64)inodeNumber);
                 }
 
+                if (Item != null)
+                    ShowDebug(2, "File: " + (String.IsNullOrEmpty(Item.LongFilename) ? (String.IsNullOrEmpty(Item.ShortFilename) ? "" : Item.ShortFilename) : Item.LongFilename));
+
                 // Draw the item on the screen.
                 //if (_lib.Data.RedrawScreen == 0)
                 //{
@@ -1064,7 +1070,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (_lib.Data.PhaseDone % 50 == 0)
                 {
                     _lib.ShowProgress((Double)(_lib.Data.PhaseDone), (Double)_lib.Data.PhaseTodo);
-                    ShowDebug(1, "Done: " + _lib.Data.PhaseDone + "/" + _lib.Data.PhaseTodo);
+                    //ShowDebug(1, "Done: " + _lib.Data.PhaseDone + "/" + _lib.Data.PhaseTodo);
                 }
 
                 InodeNumber++;

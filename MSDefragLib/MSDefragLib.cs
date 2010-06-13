@@ -331,26 +331,41 @@ namespace MSDefragLib
 	        return(TreePrev(Here));
         }
 */
-        SortedList<UInt64, ItemStruct> itemList;
+        //SortedList<UInt64, ItemStruct> itemList;
 
         /* Insert a record into the tree. The tree is sorted by LCN (Logical Cluster Number). */
         public void TreeInsert(ItemStruct newItem)
         {
-            if (itemList == null)
-            {
-                itemList = new SortedList<UInt64, ItemStruct>();
-            }
+            //eClusterState state = eClusterState.Unfragmented;
 
-	        if (newItem == null || newItem.Lcn == 0) return;
+            //if (newItem.IsFragmented(0,0))
+            //    state = eClusterState.Fragmented;
 
-            UInt64 NewLcn = newItem.Lcn;
+            //ColorizeItem(newItem, 0, 0, false);
+//            defragmenter.SetClusterState(newItem, state);
 
-            itemList.Add(NewLcn, newItem);
+            //if (itemList == null)
+            //{
+            //    itemList = new SortedList<UInt64, ItemStruct>();
+            //}
 
-            foreach (UInt64 key in itemList.Keys)
-            {
-                ItemStruct st = itemList[key];
-            }
+            //if (newItem == null || newItem.Lcn == 0) return;
+
+            //UInt64 NewLcn = newItem.Lcn;
+
+            //itemList.Add(NewLcn, newItem);
+
+            //foreach (Fragment fragment in newItem.FragmentList)
+            //{
+            //    if (fragment.IsLogical)
+            //    {
+            //        if (itemList.ContainsKey(fragment.Lcn) == false)
+            //        {
+            //            itemList.Add(fragment.Lcn, newItem);
+            //        }
+            //    }
+            //}
+
             //defragmenter.diskMap.AddCluster(NewLcn, newItem);
         }
 /*
@@ -885,7 +900,9 @@ namespace MSDefragLib
 			        }
 
 			        // Colorize the segment.
-                    defragmenter.SetClusterState((Int32)(fragment.Lcn + SegmentBegin), (Int32)(fragment.Lcn + SegmentEnd), ClusterState);
+                    //defragmenter.SetClusterState((Int32)(fragment.Lcn + SegmentBegin), (Int32)(fragment.Lcn + SegmentEnd), ClusterState);
+
+                    defragmenter.SetClusterState(Item, ClusterState);
 
 			        // Next segment
 			        SegmentBegin = SegmentEnd;

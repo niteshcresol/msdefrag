@@ -72,8 +72,8 @@ namespace MSDefragLib
 
                 if ((NextLcn != 0) && (fragment.Lcn != NextLcn))
                 {
-                    // If the fragment is above the block then return false, the block is not
-                    // fragmented and we don't have to scan any further.
+                    // If the fragment is above the block then return false;
+                    // the block is not fragmented and we don't have to scan any further.
 
                     if (FragmentBegin >= Offset + Size)
                         return false;
