@@ -94,6 +94,7 @@ namespace MSDefragLib
 
         private void ReparseClusters()
         {
+            ReparseClusters(0, a, eClusterState.Allocated);
             //lock (DiskDetails)
             //{
             //    lock (DiskFilteredDetails)

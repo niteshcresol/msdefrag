@@ -332,10 +332,28 @@ namespace MSDefragLib
         }
 */
         //SortedList<UInt64, ItemStruct> itemList;
+        List<bob> treeList;
+
+        class bob : object
+        {
+            public object f;
+            public eClusterState state;
+        }
 
         /* Insert a record into the tree. The tree is sorted by LCN (Logical Cluster Number). */
         public void TreeInsert(ItemStruct newItem)
         {
+            if (treeList == null)
+            {
+                treeList = new List<bob>();
+            }
+
+            bob b1 = new bob();
+            b1.f = newItem;
+            b1.state = eClusterState.Allocated;
+
+            treeList.Add(b1);
+
             //eClusterState state = eClusterState.Unfragmented;
 
             //if (newItem.IsFragmented(0,0))
@@ -355,16 +373,16 @@ namespace MSDefragLib
 
             //itemList.Add(NewLcn, newItem);
 
-            //foreach (Fragment fragment in newItem.FragmentList)
-            //{
-            //    if (fragment.IsLogical)
-            //    {
-            //        if (itemList.ContainsKey(fragment.Lcn) == false)
-            //        {
-            //            itemList.Add(fragment.Lcn, newItem);
-            //        }
-            //    }
-            //}
+            foreach (Fragment fragment in newItem.FragmentList)
+            {
+                if (fragment.IsLogical)
+                {
+                    bob b2 = new bob();
+                    b2.f = fragment;
+                    b2.state = eClusterState.Allocated;
+                    treeList.Add(b2);
+                }
+            }
 
             //defragmenter.diskMap.AddCluster(NewLcn, newItem);
         }
