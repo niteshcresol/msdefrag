@@ -103,7 +103,7 @@ namespace MSDefragLib
             {
                 String errorMessage = IO.IOWrapper.GetMessage(Marshal.GetLastWin32Error());
                 //ShowDebug(2, String.Format("      Error while reading Inode {0:G}: " + errorMessage, RefInode));
-                throw new Exception("Could not read the data from disk!");
+                throw new Exception("Could not read the data from disk!\nError: " + errorMessage);
             }
         }
 

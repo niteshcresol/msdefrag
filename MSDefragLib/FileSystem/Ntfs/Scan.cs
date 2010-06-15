@@ -819,6 +819,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                 mftBitmapBytes = inodeData.MftBitmapLength;
             }
 
+            int countFiles = 0;
+
             // Create an item in the Data->ItemTree for every stream.
             foreach (Stream stream in inodeData.Streams)
             {
@@ -899,9 +901,10 @@ namespace MSDefragLib.FileSystem.Ntfs
                     inodeArray.SetValue(Item, (Int64)inodeNumber);
                 }
 
-                if (Item != null)
-                    ShowDebug(2, "File: " + (String.IsNullOrEmpty(Item.LongFilename) ? (String.IsNullOrEmpty(Item.ShortFilename) ? "" : Item.ShortFilename) : Item.LongFilename));
+                //if ((Item != null) && (countFiles % 300 == 0))
+                //    ShowDebug(2, "File: " + (String.IsNullOrEmpty(Item.LongFilename) ? (String.IsNullOrEmpty(Item.ShortFilename) ? "" : Item.ShortFilename) : Item.LongFilename));
 
+                countFiles++;
                 // Draw the item on the screen.
                 //if (_lib.Data.RedrawScreen == 0)
                 //{
