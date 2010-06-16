@@ -332,27 +332,30 @@ namespace MSDefragLib
         }
 */
         //SortedList<UInt64, ItemStruct> itemList;
-        List<bob> treeList;
+        public List<ItemList> itemList;
 
-        class bob : object
+        public class ItemList : object
         {
-            public object f;
+            public ItemStruct Item;
             public eClusterState state;
         }
 
         /* Insert a record into the tree. The tree is sorted by LCN (Logical Cluster Number). */
-        public void TreeInsert(ItemStruct newItem)
+        public void AddItemToList(ItemStruct newItem)
         {
-            if (treeList == null)
+            if (itemList == null)
             {
-                treeList = new List<bob>();
+                itemList = new List<ItemList>();
             }
 
-            bob b1 = new bob();
-            b1.f = newItem;
-            b1.state = eClusterState.Allocated;
+            lock (itemList)
+            {
+                ItemList Item = new ItemList();
+                Item.Item = newItem;
+                Item.state = eClusterState.Allocated;
 
-            treeList.Add(b1);
+                itemList.Add(Item);
+            }
 
             //eClusterState state = eClusterState.Unfragmented;
 
@@ -373,16 +376,16 @@ namespace MSDefragLib
 
             //itemList.Add(NewLcn, newItem);
 
-            foreach (Fragment fragment in newItem.FragmentList)
-            {
-                if (fragment.IsLogical)
-                {
-                    bob b2 = new bob();
-                    b2.f = fragment;
-                    b2.state = eClusterState.Allocated;
-                    treeList.Add(b2);
-                }
-            }
+            //foreach (Fragment fragment in newItem.FragmentList)
+            //{
+            //    if (fragment.IsLogical)
+            //    {
+            //        bob b2 = new bob();
+            //        b2.f = fragment;
+            //        b2.state = eClusterState.Allocated;
+            //        treeList.Add(b2);
+            //    }
+            //}
 
             //defragmenter.diskMap.AddCluster(NewLcn, newItem);
         }
@@ -931,20 +934,8 @@ namespace MSDefragLib
 	        }
         }
 
-        /// <summary>
-        /// Show a map on the screen of all the clusters on disk. The map shows
-        /// which clusters are free and which are in use.
-        ///  
-        /// The Data->RedrawScreen flag controls redrawing of the screen. It is set
-        /// to "2" (busy) when the subroutine starts. If another thread changes it to
-        /// "1" (request) while the subroutine is busy then it will immediately exit
-        /// without completing the redraw. When redrawing is completely finished the
-        /// flag is set to "0" (no).
-        /// </summary>
-        /// <param name="Data"></param>
-        public void ShowDiskmap()
+        public void ParseDiskBitmap()
         {
-            ItemStruct Item;
             int Index;
             int IndexMax;
             Boolean InUse = false;
@@ -952,13 +943,8 @@ namespace MSDefragLib
 
             IO.IOWrapper.BitmapData bitmapData = null;
 
-            //Data.RedrawScreen = 2;                       /* Set the flag to "busy". */
-
-            // Exit if the library is not processing a disk yet.
-
             if (!Data.Disk.IsOpen)
             {
-                //Data.RedrawScreen = 0;                       /* Set the flag to "no". */
                 return;
             }
 
@@ -969,19 +955,14 @@ namespace MSDefragLib
 
             PrevInUse = true;
 
-            if (diskMap == null)
-            {
-                diskMap = new DiskMap((Int32)Data.TotalClusters);
-            }
+            diskMap = new DiskMap((Int32)Data.TotalClusters);
 
             do
             {
-                if (Data.Running != RunningState.Running) break;
-                //if (Data.RedrawScreen != 2) break;
-                if (!Data.Disk.IsOpen) break;
+                if (Data.Running != RunningState.Running)
+                    break;
 
-                /* Fetch a block of cluster data. */
-//                BitmapParam.StartingLcn.QuadPart = Lcn;
+                // Fetch a block of cluster data.
 
                 bitmapData = Data.Disk.VolumeBitmap;
 
@@ -997,38 +978,36 @@ namespace MSDefragLib
 
                 Lcn = bitmapData.StartingLcn;
                 Index = 0;
-                //Mask = 1;
+
                 IndexMax = bitmapData.Buffer.Length;
 
                 while ((Index < IndexMax) && (Data.Running == RunningState.Running))
                 {
-                    //InUse = (bitmapData.Buffer[Index] & Mask);
                     InUse = bitmapData.Buffer[Index];
 
                     // If at the beginning of the disk then copy the InUse value as our starting value.
-
-                    if (Lcn == 0) PrevInUse = InUse;
+                    if (Lcn == 0)
+                        PrevInUse = InUse;
 
                     // At the beginning and end of an Exclude draw the cluster
-
                     if ((Lcn == Data.MftExcludes[0].Start) || (Lcn == Data.MftExcludes[0].End) ||
                         (Lcn == Data.MftExcludes[1].Start) || (Lcn == Data.MftExcludes[1].End) ||
                         (Lcn == Data.MftExcludes[2].Start) || (Lcn == Data.MftExcludes[2].End))
                     {
+                        eClusterState State = eClusterState.Allocated;
+
                         if ((Lcn == Data.MftExcludes[0].End) ||
                             (Lcn == Data.MftExcludes[1].End) ||
                             (Lcn == Data.MftExcludes[2].End))
                         {
-                            defragmenter.SetClusterState((Int32)ClusterStart, (Int32)Lcn, eClusterState.Unmovable);
+                            State = eClusterState.Unmovable;
                         }
                         else if (PrevInUse == false)
                         {
-                            defragmenter.SetClusterState((Int32)ClusterStart, (Int32)Lcn, eClusterState.Free);
+                            State = eClusterState.Free;
                         }
-                        else
-                        {
-                            defragmenter.SetClusterState((Int32)ClusterStart, (Int32)Lcn, eClusterState.Allocated);
-                        }
+
+                        defragmenter.SetClusterState((Int32)ClusterStart, (Int32)Lcn, State);
 
                         InUse = true;
                         PrevInUse = true;
@@ -1059,7 +1038,7 @@ namespace MSDefragLib
 
             } while (Lcn < bitmapData.StartingLcn + bitmapData.BitmapSize);
 
-            if ((Lcn > 0)/* && (Data.RedrawScreen == 2)*/)
+            if (Lcn > 0)
             {
                 eClusterState clusterState = eClusterState.Free;
 
@@ -1075,32 +1054,58 @@ namespace MSDefragLib
 
             for (int i = 0; i < 3; i++)
             {
-                //if (Data.RedrawScreen != 2) break;
-                if (Data.MftExcludes[i].Start <= 0) continue;
+                if (Data.MftExcludes[i].Start <= 0)
+                    continue;
 
                 defragmenter.SetClusterState((Int32)Data.MftExcludes[i].Start, (Int32)Data.MftExcludes[i].End, eClusterState.Mft);
             }
 
-            // Colorize all the files on the screen.
-            //
-            //  Note: the "$BadClus" file on NTFS disks maps the entire disk, so we have to ignore it.
+            ShowDiskmap();
+        }
 
-            //for (Item = ItemTree.TreeSmallest(Data.ItemTree); (Data.Running == RunningState.Running) && Item != null; Item = ItemTree.TreeNext(Item))
-            //{
-            //    //if (Data.RedrawScreen != 2) break;
+        /// <summary>
+        /// Show a map on the screen of all the clusters on disk. The map shows
+        /// which clusters are free and which are in use.
+        ///  
+        /// The Data->RedrawScreen flag controls redrawing of the screen. It is set
+        /// to "2" (busy) when the subroutine starts. If another thread changes it to
+        /// "1" (request) while the subroutine is busy then it will immediately exit
+        /// without completing the redraw. When redrawing is completely finished the
+        /// flag is set to "0" (no).
+        /// </summary>
+        /// <param name="Data"></param>
+        public void ShowDiskmap()
+        {
+            if (itemList == null)
+                return;
 
-            //    if ((Item.LongFilename != null) &&
-            //        ((Item.LongFilename.CompareTo("$BadClus") == 0) ||
-            //         (Item.LongFilename.CompareTo("$BadClus:$Bad:$DATA") == 0)))
-            //    {
-            //        continue;
-            //    }
+            lock (itemList)
+            {
+                // Colorize all the files on the screen.
+                // Note: the "$BadClus" file on NTFS disks maps the entire disk, so we have to ignore it.
 
-            //    ColorizeItem(Item, 0, 0, false);
-            //}
+                foreach (ItemList a in itemList)
+                {
+                    ItemStruct Item = a.Item as ItemStruct;
 
-            /* Set the flag to "no". */
-            //if (Data.RedrawScreen == 2) Data.RedrawScreen = 0;
+                    if (Data.Running != RunningState.Running)
+                        break;
+
+                    //if (Data.RedrawScreen != 2) break;
+
+                    if (Item == null)
+                        continue;
+
+                    if ((Item.LongFilename != null) &&
+                        ((Item.LongFilename.CompareTo("$BadClus") == 0) ||
+                        (Item.LongFilename.CompareTo("$BadClus:$Bad:$DATA") == 0)))
+                    {
+                        continue;
+                    }
+
+                    ColorizeItem(Item, 0, 0, false);
+                }
+            }
         }
 
 /*
@@ -3009,7 +3014,7 @@ namespace MSDefragLib
             //    Data.PhaseTodo++;
             //}
 
-            ShowDiskmap();
+            //ShowDiskmap();
 
 	        // Walk through all the items one by one
 
@@ -3156,7 +3161,7 @@ namespace MSDefragLib
             Data.PhaseDone = Data.PhaseTodo;
 
             defragmenter.SetClusterState(0, 0, 0);
-            ShowDiskmap();
+            //ShowDiskmap();
 
 	        // Calculate the begin of the zone's.
 	        CalculateZones();
@@ -4754,7 +4759,7 @@ namespace MSDefragLib
             ShowLogMessage(0, "Input mask: " + Data.IncludeMask);
 
             /* Defragment and optimize. */
-            ShowDiskmap();
+            ParseDiskBitmap();
 
             if (Data.Running == RunningState.Running)
             {

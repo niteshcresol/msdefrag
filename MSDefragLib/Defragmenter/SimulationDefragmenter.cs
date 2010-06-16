@@ -23,6 +23,11 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
+        public override void ReparseClusters()
+        {
+            //lib.ReparseClusters();
+        }
+        
         public override void FinishDefragmentation(Int32 timeoutMs)
         {
             if ((lib.Data != null) && (lib.Data.Running == RunningState.Running))

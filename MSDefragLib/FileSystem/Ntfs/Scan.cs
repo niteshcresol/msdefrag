@@ -82,7 +82,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             {
                 ShowDebug(2, "This is not a valid MFT record, it does not begin with FILE (maybe trying to read past the end?).");
                 //m_msDefragLib.ShowHex(Data, Buffer.m_bytes, BufLength);
-                throw new InvalidDataException();
+                //throw new InvalidDataException();
             }
 
             // Walk through all the sectors and restore the last 2 bytes with the value
@@ -873,7 +873,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 // Add the item record to the sorted item tree in memory.
-                _lib.TreeInsert(Item);
+                _lib.AddItemToList(Item);
 
                 //  Also add the item to the array that is used to construct the full pathnames.
                 //
@@ -1087,23 +1087,24 @@ namespace MSDefragLib.FileSystem.Ntfs
                       (Int64)MaxInode * 1000 / (endTime - startTime).TotalMilliseconds));
             }
 
-            //using (_lib.Data.Disk)
-            //{
-            //    if (_lib.Data.Running != RunningState.Running)
-            //    {
-            //        ItemTree.Delete(_lib.Data.ItemTree);
-            //        _lib.Data.ItemTree = null;
-            //        return false;
-            //    }
+            using (_lib.Data.Disk)
+            {
+                if (_lib.Data.Running != RunningState.Running)
+                {
+                    _lib.itemList = null;
+                    return false;
+                }
 
-            //    // Setup the ParentDirectory in all the items with the info in the InodeArray.
-            //    for (Item = ItemTree.TreeSmallest(_lib.Data.ItemTree); Item != null; Item = ItemTree.TreeNext(Item))
-            //    {
-            //        Item.ParentDirectory = (ItemStruct)InodeArray.GetValue((Int64)Item.ParentInode);
-            //        if (Item.ParentInode == 5)
-            //            Item.ParentDirectory = null;
-            //    }
-            //}
+                // Setup the ParentDirectory in all the items with the info in the InodeArray.
+                foreach (MSDefragLib.ItemList a in _lib.itemList)
+                {
+                    ItemStruct item = a.Item as ItemStruct;
+
+                    Item.ParentDirectory = (ItemStruct)InodeArray.GetValue((Int64)Item.ParentInode);
+                    if (Item.ParentInode == 5)
+                        Item.ParentDirectory = null;
+                }
+            }
             return true;
         }
     }

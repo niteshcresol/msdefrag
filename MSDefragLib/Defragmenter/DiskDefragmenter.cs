@@ -29,6 +29,11 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
+        public override void ReparseClusters()
+        {
+            lib.ParseDiskBitmap();
+        }
+
         public override DiskMap diskMap
         {
             set { }

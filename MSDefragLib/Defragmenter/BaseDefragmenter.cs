@@ -34,12 +34,16 @@ namespace MSDefragLib.Defragmenter
             defragEventDispatcher.UpdateProgress(progress, all);
         }
 
+        public abstract void ReparseClusters();
+
         public void ResendAllClusters()
         {
             if (diskMap == null || defragEventDispatcher == null)
             {
                 return;
             }
+
+            ReparseClusters();
 
             IList<MapClusterState> clusters = diskMap.GetAllFilteredClusters();
             defragEventDispatcher.AddFilteredClusters(clusters);
