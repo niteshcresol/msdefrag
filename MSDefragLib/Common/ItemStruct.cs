@@ -107,7 +107,42 @@ namespace MSDefragLib
             return false;
         }
 
+        public String GetPath(Boolean shortPath)
+        {
+            String path = String.Empty;
 
+            path = shortPath ? ShortFilename : LongFilename;
+
+            if (String.IsNullOrEmpty(path))
+            {
+                path = shortPath ? LongFilename : ShortFilename;
+            }
+
+            if (String.IsNullOrEmpty(path))
+            {
+                path = String.Empty;
+            }
+
+            return path;
+        }
+
+        public String GetCompletePath(String MountPoint, Boolean shortPath)
+        {
+            String path = String.Empty;
+            ItemStruct parent = ParentDirectory;
+
+            while (parent != null)
+            {
+                path = parent.GetPath(shortPath) + "\\" + path;
+
+                parent = parent.ParentDirectory;
+            }
+
+	        /* Append all the strings. */
+	        path = MountPoint + "\\" + path;
+
+            return path;
+        }
 
         public ItemStruct Parent;              /* Parent item. */
         public ItemStruct Smaller;             /* Next smaller item. */

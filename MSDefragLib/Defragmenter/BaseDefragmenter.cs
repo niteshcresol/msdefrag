@@ -96,11 +96,13 @@ namespace MSDefragLib.Defragmenter
         public void StartDefragmentation(string parameter)
         {
             defragThread = new Thread(Defrag);
+            defragThread.Name = "Defrag Engine";
             defragThread.Priority = ThreadPriority.Lowest;
 
             defragThread.Start();
 
             eventDispatcherThread = new Thread(EventDispatcher);
+            eventDispatcherThread.Name = "Defrag Event Dispatcher";
             eventDispatcherThread.Priority = ThreadPriority.Normal;
 
             eventDispatcherThread.Start();
@@ -147,10 +149,8 @@ namespace MSDefragLib.Defragmenter
                 {
                     return diskMap.NumFilteredClusters;
                 }
-                else
-                {
-                    return 0;
-                }
+
+                return 0;
             }
 
             set
@@ -184,7 +184,7 @@ namespace MSDefragLib.Defragmenter
 
             diskMap.AddCluster(item, newState);
 
-            ShowFilteredClusters(0, diskMap.a);
+            ShowFilteredClusters(0, diskMap.totalClusters);
         }
 
         #endregion

@@ -749,7 +749,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             if (BaseInode != 0)
             {
-                ShowDebug(6, String.Format("Ignoring Inode {0:G}, it's an extension of Inode {1:G}", inodeNumber, BaseInode));
+                //ShowDebug(6, String.Format("Ignoring Inode {0:G}, it's an extension of Inode {1:G}", inodeNumber, BaseInode));
                 return true;
             }
 
@@ -996,7 +996,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ItemStruct[] InodeArray = new ItemStruct[MaxInode];
             //InodeArray[0] = _lib.Data.ItemTree;
-            ItemStruct Item = null;
+            //ItemStruct Item = null;
 
             _lib.Data.PhaseDone = 0;
             _lib.Data.PhaseTodo = 0;
@@ -1073,7 +1073,6 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (_lib.Data.PhaseDone % 50 == 0)
                 {
                     _lib.ShowProgress((Double)(_lib.Data.PhaseDone), (Double)_lib.Data.PhaseTodo);
-                    //ShowDebug(1, "Done: " + _lib.Data.PhaseDone + "/" + _lib.Data.PhaseTodo);
                 }
 
                 InodeNumber++;
@@ -1096,13 +1095,11 @@ namespace MSDefragLib.FileSystem.Ntfs
                 }
 
                 // Setup the ParentDirectory in all the items with the info in the InodeArray.
-                foreach (MSDefragLib.ItemList a in _lib.itemList)
+                foreach (ItemStruct item in _lib.itemList)
                 {
-                    ItemStruct item = a.Item as ItemStruct;
-
-                    Item.ParentDirectory = (ItemStruct)InodeArray.GetValue((Int64)Item.ParentInode);
-                    if (Item.ParentInode == 5)
-                        Item.ParentDirectory = null;
+                    item.ParentDirectory = (ItemStruct)InodeArray.GetValue((Int64)item.ParentInode);
+                    if (item.ParentInode == 5)
+                        item.ParentDirectory = null;
                 }
             }
             return true;

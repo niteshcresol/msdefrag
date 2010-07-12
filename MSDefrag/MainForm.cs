@@ -94,7 +94,7 @@ namespace MSDefrag
         {
             progressBar.Value = (Int16)val;
 
-            progressBarText.Text = String.Format(CultureInfo.CurrentCulture, "{0:P}", val * 0.01);
+            progressBarText.Text = String.Format(CultureInfo.InstalledUICulture, "{0:P4}", val * 0.01);
         }
 
         private void UpdateLogMessage(IList<LogMessage> list)
@@ -198,7 +198,7 @@ namespace MSDefrag
         {
             Size newPictureSize = diskBitmap.Size;
 
-            if (pictureSize.Height != newPictureSize.Height || pictureSize.Width != newPictureSize.Width)
+            if (! pictureSize.Equals(newPictureSize))
             {
                 ResetBitmapDisplay();
             }

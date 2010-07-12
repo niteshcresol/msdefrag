@@ -51,14 +51,14 @@ namespace MSDefragLib
                     return eClusterState.Fragmented;
                 }
 
-                if (numClusterStates[(Int32)eClusterState.Unfragmented] > 0)
-                {
-                    return eClusterState.Unfragmented;
-                }
-
                 if (numClusterStates[(Int32)eClusterState.SpaceHog] > 0)
                 {
                     return eClusterState.SpaceHog;
+                }
+
+                if (numClusterStates[(Int32)eClusterState.Unfragmented] > 0)
+                {
+                    return eClusterState.Unfragmented;
                 }
 
                 if (numClusterStates[(Int32)eClusterState.Allocated] > 0)

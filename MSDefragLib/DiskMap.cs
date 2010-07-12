@@ -7,11 +7,11 @@ namespace MSDefragLib
 {
     public class DiskMap
     {
-        public Int32 a;
+        public Int32 totalClusters;
 
         public DiskMap(Int32 numClusters)
         {
-            a = numClusters;
+            totalClusters = numClusters;
             //DiskDetails = new DiskMapDetails(numClusters);
             DiskFilteredDetails = new DiskMapFilteredData(5733);
         }
@@ -33,6 +33,11 @@ namespace MSDefragLib
 
         public void AddCluster(Int32 idxCluster, eClusterState state)
         {
+            Double clustersPerFilter = (Double)totalClusters / (Double)DiskFilteredDetails.TotalClusters;
+
+            Int32 idxFilteredCluster = (Int32)(idxCluster / clustersPerFilter);
+
+            DiskFilteredDetails.AddClusterState(idxFilteredCluster, state);
             //lock (DiskDetails)
             //{
             //    DiskDetails.AddCluster(idxCluster, state);
@@ -41,12 +46,14 @@ namespace MSDefragLib
 
         public void AddCluster(ItemStruct item, eClusterState state)
         {
-            Double clustersPerFilter = (Double)a / (Double)DiskFilteredDetails.TotalClusters;
+            Double clustersPerFilter = (Double)totalClusters / (Double)DiskFilteredDetails.TotalClusters;
 
             foreach (Fragment fragment in item.FragmentList)
             {
                 if (fragment.IsVirtual)
                     continue;
+
+                AddCluster((Int32)fragment.Lcn, state);
 
                 Int32 idxCluster = (Int32)(fragment.Lcn / clustersPerFilter);
 
@@ -68,7 +75,7 @@ namespace MSDefragLib
                 Int32 filterBegin = 0;
                 Int32 filterEnd = 1;
 
-                Double clustersPerFilter = (Double)a / (Double)DiskFilteredDetails.TotalClusters;
+                Double clustersPerFilter = (Double)totalClusters / (Double)DiskFilteredDetails.TotalClusters;
 
                 filterBegin = (Int32)(clusterBegin / clustersPerFilter);
                 filterEnd = (Int32)(clusterEnd / clustersPerFilter);
@@ -94,7 +101,7 @@ namespace MSDefragLib
 
         private void ReparseClusters()
         {
-            ReparseClusters(0, a, eClusterState.Allocated);
+            ReparseClusters(0, totalClusters, eClusterState.Allocated);
             //lock (DiskDetails)
             //{
             //    lock (DiskFilteredDetails)
@@ -130,7 +137,7 @@ namespace MSDefragLib
         {
             //lock (DiskFilteredDetails)
             //{
-                Double clustersPerFilter = (Double)a / (Double)DiskFilteredDetails.TotalClusters;
+                Double clustersPerFilter = (Double)totalClusters / (Double)DiskFilteredDetails.TotalClusters;
 
                 Int32 filterBegin = (Int32)(clusterBegin / clustersPerFilter);
                 Int32 filterEnd = (Int32)(clusterEnd / clustersPerFilter);

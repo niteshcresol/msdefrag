@@ -80,6 +80,7 @@
     <Compile Include="DiskMapFilteredData.cs" />
     <Compile Include="FileSystem\Ntfs\BitmapFile.cs" />
     <Compile Include="FileSystem\Ntfs\ByteArray.cs" />
+    <Compile Include="FileSystem\Ntfs\Defrag.cs" />
     <Compile Include="FileSystem\Ntfs\IAttribute.cs" />
     <Compile Include="FileSystem\Ntfs\MasterFileTable.cs" />
     <Compile Include="FileSystem\Ntfs\RefactoringHelper.cs" />
