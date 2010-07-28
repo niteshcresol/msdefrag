@@ -20,14 +20,15 @@ namespace MSDefragLib
             Data.Running = RunningState.Running;
             Data.TotalClusters = 400000;
 
-            diskMap = new DiskMap((Int32)Data.TotalClusters);
+            diskMap = new DiskMap();
         }
 
         public void RunSimulation()
         {
             Random rnd = new Random();
-
             UInt32 maxNumTest = 450025;
+
+            diskMap.totalClusters = (Int32)Data.TotalClusters;
 
             //defragmenter.DisplayCluster(0, 10000, eClusterState.Fragmented);
             //defragmenter.DisplayCluster(10001, 20000, eClusterState.Busy);

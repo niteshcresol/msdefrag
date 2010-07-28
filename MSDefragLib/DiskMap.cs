@@ -9,11 +9,11 @@ namespace MSDefragLib
     {
         public Int32 totalClusters;
 
-        public DiskMap(Int32 numClusters)
+        public DiskMap()
         {
-            totalClusters = numClusters;
-            //DiskDetails = new DiskMapDetails(numClusters);
-            DiskFilteredDetails = new DiskMapFilteredData(5733);
+            totalClusters = 0;
+
+            DiskFilteredDetails = new DiskMapFilteredData(0);
         }
 
         public Int32 NumFilteredClusters
@@ -27,7 +27,7 @@ namespace MSDefragLib
                     DiskFilteredDetails.TotalClusters = value;
                 }
 
-                ReparseClusters();
+                ResetClusterStates();
             }
         }
 
@@ -38,10 +38,6 @@ namespace MSDefragLib
             Int32 idxFilteredCluster = (Int32)(idxCluster / clustersPerFilter);
 
             DiskFilteredDetails.AddClusterState(idxFilteredCluster, state);
-            //lock (DiskDetails)
-            //{
-            //    DiskDetails.AddCluster(idxCluster, state);
-            //}
         }
 
         public void AddCluster(ItemStruct item, eClusterState state)
@@ -99,9 +95,9 @@ namespace MSDefragLib
             return clusters;
         }
 
-        private void ReparseClusters()
+        private void ReparseClusters4()
         {
-            ReparseClusters(0, totalClusters, eClusterState.Allocated);
+            //ReparseClusters(0, totalClusters, eClusterState.Allocated);
             //lock (DiskDetails)
             //{
             //    lock (DiskFilteredDetails)
@@ -133,37 +129,43 @@ namespace MSDefragLib
             //}
         }
 
-        private void ReparseClusters(Int32 clusterBegin, Int32 clusterEnd, eClusterState state)
+        private void ReparseClusters2(Int32 clusterBegin, Int32 clusterEnd, eClusterState state)
         {
-            //lock (DiskFilteredDetails)
+            //Double clustersPerFilter = (Double)totalClusters / (Double)DiskFilteredDetails.TotalClusters;
+
+            //Int32 filterBegin = (Int32)(clusterBegin / clustersPerFilter);
+            //Int32 filterEnd = (Int32)(clusterEnd / clustersPerFilter);
+
+            //for (Int32 filterIdx = filterBegin; filterIdx < filterEnd; filterIdx++)
             //{
-                Double clustersPerFilter = (Double)totalClusters / (Double)DiskFilteredDetails.TotalClusters;
+            //    if ((filterIdx < 0) || (filterIdx >= DiskFilteredDetails.TotalClusters))
+            //        return;
 
-                Int32 filterBegin = (Int32)(clusterBegin / clustersPerFilter);
-                Int32 filterEnd = (Int32)(clusterEnd / clustersPerFilter);
-
-                for (Int32 filterIdx = filterBegin; filterIdx < filterEnd; filterIdx++)
-                {
-                    if ((filterIdx < 0) || (filterIdx >= DiskFilteredDetails.TotalClusters))
-                        return;
-
-                    DiskFilteredDetails.AddClusterState(filterIdx, state);
-                    DiskFilteredDetails.SetClusterDirty(filterIdx, true);
-                }
+            //    DiskFilteredDetails.AddClusterState(filterIdx, state);
+            //    DiskFilteredDetails.SetClusterDirty(filterIdx, true);
             //}
         }
 
         public void SetClusterState(Int32 clusterBegin, Int32 clusterEnd, eClusterState state, Boolean updateFilteredClusters)
         {
-            //lock (DiskDetails)
-            //{
-            //    DiskDetails.SetClusterState(clusterBegin, clusterEnd, state);
+            Double clustersPerFilter = (Double)totalClusters / (Double)DiskFilteredDetails.TotalClusters;
 
-            //    if (updateFilteredClusters)
-            //    {
-                    ReparseClusters(clusterBegin, clusterEnd, state);
-            //    }
-            //}
+            Int32 filterBegin = (Int32)(clusterBegin / clustersPerFilter);
+            Int32 filterEnd = (Int32)(clusterEnd / clustersPerFilter);
+
+            for (Int32 filterIdx = filterBegin; filterIdx < filterEnd; filterIdx++)
+            {
+                if ((filterIdx < 0) || (filterIdx >= DiskFilteredDetails.TotalClusters))
+                    return;
+
+                DiskFilteredDetails.AddClusterState(filterIdx, state);
+                DiskFilteredDetails.SetClusterDirty(filterIdx, true);
+            }
+        }
+
+        public void ResetClusterStates()
+        {
+            SetClusterState(0, totalClusters, eClusterState.Allocated, true);
         }
 
         //DiskMapDetails DiskDetails;

@@ -56,6 +56,9 @@ namespace MSDefragLib
             defragmenter = parent;
 
             m_scanNtfs = new Scan(this);
+
+            diskMap = new DiskMap();
+            //diskMap = new DiskMap((Int32)Data.TotalClusters);
         }
 
         #region messages
@@ -853,7 +856,7 @@ namespace MSDefragLib
 
             IO.IOWrapper.BitmapData bitmapData = null;
 
-            if (!Data.Disk.IsOpen)
+            if ((Data == null) || (Data.Disk == null) || !Data.Disk.IsOpen)
             {
                 return;
             }
@@ -865,7 +868,7 @@ namespace MSDefragLib
 
             PrevInUse = true;
 
-            diskMap = new DiskMap((Int32)Data.TotalClusters);
+            diskMap.totalClusters = (Int32)Data.TotalClusters;
 
             int ii = 0;
 
@@ -950,7 +953,7 @@ namespace MSDefragLib
                     if (ii % 100000 == 0)
                     {
                         ShowLogMessage(1, "Reparse bitmap: " + Index + " / " + IndexMax);
-                        Thread.Sleep(300);
+                        Thread.Sleep(50);
                     }
 
                     ii++;

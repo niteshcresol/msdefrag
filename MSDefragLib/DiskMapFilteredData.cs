@@ -55,9 +55,7 @@ namespace MSDefragLib
 
                 for (Int32 ii = 0; ii < totalClusters; ii++)
                 {
-                    MapClusterState cluster = new MapClusterState(ii);
-
-                    ClusterData.Add(cluster);
+                    ClusterData.Add(new MapClusterState(ii));
                 }
             }
         }

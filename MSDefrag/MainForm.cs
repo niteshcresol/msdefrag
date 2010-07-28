@@ -30,15 +30,6 @@ namespace MSDefrag
 
         #region Graphics functions
 
-        private void ResetBitmapDisplay()
-        {
-            diskBitmap.Initialize(GuiSettings);
-
-            if (Defragmenter == null) { return; }
-
-            Defragmenter.NumFilteredClusters = diskBitmap.NumSquares;
-        }
-
         private void AddFilteredClustersToQueue(IList<MSDefragLib.MapClusterState> filteredClusters)
         {
             if (filteredClusters == null) { return; }
@@ -56,9 +47,12 @@ namespace MSDefrag
 
             if (Defragmenter == null) { return; }
 
-            ResetBitmapDisplay();
+            diskBitmap.Initialize(GuiSettings);
+
+            Defragmenter.NumFilteredClusters = diskBitmap.NumSquares;
 
             Defragmenter.StartDefragmentation(DefragSettings.Path);
+
             RegisterEvents(true);
         }
 
@@ -107,7 +101,7 @@ namespace MSDefrag
                 }
             }
 
-            LogMessageLabel.Text = "Level <" + list.Last().LogLevel.ToString() + "> | " + list.Last().Message.Trim();
+            LogMessageLabel.Text = list.Last().Message.Trim();
         }
 
         #endregion
@@ -198,24 +192,25 @@ namespace MSDefrag
         {
             Size newPictureSize = diskBitmap.Size;
 
-            if (! pictureSize.Equals(newPictureSize))
-            {
-                ResetBitmapDisplay();
-            }
-
             diskBitmap.SetBusy(false);
 
-            if (Defragmenter != null)
+            if (!pictureSize.Equals(newPictureSize))
             {
-                Defragmenter.Continue();
+                diskBitmap.Initialize(GuiSettings);
+
+                Defragmenter.StartReparseThread(diskBitmap.NumSquares);
+
+                //if (Defragmenter != null)
+                //    Defragmenter.NumFilteredClusters = diskBitmap.NumSquares;
             }
 
+            if (Defragmenter != null)
+                Defragmenter.Continue();
         }
 
         private void OnShow(object sender, EventArgs e)
         {
-            ResetBitmapDisplay();
-            //diskBitmap.Initialize(GuiSettings);
+            diskBitmap.Initialize(GuiSettings);
         }
 
         #endregion

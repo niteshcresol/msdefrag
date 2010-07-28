@@ -43,7 +43,7 @@ namespace MSDefragLib.Defragmenter
                 return;
             }
 
-            ReparseClusters();
+            //ReparseClusters();
 
             IList<MapClusterState> clusters = diskMap.GetAllFilteredClusters();
             defragEventDispatcher.AddFilteredClusters(clusters);
@@ -97,7 +97,7 @@ namespace MSDefragLib.Defragmenter
         {
             defragThread = new Thread(Defrag);
             defragThread.Name = "Defrag Engine";
-            defragThread.Priority = ThreadPriority.Lowest;
+            defragThread.Priority = ThreadPriority.Normal;
 
             defragThread.Start();
 
@@ -125,6 +125,15 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
+        public void StartReparseThread(Int32 numClusters)
+        {
+            Thread reparseThread = new Thread(Reparse);
+            reparseThread.Name = "Reparse Clusters";
+            reparseThread.Priority = ThreadPriority.Normal;
+
+            reparseThread.Start();
+        }
+
         private void Defrag()
         {
             BeginDefragmentation(@"C:\*");
@@ -133,6 +142,11 @@ namespace MSDefragLib.Defragmenter
         private void EventDispatcher()
         {
             defragEventDispatcher.StartEventDispatcher();
+        }
+
+        private void Reparse()
+        {
+            ReparseClusters();
         }
 
         #endregion
@@ -146,9 +160,7 @@ namespace MSDefragLib.Defragmenter
             get
             {
                 if (diskMap != null)
-                {
                     return diskMap.NumFilteredClusters;
-                }
 
                 return 0;
             }
@@ -158,6 +170,7 @@ namespace MSDefragLib.Defragmenter
                 if (diskMap != null)
                 {
                     diskMap.NumFilteredClusters = value;
+                    ReparseClusters();
                     ResendAllClusters();
                 }
             }
