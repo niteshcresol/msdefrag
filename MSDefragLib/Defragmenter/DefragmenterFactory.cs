@@ -9,28 +9,11 @@ namespace MSDefragLib
 {
     public class DefragmenterFactory
     {
-        public static IDefragmenter Create(EnumDefragType defragType)
+        public static IDefragmenter Create()
         {
-            IDefragmenter Defragmenter = null;
-
-            switch (defragType)
-            {
-                case EnumDefragType.defragTypeDefragmentation:
-                    Defragmenter = new DiskDefragmenter();
-                    break;
-                default:
-                    Defragmenter = new SimulationDefragmenter();
-                    break;
-            }
+            IDefragmenter Defragmenter = new DiskDefragmenter();
 
             return Defragmenter;
         }
     }
-
-    public enum EnumDefragType
-    {
-        defragTypeDefragmentation = 0,
-        defragTypeSimulation
-    }
-
 }

@@ -153,7 +153,7 @@ namespace MSDefragLib
             Int32 filterBegin = (Int32)(clusterBegin / clustersPerFilter);
             Int32 filterEnd = (Int32)(clusterEnd / clustersPerFilter);
 
-            for (Int32 filterIdx = filterBegin; filterIdx < filterEnd; filterIdx++)
+            for (Int32 filterIdx = filterBegin; filterIdx <= filterEnd; filterIdx++)
             {
                 if ((filterIdx < 0) || (filterIdx >= DiskFilteredDetails.TotalClusters))
                     return;

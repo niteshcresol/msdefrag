@@ -847,7 +847,7 @@ namespace MSDefragLib
 	        }
         }
 
-        public void ParseDiskBitmap()
+        public void ParseDiskBitmap3()
         {
             int Index;
             int IndexMax;
@@ -860,6 +860,8 @@ namespace MSDefragLib
             {
                 return;
             }
+
+            Data.Reparse = true;
 
             // Show the map of all the clusters in use
 
@@ -874,6 +876,9 @@ namespace MSDefragLib
 
             do
             {
+                if (!Data.Reparse)
+                    break;
+
                 if (Data.Running != RunningState.Running)
                     break;
 
@@ -984,6 +989,80 @@ namespace MSDefragLib
             }
 
             DisplayAllItems();
+
+            Data.Reparse = false;
+        }
+
+        public void ParseDiskBitmap()
+        {
+            if ((Data == null) || (Data.Disk == null) || !Data.Disk.IsOpen)
+            {
+                return;
+            }
+
+            Data.Reparse = true;
+
+            diskMap.totalClusters = (Int32)Data.TotalClusters;
+
+            Int32 numFilteredClusters = defragmenter.diskMap.NumFilteredClusters;
+            Int32 totalClusters = (Int32)Data.TotalClusters;
+
+            Double clusterPerFilter = (Double)totalClusters / (Double)numFilteredClusters;
+
+            // Fetch a block of cluster data.
+
+            IO.IOWrapper.BitmapData bitmapData = Data.Disk.VolumeBitmap;
+
+            Double Index = 0;
+            Double IndexMax = bitmapData.Buffer.Length;
+
+            while ((Index < IndexMax) && (Data.Running == RunningState.Running))
+            {
+                Int32 currentCluster = (Int32)Index;
+                Int32 nextCluster = Math.Min((Int32)(currentCluster + clusterPerFilter), (Int32)totalClusters - 1);
+
+                eClusterState currentState = eClusterState.Free;
+
+                Boolean Allocated = bitmapData.Buffer[currentCluster];
+
+                if (Allocated == false)
+                {
+                    for (Int32 clusterNumber = currentCluster; clusterNumber <= nextCluster; clusterNumber++)
+                    {
+                        Allocated = bitmapData.Buffer[clusterNumber];
+
+                        if (Allocated == true) break;
+                    }
+                }
+
+                if (Allocated)
+                {
+                    currentState = eClusterState.Allocated;
+                }
+
+                defragmenter.SetClusterState(currentCluster, nextCluster - 1, currentState);
+
+                Index += clusterPerFilter;
+            }
+
+            // Show the MFT zones
+
+            for (int i = 0; i < 3; i++)
+            {
+                if (Data.MftExcludes[i].Start <= 0)
+                    continue;
+
+                defragmenter.SetClusterState((Int32)Data.MftExcludes[i].Start, (Int32)Data.MftExcludes[i].End, eClusterState.Mft);
+            }
+
+            DisplayAllItems();
+
+            Data.Reparse = false;
+        }
+
+        public void StopReparsingClusters()
+        {
+            Data.Reparse = false;
         }
 
         /// <summary>

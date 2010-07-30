@@ -24,48 +24,63 @@ namespace MSDefrag
 
             GuiSettings = new MSDefrag.GuiSettings();
             DefragSettings = new DefragmentationSettings();
+            Defragmenter = DefragmenterFactory.Create();
+
+            diskBitmap.Defragmenter = Defragmenter;
+            UpdateDiskBitmap();
         }
 
         #endregion
 
-        #region Graphics functions
+        #region Actions
 
-        private void AddFilteredClustersToQueue(IList<MSDefragLib.MapClusterState> filteredClusters)
+        private void StartDefragmentation()
         {
-            if (filteredClusters == null) { return; }
-
-            diskBitmap.AddFilteredClusters(filteredClusters);
-        }
-
-        #endregion
-
-        #region Other
-
-        private void StartDefragmentation(EnumDefragType mode)
-        {
-            Defragmenter = DefragmenterFactory.Create(mode);
-
-            if (Defragmenter == null) { return; }
-
-            diskBitmap.Initialize(GuiSettings);
-
-            Defragmenter.NumFilteredClusters = diskBitmap.NumSquares;
-
-            Defragmenter.StartDefragmentation(DefragSettings.Path);
+            toolButtonStartDefrag.Enabled = false;
+            toolButtonStopDefrag.Enabled = true;
 
             RegisterEvents(true);
+
+            Defragmenter.StartDefragmentation(DefragSettings.Path);
         }
 
         private void StopDefragmentation()
         {
-            if (Defragmenter == null) { return; }
+            toolButtonStartDefrag.Enabled = false;
+            toolButtonStopDefrag.Enabled = false;
 
             Defragmenter.StopDefragmentation(4000);
+
             RegisterEvents(false);
 
-            Defragmenter = null;
-
+            toolButtonStartDefrag.Enabled = true;
+            toolButtonStopDefrag.Enabled = false;
         }
+
+
+        private void StartResizing()
+        {
+            Defragmenter.Pause();
+
+            diskBitmap.StartResizing();
+        }
+
+        private void StopResizing()
+        {
+            diskBitmap.StopResizing();
+
+            Defragmenter.Continue();
+        }
+
+        private void UpdateDiskBitmap()
+        {
+            diskBitmap.Initialize(GuiSettings);
+            Defragmenter.NumFilteredClusters = diskBitmap.NumSquares;
+        }
+
+        #endregion
+
+        #region Defrag library events
 
         private void RegisterEvents(Boolean register)
         {
@@ -84,11 +99,51 @@ namespace MSDefrag
             }
         }
 
+        #region ProgressBar
+
+        private void UpdateProgress(object sender, EventArgs e)
+        {
+            ProgressEventArgs ea = e as ProgressEventArgs;
+
+            if (ea != null)
+            {
+                BeginInvoke(new MethodInvoker(delegate { UpdateProgressBar(ea.Progress); }));
+            }
+        }
+
         private void UpdateProgressBar(Double val)
         {
             progressBar.Value = (Int16)val;
 
             progressBarText.Text = String.Format(CultureInfo.InstalledUICulture, "{0:P4}", val * 0.01);
+        }
+
+        #endregion
+
+        #region DiskMap
+
+        private void UpdateFilteredDiskMap(object sender, EventArgs e)
+        {
+            FilteredClusterEventArgs ea = e as FilteredClusterEventArgs;
+
+            if (ea != null)
+            {
+                diskBitmap.AddFilteredClusters(ea.Clusters);
+            }
+        }
+
+        #endregion
+
+        #region Log Messages
+
+        private void UpdateLogMessages(object sender, EventArgs e)
+        {
+            LogMessagesEventArgs ea = e as LogMessagesEventArgs;
+
+            if (ea != null)
+            {
+                BeginInvoke(new MethodInvoker(delegate { UpdateLogMessage(ea.Messages); }));
+            }
         }
 
         private void UpdateLogMessage(IList<LogMessage> list)
@@ -106,67 +161,18 @@ namespace MSDefrag
 
         #endregion
 
+        #endregion
+
         #region Event Handling
 
-        private void OnStartDefragmentation(object sender, EventArgs e)
+        private void OnStartDefrag(object sender, EventArgs e)
         {
-            toolButtonStartDefrag.Enabled = false;
-            toolButtonStartSimulation.Enabled = false;
-            toolButtonStopDefrag.Enabled = true;
-
-            StartDefragmentation(EnumDefragType.defragTypeDefragmentation);
-        }
-
-        private void OnStartSimulation(object sender, EventArgs e)
-        {
-            toolButtonStartDefrag.Enabled = false;
-            toolButtonStartSimulation.Enabled = false;
-            toolButtonStopDefrag.Enabled = true;
-
-            StartDefragmentation(EnumDefragType.defragTypeSimulation);
+            StartDefragmentation();
         }
 
         private void OnStopDefrag(object sender, EventArgs e)
         {
-            toolButtonStartDefrag.Enabled = false;
-            toolButtonStartSimulation.Enabled = false;
-            toolButtonStopDefrag.Enabled = false;
-
             StopDefragmentation();
-
-            toolButtonStartDefrag.Enabled = true;
-            toolButtonStartSimulation.Enabled = true;
-            toolButtonStopDefrag.Enabled = false;
-        }
-
-        private void UpdateFilteredDiskMap(object sender, EventArgs e)
-        {
-            FilteredClusterEventArgs ea = e as FilteredClusterEventArgs;
-
-            if (ea != null)
-            {
-                diskBitmap.AddFilteredClusters(ea.Clusters);
-            }
-        }
-
-        private void UpdateProgress(object sender, EventArgs e)
-        {
-            ProgressEventArgs ea = e as ProgressEventArgs;
-
-            if (ea != null)
-            {
-                BeginInvoke(new MethodInvoker(delegate { UpdateProgressBar(ea.Progress); }));
-            }
-        }
-
-        private void UpdateLogMessages(object sender, EventArgs e)
-        {
-            LogMessagesEventArgs ea = e as LogMessagesEventArgs;
-
-            if (ea != null)
-            {
-                BeginInvoke(new MethodInvoker(delegate { UpdateLogMessage(ea.Messages); }));
-            }
         }
 
         private void OnGuiClosing(object sender, FormClosingEventArgs e)
@@ -174,43 +180,14 @@ namespace MSDefrag
             StopDefragmentation();
         }
 
-        private Size pictureSize;
-
         private void OnResizeBegin(object sender, EventArgs e)
         {
-            pictureSize = diskBitmap.Size;
-
-            if (Defragmenter != null)
-            {
-                Defragmenter.Pause();
-            }
-
-            diskBitmap.SetBusy(true);
+            StartResizing();
         }
 
         private void OnResizeEnd(object sender, EventArgs e)
         {
-            Size newPictureSize = diskBitmap.Size;
-
-            diskBitmap.SetBusy(false);
-
-            if (!pictureSize.Equals(newPictureSize))
-            {
-                diskBitmap.Initialize(GuiSettings);
-
-                Defragmenter.StartReparseThread(diskBitmap.NumSquares);
-
-                //if (Defragmenter != null)
-                //    Defragmenter.NumFilteredClusters = diskBitmap.NumSquares;
-            }
-
-            if (Defragmenter != null)
-                Defragmenter.Continue();
-        }
-
-        private void OnShow(object sender, EventArgs e)
-        {
-            diskBitmap.Initialize(GuiSettings);
+            StopResizing();
         }
 
         #endregion
@@ -218,7 +195,6 @@ namespace MSDefrag
         #region Variables
 
         private IDefragmenter Defragmenter;
-
         private DefragmentationSettings DefragSettings;
         private GuiSettings GuiSettings;
 

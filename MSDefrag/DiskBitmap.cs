@@ -38,7 +38,9 @@ namespace MSDefrag
         {
             Image = BitmapSettings.bitmap;
 
-            graphics = Graphics.FromImage(BitmapSettings.bitmap);
+            if (Image == null) return;
+
+            graphics = Graphics.FromImage(Image);
 
             Rectangle drawingArea = BitmapSettings.DrawingArea;
 
@@ -132,6 +134,56 @@ namespace MSDefrag
 
         private Boolean SystemBusy;
 
+        private Boolean SuspendLayout1;
+
+        public IDefragmenter Defragmenter;
+
         #endregion
+
+        private void InitializeComponent()
+        {
+            ((System.ComponentModel.ISupportInitialize)(this)).BeginInit();
+            this.SuspendLayout();
+            // 
+            // DiskBitmap
+            // 
+            this.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.Size = new System.Drawing.Size(800, 600);
+            this.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            ((System.ComponentModel.ISupportInitialize)(this)).EndInit();
+            this.ResumeLayout(false);
+
+        }
+
+        private Size pictureSize;
+
+        public void StartResizing()
+        {
+            this.SuspendLayout();
+
+            pictureSize = Size;
+        }
+
+        public void StopResizing()
+        {
+            if (!pictureSize.Equals(Size))
+            {
+                Initialize(new GuiSettings());
+            }
+
+            this.ResumeLayout();
+        }
+
+        private void ControlResized(object sender, EventArgs e)
+        {
+            SuspendLayout1 = false;
+
+            //if (!pictureSize.Equals(Size))
+            //{
+            //    ResizeBitmap();
+            //}
+
+            Defragmenter.Continue();
+        }
     }
 }

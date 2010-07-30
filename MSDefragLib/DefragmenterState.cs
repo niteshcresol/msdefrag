@@ -78,6 +78,8 @@ namespace MSDefragLib
             Running = RunningState.Running;
         }
 
+        public Boolean Reparse;
+
 	    public UInt16 Phase;                             /* The current Phase (1...3). */
         public UInt16 Zone;                              /* The current Zone (0..2) for Phase 3. */
         public RunningState Running;                     /* If not RUNNING then stop defragging. */

@@ -38,7 +38,6 @@
             this.toolStripContainer1 = new System.Windows.Forms.ToolStripContainer();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolButtonStartDefrag = new System.Windows.Forms.ToolStripButton();
-            this.toolButtonStartSimulation = new System.Windows.Forms.ToolStripButton();
             this.toolButtonStopDefrag = new System.Windows.Forms.ToolStripButton();
             this.diskBitmap = new MSDefrag.DiskBitmap();
             this.statusStrip1.SuspendLayout();
@@ -124,7 +123,7 @@
             this.toolStripContainer1.TopToolStripPanel.BackColor = System.Drawing.SystemColors.Control;
             this.toolStripContainer1.TopToolStripPanel.Controls.Add(this.toolStrip1);
             this.toolStripContainer1.TopToolStripPanel.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
-            this.toolStripContainer1.TopToolStripPanel.Click += new System.EventHandler(this.OnStartDefragmentation);
+            this.toolStripContainer1.TopToolStripPanel.Click += new System.EventHandler(this.OnStartDefrag);
             // 
             // toolStrip1
             // 
@@ -133,12 +132,11 @@
             this.toolStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolButtonStartDefrag,
-            this.toolButtonStartSimulation,
             this.toolButtonStopDefrag});
             this.toolStrip1.Location = new System.Drawing.Point(3, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
-            this.toolStrip1.Size = new System.Drawing.Size(220, 31);
+            this.toolStrip1.Size = new System.Drawing.Size(137, 31);
             this.toolStrip1.TabIndex = 0;
             this.toolStrip1.Text = "gggg";
             // 
@@ -150,18 +148,7 @@
             this.toolButtonStartDefrag.Size = new System.Drawing.Size(68, 28);
             this.toolButtonStartDefrag.Text = "Defrag";
             this.toolButtonStartDefrag.ToolTipText = "Defrag";
-            this.toolButtonStartDefrag.Click += new System.EventHandler(this.OnStartDefragmentation);
-            // 
-            // toolButtonStartSimulation
-            // 
-            this.toolButtonStartSimulation.BackColor = System.Drawing.SystemColors.Control;
-            this.toolButtonStartSimulation.Image = ((System.Drawing.Image)(resources.GetObject("toolButtonStartSimulation.Image")));
-            this.toolButtonStartSimulation.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolButtonStartSimulation.Name = "toolButtonStartSimulation";
-            this.toolButtonStartSimulation.Size = new System.Drawing.Size(83, 28);
-            this.toolButtonStartSimulation.Text = "Simulation";
-            this.toolButtonStartSimulation.ToolTipText = "Simulation";
-            this.toolButtonStartSimulation.Click += new System.EventHandler(this.OnStartSimulation);
+            this.toolButtonStartDefrag.Click += new System.EventHandler(this.OnStartDefrag);
             // 
             // toolButtonStopDefrag
             // 
@@ -173,16 +160,17 @@
             this.toolButtonStopDefrag.Text = "Stop";
             this.toolButtonStopDefrag.Click += new System.EventHandler(this.OnStopDefrag);
             // 
-            // pictureBox1
+            // diskBitmap
             // 
             this.diskBitmap.BackColor = System.Drawing.SystemColors.Control;
             this.diskBitmap.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.diskBitmap.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.diskBitmap.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
+            this.diskBitmap.Image = ((System.Drawing.Image)(resources.GetObject("diskBitmap.Image")));
             this.diskBitmap.Location = new System.Drawing.Point(0, 0);
             this.diskBitmap.Margin = new System.Windows.Forms.Padding(0);
-            this.diskBitmap.Name = "pictureBox1";
+            this.diskBitmap.Name = "diskBitmap";
             this.diskBitmap.Size = new System.Drawing.Size(830, 577);
+            this.diskBitmap.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
             this.diskBitmap.TabIndex = 0;
             this.diskBitmap.TabStop = false;
             // 
@@ -195,7 +183,6 @@
             this.Name = "MainForm";
             this.Text = "Marko\'s Defragmentation Tool";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.OnGuiClosing);
-            this.Shown += new System.EventHandler(this.OnShow);
             this.ResizeBegin += new System.EventHandler(this.OnResizeBegin);
             this.ResizeEnd += new System.EventHandler(this.OnResizeEnd);
             this.statusStrip1.ResumeLayout(false);
@@ -203,6 +190,7 @@
             this.toolStripContainer1.BottomToolStripPanel.ResumeLayout(false);
             this.toolStripContainer1.BottomToolStripPanel.PerformLayout();
             this.toolStripContainer1.ContentPanel.ResumeLayout(false);
+            this.toolStripContainer1.ContentPanel.PerformLayout();
             this.toolStripContainer1.TopToolStripPanel.ResumeLayout(false);
             this.toolStripContainer1.TopToolStripPanel.PerformLayout();
             this.toolStripContainer1.ResumeLayout(false);
@@ -221,7 +209,6 @@
         private System.Windows.Forms.ToolStripContainer toolStripContainer1;
         private System.Windows.Forms.ToolStrip toolStrip1;
         private System.Windows.Forms.ToolStripButton toolButtonStartDefrag;
-        private System.Windows.Forms.ToolStripButton toolButtonStartSimulation;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.ToolStripStatusLabel progressBarText;
         private System.Windows.Forms.ToolStripProgressBar progressBar;

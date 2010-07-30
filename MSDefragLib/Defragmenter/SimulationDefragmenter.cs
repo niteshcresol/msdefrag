@@ -27,6 +27,12 @@ namespace MSDefragLib.Defragmenter
         {
             //lib.ReparseClusters();
         }
+
+        public override void StopReparsingClusters()
+        {
+            //lib.StopReparsingClusters();
+        }
+
         
         public override void FinishDefragmentation(Int32 timeoutMs)
         {

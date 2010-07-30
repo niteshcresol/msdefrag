@@ -90,7 +90,12 @@ namespace MSDefrag
             offsetX = borderOffsetX + borderWidth;
             offsetY = borderOffsetY + borderWidth;
 
-            bitmap = new Bitmap(width, height);
+            bitmap = null;
+
+            if (width > 0 && height > 0)
+            {
+                bitmap = new Bitmap(width, height);
+            }
         }
         public void InitColors()
         {

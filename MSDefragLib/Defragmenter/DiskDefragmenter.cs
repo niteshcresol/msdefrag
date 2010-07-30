@@ -34,6 +34,11 @@ namespace MSDefragLib.Defragmenter
             lib.ParseDiskBitmap();
         }
 
+        public override void StopReparsingClusters()
+        {
+            lib.StopReparsingClusters();
+        }
+
         public override DiskMap diskMap
         {
             set { }

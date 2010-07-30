@@ -35,6 +35,7 @@ namespace MSDefragLib.Defragmenter
         }
 
         public abstract void ReparseClusters();
+        public abstract void StopReparsingClusters();
 
         public void ResendAllClusters()
         {
@@ -89,6 +90,7 @@ namespace MSDefragLib.Defragmenter
 
         private Thread defragThread;
         private Thread eventDispatcherThread;
+        private Thread reparseThread;
 
         public abstract void BeginDefragmentation(string parameter);
         public abstract void FinishDefragmentation(int timeoutMS);
@@ -112,13 +114,13 @@ namespace MSDefragLib.Defragmenter
         {
             FinishDefragmentation(5000);
 
-            if (defragThread.IsAlive)
+            if (defragThread != null && defragThread.IsAlive)
             {
                 defragThread.Interrupt();
                 defragThread.Join();
             }
 
-            if (eventDispatcherThread.IsAlive)
+            if (eventDispatcherThread != null && eventDispatcherThread.IsAlive)
             {
                 eventDispatcherThread.Interrupt();
                 eventDispatcherThread.Join();
@@ -127,7 +129,15 @@ namespace MSDefragLib.Defragmenter
 
         public void StartReparseThread(Int32 numClusters)
         {
-            Thread reparseThread = new Thread(Reparse);
+            StopReparsingClusters();
+
+            if (reparseThread != null && reparseThread.IsAlive)
+            {
+                reparseThread.Interrupt();
+                reparseThread.Join();
+            }
+
+            reparseThread = new Thread(Reparse);
             reparseThread.Name = "Reparse Clusters";
             reparseThread.Priority = ThreadPriority.Normal;
 
