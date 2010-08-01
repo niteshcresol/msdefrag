@@ -1017,6 +1017,9 @@ namespace MSDefragLib.FileSystem.Ntfs
                 if (_lib.Data.Running != RunningState.Running)
                     break;
 
+                if (_lib.Data.Reparse == true)
+                    _lib.ParseDiskBitmap();
+
                 // Ignore the m_iNode if the bitmap says it's not in use.
                 if (!bit || (InodeNumber == 0))
                 {

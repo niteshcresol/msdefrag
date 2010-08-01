@@ -165,7 +165,7 @@ namespace MSDefragLib
 
         public void ResetClusterStates()
         {
-            SetClusterState(0, totalClusters, eClusterState.Allocated, true);
+            SetClusterState(0, totalClusters, eClusterState.Free, true);
         }
 
         //DiskMapDetails DiskDetails;

@@ -41,6 +41,7 @@ namespace MSDefrag
 
             RegisterEvents(true);
 
+            UpdateDiskBitmap();
             Defragmenter.StartDefragmentation(DefragSettings.Path);
         }
 
@@ -68,6 +69,8 @@ namespace MSDefrag
         private void StopResizing()
         {
             diskBitmap.StopResizing();
+
+            Defragmenter.NumFilteredClusters = diskBitmap.NumSquares;
 
             Defragmenter.Continue();
         }

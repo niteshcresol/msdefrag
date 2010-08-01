@@ -1000,6 +1000,8 @@ namespace MSDefragLib
                 return;
             }
 
+            defragmenter.ResetClusterStates();
+
             Data.Reparse = true;
 
             diskMap.totalClusters = (Int32)Data.TotalClusters;
@@ -1057,7 +1059,16 @@ namespace MSDefragLib
 
             DisplayAllItems();
 
+            defragmenter.ResendAllClusters();
+
             Data.Reparse = false;
+        }
+
+        public void StartReparsingClusters()
+        {
+            if (Data == null) return;
+
+            Data.Reparse = true;
         }
 
         public void StopReparsingClusters()

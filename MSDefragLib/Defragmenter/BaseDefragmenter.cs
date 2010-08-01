@@ -90,7 +90,6 @@ namespace MSDefragLib.Defragmenter
 
         private Thread defragThread;
         private Thread eventDispatcherThread;
-        private Thread reparseThread;
 
         public abstract void BeginDefragmentation(string parameter);
         public abstract void FinishDefragmentation(int timeoutMS);
@@ -127,23 +126,6 @@ namespace MSDefragLib.Defragmenter
             }
         }
 
-        public void StartReparseThread(Int32 numClusters)
-        {
-            StopReparsingClusters();
-
-            if (reparseThread != null && reparseThread.IsAlive)
-            {
-                reparseThread.Interrupt();
-                reparseThread.Join();
-            }
-
-            reparseThread = new Thread(Reparse);
-            reparseThread.Name = "Reparse Clusters";
-            reparseThread.Priority = ThreadPriority.Normal;
-
-            reparseThread.Start();
-        }
-
         private void Defrag()
         {
             BeginDefragmentation(@"C:\*");
@@ -152,11 +134,6 @@ namespace MSDefragLib.Defragmenter
         private void EventDispatcher()
         {
             defragEventDispatcher.StartEventDispatcher();
-        }
-
-        private void Reparse()
-        {
-            ReparseClusters();
         }
 
         #endregion
@@ -179,9 +156,11 @@ namespace MSDefragLib.Defragmenter
             {
                 if (diskMap != null)
                 {
-                    diskMap.NumFilteredClusters = value;
-                    ReparseClusters();
-                    ResendAllClusters();
+                    if (diskMap.NumFilteredClusters != value)
+                    {
+                        diskMap.NumFilteredClusters = value;
+                        ReparseClusters();
+                    }
                 }
             }
         }
@@ -208,6 +187,16 @@ namespace MSDefragLib.Defragmenter
             diskMap.AddCluster(item, newState);
 
             ShowFilteredClusters(0, diskMap.totalClusters);
+        }
+
+        public void ResetClusterStates()
+        {
+            if (diskMap == null)
+            {
+                return;
+            }
+
+            diskMap.ResetClusterStates();
         }
 
         #endregion

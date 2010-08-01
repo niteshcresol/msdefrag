@@ -13,7 +13,6 @@ namespace MSDefragLib
 
         void StartDefragmentation(String parameter);
         void StopDefragmentation(Int32 timeoutMs);
-        void StartReparseThread(Int32 numClusters);
 
         DefragEventDispatcher defragEventDispatcher { get; set; }
         Int32 NumFilteredClusters { get; set; }

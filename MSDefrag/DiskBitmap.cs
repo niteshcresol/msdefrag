@@ -134,8 +134,6 @@ namespace MSDefrag
 
         private Boolean SystemBusy;
 
-        private Boolean SuspendLayout1;
-
         public IDefragmenter Defragmenter;
 
         #endregion
@@ -172,18 +170,6 @@ namespace MSDefrag
             }
 
             this.ResumeLayout();
-        }
-
-        private void ControlResized(object sender, EventArgs e)
-        {
-            SuspendLayout1 = false;
-
-            //if (!pictureSize.Equals(Size))
-            //{
-            //    ResizeBitmap();
-            //}
-
-            Defragmenter.Continue();
         }
     }
 }
