@@ -80,7 +80,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             if (record != 0x454c4946)
             {
-                ShowDebug(2, "This is not a valid MFT record, it does not begin with FILE (maybe trying to read past the end?).");
+                ShowDebug(2, LogMessage.messages[0]);
                 //m_msDefragLib.ShowHex(Data, Buffer.m_bytes, BufLength);
                 //throw new InvalidDataException();
             }
@@ -102,7 +102,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 if (index * sizeof(UInt16) >= (Int64)BufLength)
                 {
-                    ShowDebug(0, "Warning: USA data indicates that data is missing, the MFT may be corrupt.");
+                    ShowDebug(0, LogMessage.messages[1]);
                     throw new InvalidDataException();
                 }
 
@@ -110,7 +110,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 if (BufferW.GetValue(index) != UpdateSequenceArray.GetValue(0))
                 {
-                    ShowDebug(0, "Error: USA fixup word is not equal to the Update Sequence Number, the MFT may be corrupt.");
+                    ShowDebug(0, LogMessage.messages[2]);
                     throw new InvalidDataException();
                 }
 
@@ -145,9 +145,9 @@ namespace MSDefragLib.FileSystem.Ntfs
             //Trace.WriteLine(this, String.Format(
             //    "ReadNonResidentData {0:G}, {1:G} bytes", offset, runDataLength));
 
-            ShowDebug(6, String.Format("    Reading {0:G} bytes from offset {0:G}", wantedLength, offset));
+            ShowDebug(6, String.Format(LogMessage.messages[3], wantedLength, offset));
 
-            ErrorCheck((runData == null) || (runDataLength == 0), "Sanity check failed!", true);
+            ErrorCheck((runData == null) || (runDataLength == 0), LogMessage.messages[4], true);
 
             // We have to round up the WantedLength to the nearest sector.
             // For some reason or other Microsoft has decided that raw reading from disk can
@@ -160,7 +160,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             if (wantedLength >= UInt32.MaxValue)
             {
-                ShowDebug(2, String.Format("    Cannot read {0:G} bytes, maximum is {1:G}.", wantedLength, UInt32.MaxValue));
+                ShowDebug(2, String.Format(LogMessage.messages[5], wantedLength, UInt32.MaxValue));
                 return null;
             }
 
@@ -216,7 +216,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 // Read the data from the disk. If error then return FALSE.
 
-                ShowDebug(6, String.Format("    Reading {0:G} bytes from Lcn={1:G} into offset={2:G}",
+                ShowDebug(6, String.Format(LogMessage.messages[6],
                     ExtentLength, ExtentLcn / diskInfo.BytesPerCluster,
                     ExtentVcn - offset));
 
@@ -248,7 +248,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     UInt64 startingVcn,
                     UInt64 byteCount)
         {
-            ErrorCheck((_lib.Data == null) || (inodeData == null), "Sanity check failed", true);
+            ErrorCheck((_lib.Data == null) || (inodeData == null), LogMessage.messages[4], true);
 
             // Find the stream in the list of streams. If not found then create a new stream.
             Stream foundStream = inodeData.Streams.FirstOrDefault(x => (x.Name == streamName) && (x.Type.Type == streamType.Type));
@@ -278,7 +278,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             catch (Exception)
             {
                 _countRunDataIssues++;
-                Trace.WriteLine(this, String.Format("RunData Parse issue {1} for Stream: {0}",
+                Trace.WriteLine(this, String.Format(LogMessage.messages[7],
                     foundStream, _countRunDataIssues));
             }
         }
@@ -381,8 +381,8 @@ namespace MSDefragLib.FileSystem.Ntfs
             FileRecordHeader FileRecordHeader;
 
             UInt64 BaseInode;
-            ErrorCheck((reader == null) || (bufLength == 0), "Sanity check failed", true);
-            ErrorCheck((depth > 1000), "Error: infinite attribute loop", false);
+            ErrorCheck((reader == null) || (bufLength == 0), LogMessage.messages[4], true);
+            ErrorCheck((depth > 1000), LogMessage.messages[8], false);
 
             AttributeList attributeList = null;
 
@@ -448,7 +448,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 if (!FileRecordHeader.IsInUse)
                 {
-                    ShowDebug(6, String.Format("      Referenced m_iNode {0:G} is not in use.", RefInode));
+                    ShowDebug(6, String.Format(LogMessage.messages[9], RefInode));
                     continue;
                 }
 
@@ -459,7 +459,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
                 if (inodeData.Inode != BaseInode)
                 {
-                    ShowDebug(6, String.Format("      Warning: m_iNode {0:G} is an extension of m_iNode {1:G}, but thinks it's an extension of m_iNode {2:G}.",
+                    ShowDebug(6, String.Format(LogMessage.messages[10],
                             RefInode, inodeData.Inode, BaseInode));
                     continue;
                 }
@@ -521,7 +521,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     (offset + 4 > bufLength) ||
                     (attribute.Length < 3) ||
                     (offset + attribute.Length > bufLength),
-                    String.Format("Error: attribute in m_iNode {0:G} is bigger than the data, the MFT may be corrupt.", inodeData.Inode), true);
+                    String.Format(LogMessage.messages[11], inodeData.Inode), true);
 
                 // Skip AttributeList's for now.
                 if (attribute.Type.IsAttributeList)
@@ -737,7 +737,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             // If the record is not in use then quietly exit
             if (!fileRecordHeader.IsInUse)
             {
-                ShowDebug(6, String.Format("Inode {0:G} is not in use.", inodeNumber));
+                ShowDebug(6, String.Format(LogMessage.messages[12], inodeNumber));
                 return false;
             }
 
@@ -767,18 +767,18 @@ namespace MSDefragLib.FileSystem.Ntfs
             // Note: why is the MFTRecordNumber only 32 bit? Inode numbers are 48 bit.
             //
             ErrorCheck(fileRecordHeader.MFTRecordNumber != inodeNumber,
-                String.Format("Warning: Inode {0:G} contains a different MFTRecordNumber {1:G}",
+                String.Format(LogMessage.messages[13],
                       inodeNumber, fileRecordHeader.MFTRecordNumber), true);
 
             ErrorCheck(
                 fileRecordHeader.AttributeOffset >= bufLength,
-                String.Format("Error: attributes in m_iNode {0:G} are outside the FILE record, the MFT may be corrupt.",
+                String.Format(LogMessage.messages[14],
                       inodeNumber), 
                  true);
 
             ErrorCheck(
                 fileRecordHeader.BytesInUse > bufLength,
-                String.Format("Error: in m_iNode {0:G} the record is bigger than the size of the buffer, the MFT may be corrupt.",
+                String.Format(LogMessage.messages[15],
                       inodeNumber), 
                 true);
 
@@ -806,7 +806,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             catch (Exception)
             {
                 _countProcessAttributesIssues++;
-                Trace.WriteLine(this, String.Format("ProcessAttributes failed for {0} (cnt={1})",
+                Trace.WriteLine(this, String.Format(LogMessage.messages[16],
                     inodeData.LongFilename, _countProcessAttributesIssues));
             }
 
@@ -905,15 +905,16 @@ namespace MSDefragLib.FileSystem.Ntfs
                 //    ShowDebug(2, "File: " + (String.IsNullOrEmpty(Item.LongFilename) ? (String.IsNullOrEmpty(Item.ShortFilename) ? "" : Item.ShortFilename) : Item.LongFilename));
 
                 countFiles++;
+
                 // Draw the item on the screen.
-                //if (_lib.Data.RedrawScreen == 0)
-                //{
+                if (_lib.Data.Reparse == false)
+                {
                     _lib.ColorizeItem(Item, 0, 0, false);
-                //}
-                //else
-                //{
-                //    _lib.ShowDiskmap();
-                //}
+                }
+                else
+                {
+                    _lib.ParseDiskBitmap();
+                }
             }
 
             return true;
@@ -931,7 +932,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             // Test if the boot block is an NTFS boot block.
             if (bootSector.Filesystem != FS.Filesystem.NTFS)
             {
-                ShowDebug(2, "This is not an NTFS disk (different cookie).");
+                ShowDebug(2, LogMessage.messages[17]);
                 return false;
             }
 
@@ -946,20 +947,20 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             ShowDebug(0, "This is an NTFS disk.");
 
-            ShowDebug(2, String.Format("  Disk cookie: {0:X}", bootSector.OemId));
-            ShowDebug(2, String.Format("  BytesPerSector: {0:G}", diskInfo.BytesPerSector));
-            ShowDebug(2, String.Format("  TotalSectors: {0:G}", diskInfo.TotalSectors));
-            ShowDebug(2, String.Format("  SectorsPerCluster: {0:G}", diskInfo.SectorsPerCluster));
+            ShowDebug(2, String.Format(LogMessage.messages[18], bootSector.OemId));
+            ShowDebug(2, String.Format(LogMessage.messages[19], diskInfo.BytesPerSector));
+            ShowDebug(2, String.Format(LogMessage.messages[20], diskInfo.TotalSectors));
+            ShowDebug(2, String.Format(LogMessage.messages[21], diskInfo.SectorsPerCluster));
 
-            ShowDebug(2, String.Format("  SectorsPerTrack: {0:G}", bootSector.SectorsPerTrack));
-            ShowDebug(2, String.Format("  NumberOfHeads: {0:G}", bootSector.NumberOfHeads));
-            ShowDebug(2, String.Format("  MftStartLcn: {0:G}", diskInfo.MftStartLcn));
-            ShowDebug(2, String.Format("  Mft2StartLcn: {0:G}", diskInfo.Mft2StartLcn));
-            ShowDebug(2, String.Format("  BytesPerMftRecord: {0:G}", diskInfo.BytesPerMftRecord));
-            ShowDebug(2, String.Format("  ClustersPerIndexRecord: {0:G}", diskInfo.ClustersPerIndexRecord));
+            ShowDebug(2, String.Format(LogMessage.messages[22], bootSector.SectorsPerTrack));
+            ShowDebug(2, String.Format(LogMessage.messages[23], bootSector.NumberOfHeads));
+            ShowDebug(2, String.Format(LogMessage.messages[24], diskInfo.MftStartLcn));
+            ShowDebug(2, String.Format(LogMessage.messages[25], diskInfo.Mft2StartLcn));
+            ShowDebug(2, String.Format(LogMessage.messages[26], diskInfo.BytesPerMftRecord));
+            ShowDebug(2, String.Format(LogMessage.messages[27], diskInfo.ClustersPerIndexRecord));
 
-            ShowDebug(2, String.Format("  MediaType: {0:X}", bootSector.MediaType));
-            ShowDebug(2, String.Format("  VolumeSerialNumber: {0:X}", bootSector.Serial));
+            ShowDebug(2, String.Format(LogMessage.messages[28], bootSector.MediaType));
+            ShowDebug(2, String.Format(LogMessage.messages[29], bootSector.Serial));
 
             // Calculate the size of first 16 Inodes in the MFT. The Microsoft defragmentation API cannot move these inodes.
             _lib.Data.Disk.MftLockedClusters = diskInfo.BytesPerCluster / diskInfo.BytesPerMftRecord;
@@ -987,7 +988,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 ref MftDataFragments, ref MftDataBytes, ref MftBitmapFragments, ref MftBitmapBytes,
                 Helper.BinaryReader(Buffer), diskInfo.BytesPerMftRecord);
 
-            ShowDebug(6, String.Format("MftDataBytes = {0:G}, MftBitmapBytes = {0:G}", MftDataBytes, MftBitmapBytes));
+            ShowDebug(6, String.Format(LogMessage.messages[30], MftDataBytes, MftBitmapBytes));
 
             BitmapFile bitmapFile = new BitmapFile(_lib.Data.Disk,
                 diskInfo, MftBitmapFragments, MftBitmapBytes, MftDataBytes);
@@ -1085,7 +1086,7 @@ namespace MSDefragLib.FileSystem.Ntfs
 
             if (endTime > startTime)
             {
-                ShowDebug(2, String.Format("  Analysis speed: {0:G} items per second",
+                ShowDebug(2, String.Format(LogMessage.messages[31],
                       (Int64)MaxInode * 1000 / (endTime - startTime).TotalMilliseconds));
             }
 
