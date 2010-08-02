@@ -28,15 +28,13 @@ namespace MSDefragLib
         {
             index = clusterIndex;
             state = newState;
-            isDirty = true;
+            dirty = true;
         }
 
         private Int32 index;
-
         public Int32 Index { get { return index; } }
 
         private eClusterState state;
-
         public eClusterState State
         {
             get { return state; }
@@ -44,18 +42,39 @@ namespace MSDefragLib
             {
                 if (state != value)
                 {
-                    isDirty = true;
+                    dirty = true;
                 }
 
                 state = value;
             }
         }
 
-        private Boolean isDirty;
+        private Boolean dirty;
+        public Boolean Dirty
+        {
+            get { return dirty; }
+            set { dirty = value; }
+        }
 
-        public Boolean Dirty {
-            get { return isDirty; }
-            set { isDirty = value; }
+        private Boolean masterFileTable;
+        public Boolean MasterFileTable
+        {
+            get { return masterFileTable; }
+            set { masterFileTable = value; }
+        }
+
+        private Boolean currentyUsed;
+        public Boolean CurrentlyUsed
+        {
+            get { return currentyUsed; }
+            set { currentyUsed = value; }
+        }
+
+        private Boolean spaceHog;
+        public Boolean SpaceHog
+        {
+            get { return spaceHog; }
+            set { spaceHog = value; }
         }
     }
 }

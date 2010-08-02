@@ -75,7 +75,6 @@
     <Compile Include="Defragmenter\DiskDefragmenter.cs" />
     <Compile Include="Defragmenter\IDefragmenter.cs" />
     <Compile Include="DiskMap.cs" />
-    <Compile Include="DiskMapDetails.cs" />
     <Compile Include="DiskMapFilteredData.cs" />
     <Compile Include="FileSystem\Ntfs\BitmapFile.cs" />
     <Compile Include="FileSystem\Ntfs\ByteArray.cs" />
