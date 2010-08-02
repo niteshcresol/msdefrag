@@ -110,7 +110,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <summary>
         ///  Total number of bytes.
         /// </summary>
-        public UInt64 Bytes
+        public UInt64 TotalBytes
         { get; set; }
 
     }

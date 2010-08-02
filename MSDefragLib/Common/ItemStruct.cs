@@ -13,6 +13,7 @@ namespace MSDefragLib
         public ItemStruct(FileSystem.Ntfs.Stream stream)
         {
             FragmentList = stream.Fragments;
+            Error = false;
         }
 
         /// <summary>
@@ -170,5 +171,6 @@ namespace MSDefragLib
         public Boolean Unmovable;                    /* YES: file can't/couldn't be moved. */
         public Boolean Exclude;                      /* YES: file is not to be defragged/optimized. */
         public Boolean SpaceHog;                     /* YES: file to be moved to end of disk. */
+        public Boolean Error;
     };
 }

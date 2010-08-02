@@ -26,6 +26,7 @@ namespace MSDefrag
         private static Color ColorMft = Color.Pink;
         private static Color ColorSpaceHog = Color.DarkCyan;
         private static Color ColorUnfragmented = Color.Green;
+        private static Color ColorError = Color.Red;
 
         #endregion
 
@@ -111,6 +112,7 @@ namespace MSDefrag
             colors[(Int32)MSDefragLib.eClusterState.Mft] = ColorMft;
             colors[(Int32)MSDefragLib.eClusterState.SpaceHog] = ColorSpaceHog;
             colors[(Int32)MSDefragLib.eClusterState.Unfragmented] = ColorUnfragmented;
+            colors[(Int32)MSDefragLib.eClusterState.Error] = ColorError;
         }
 
         public void InitBrushes()

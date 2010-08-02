@@ -746,7 +746,7 @@ namespace MSDefragLib
         /// <param name="BusyOffset">Number of first cluster to be highlighted.</param>
         /// <param name="BusySize">Number of clusters to be highlighted.</param>
         /// <param name="UnDraw">true to undraw the file from the screen.</param>
-        public void ColorizeItem(ItemStruct Item, UInt64 BusyOffset, UInt64 BusySize, Boolean UnDraw)
+        public void ColorizeItem(ItemStruct Item, UInt64 BusyOffset, UInt64 BusySize, Boolean UnDraw, Boolean Error)
         {
 	        UInt64 SegmentBegin;
 	        UInt64 SegmentEnd;
@@ -836,7 +836,7 @@ namespace MSDefragLib
 			        // Colorize the segment.
                     //defragmenter.SetClusterState((Int32)(fragment.Lcn + SegmentBegin), (Int32)(fragment.Lcn + SegmentEnd), ClusterState);
 
-                    defragmenter.SetClusterState(Item, ClusterState);
+                    defragmenter.SetClusterState(Item, Error ? eClusterState.Error : ClusterState);
 
 			        // Next segment
 			        SegmentBegin = SegmentEnd;
@@ -1115,7 +1115,7 @@ namespace MSDefragLib
                         continue;
                     }
 
-                    ColorizeItem(Item, 0, 0, false);
+                    ColorizeItem(Item, 0, 0, false, Item.Error);
 
                     if (ii % 1000 == 0)
                     {
@@ -2089,7 +2089,7 @@ namespace MSDefragLib
             {
                 if (Data.Running != RunningState.Running) break;
 
-                ColorizeItem(Item, 0, 0, false);
+                ColorizeItem(Item, 0, 0, false, Item.Error);
 
                 // Construct the full path's of the item. The MFT contains only the filename, plus
                 // a pointer to the directory. We have to construct the full paths's by joining
@@ -2126,7 +2126,7 @@ namespace MSDefragLib
                 {
                     Item.Exclude = true;
 
-                    ColorizeItem(Item,0,0,false);
+                    ColorizeItem(Item,0,0,false, Item.Error);
                 }
 
                 // Determine if the item is to be excluded by comparing it's name with the Exclude masks.
@@ -2140,7 +2140,7 @@ namespace MSDefragLib
                         {
                             Item.Exclude = true;
 
-                            ColorizeItem(Item,0,0,false);
+                            ColorizeItem(Item, 0, 0, false, Item.Error);
 
                             break;
                         }
@@ -2156,7 +2156,7 @@ namespace MSDefragLib
                     (Item.LongFilename == "jkdefragscreensaver.log")))
                 {
                     Item.Exclude = true;
-                    ColorizeItem(Item,0,0,false);
+                    ColorizeItem(Item, 0, 0, false, Item.Error);
                 }
 
                 // The item is a SpaceHog if it's larger than 50 megabytes, or last access time is more 
@@ -2187,7 +2187,7 @@ namespace MSDefragLib
                         }
                     }
 
-                    if (Item.SpaceHog == true) ColorizeItem(Item,0,0,false);
+                    if (Item.SpaceHog == true) ColorizeItem(Item, 0, 0, false, Item.Error);
                 }
 
                 // Special exception for "http://www.safeboot.com/". 
@@ -2217,7 +2217,7 @@ namespace MSDefragLib
                 }
 
                 if (Item.Unmovable == true)
-                    ColorizeItem(Item, 0, 0, false);
+                    ColorizeItem(Item, 0, 0, false, Item.Error);
 
                 // Update the progress percentage.
                 Data.PhaseDone++;

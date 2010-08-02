@@ -31,40 +31,29 @@ namespace MSDefragLib
         {
             get
             {
+                if (numClusterStates[(Int32)eClusterState.Error] > 0)
+                    return eClusterState.Error;
+
                 if (numClusterStates[(Int32)eClusterState.Busy] > 0)
-                {
                     return eClusterState.Busy;
-                }
 
                 if (numClusterStates[(Int32)eClusterState.Mft] > 0)
-                {
                     return eClusterState.Mft;
-                }
 
                 if (numClusterStates[(Int32)eClusterState.Unmovable] > 0)
-                {
                     return eClusterState.Unmovable;
-                }
 
                 if (numClusterStates[(Int32)eClusterState.Fragmented] > 0)
-                {
                     return eClusterState.Fragmented;
-                }
 
                 if (numClusterStates[(Int32)eClusterState.SpaceHog] > 0)
-                {
                     return eClusterState.SpaceHog;
-                }
 
                 if (numClusterStates[(Int32)eClusterState.Unfragmented] > 0)
-                {
                     return eClusterState.Unfragmented;
-                }
 
                 if (numClusterStates[(Int32)eClusterState.Allocated] > 0)
-                {
                     return eClusterState.Allocated;
-                }
 
                 return eClusterState.Free;
             }
