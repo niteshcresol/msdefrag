@@ -870,7 +870,7 @@ namespace MSDefragLib
 
             PrevInUse = true;
 
-            diskMap.totalClusters = (Int32)Data.TotalClusters;
+            diskMap.TotalClusters = (Int32)Data.TotalClusters;
 
             int ii = 0;
 
@@ -1004,7 +1004,7 @@ namespace MSDefragLib
 
             Data.Reparse = true;
 
-            diskMap.totalClusters = (Int32)Data.TotalClusters;
+            diskMap.TotalClusters = (Int32)Data.TotalClusters;
 
             Int32 numFilteredClusters = defragmenter.diskMap.NumFilteredClusters;
             Int32 totalClusters = (Int32)Data.TotalClusters;

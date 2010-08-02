@@ -186,7 +186,7 @@ namespace MSDefragLib.Defragmenter
 
             diskMap.AddCluster(item, newState);
 
-            ShowFilteredClusters(0, diskMap.totalClusters);
+            ShowFilteredClusters(0, diskMap.TotalClusters);
         }
 
         public void ResetClusterStates()

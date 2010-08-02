@@ -72,7 +72,12 @@ namespace MSDefragLib
 
         public void AddClusterState(eClusterState state)
         {
+            eClusterState oldState = MaxState;
+
             numClusterStates[(Int32)state]++;
+
+            if (oldState != MaxState)
+                Dirty = true;
         }
 
         public void RemoveClusterState(eClusterState state)
@@ -96,6 +101,8 @@ namespace MSDefragLib
             {
                 numClusterStates[(Int32)ii] = 0;
             }
+
+            Dirty = true;
         }
 
         private Boolean isDirty;

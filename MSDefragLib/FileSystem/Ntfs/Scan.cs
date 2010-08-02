@@ -72,9 +72,9 @@ namespace MSDefragLib.FileSystem.Ntfs
         /// <param name="DiskInfo"></param>
         /// <param name="Buffer"></param>
         /// <param name="BufLength"></param>
-        private void FixupRawMftdata(DiskInformation DiskInfo, ByteArray buffer, UInt64 BufLength)
+        private void FixupRawMftdata(DiskInformation DiskInfo, ByteArray buffer,Int64 bufferStart,  UInt64 BufLength)
         {
-            UInt32 record = BitConverter.ToUInt32(buffer.Bytes, 0);
+            UInt32 record = BitConverter.ToUInt32(buffer.Bytes, (Int32)bufferStart);
 
             // If this is not a FILE record then return FALSE
 
@@ -441,7 +441,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                 _lib.Data.Disk.ReadFromCluster(tempVcn, Buffer2.Bytes, 0,
                     (Int32)diskInfo.BytesPerMftRecord);
 
-                FixupRawMftdata(diskInfo, Buffer2, diskInfo.BytesPerMftRecord);
+                FixupRawMftdata(diskInfo, Buffer2, 0, diskInfo.BytesPerMftRecord);
 
                 // If the Inode is not in use then skip.
                 FileRecordHeader = FileRecordHeader.Parse(Helper.BinaryReader(Buffer2));
@@ -973,7 +973,7 @@ namespace MSDefragLib.FileSystem.Ntfs
             _lib.Data.Disk.ReadFromCluster(tempLcn, Buffer.Bytes, 0,
                 (Int32)diskInfo.BytesPerMftRecord);
 
-            FixupRawMftdata(diskInfo, Buffer, diskInfo.BytesPerMftRecord);
+            FixupRawMftdata(diskInfo, Buffer, 0, diskInfo.BytesPerMftRecord);
 
             // Extract data from the MFT record and put into an Item struct in memory. If
             // there was an error then exit.
@@ -1065,7 +1065,8 @@ namespace MSDefragLib.FileSystem.Ntfs
                 UInt64 position = diskInfo.InodeToBytes(InodeNumber - BlockStart);
 
                 FixupRawMftdata(diskInfo,
-                        Buffer.ToByteArray((Int64)position, Buffer.GetLength() - (Int64)(position)),
+                        Buffer, (Int64)position,
+                        //Buffer.ToByteArray((Int64)position, Buffer.GetLength() - (Int64)(position)), 0, 
                         diskInfo.BytesPerMftRecord);
 
                 // Interpret the m_iNode's attributes.
