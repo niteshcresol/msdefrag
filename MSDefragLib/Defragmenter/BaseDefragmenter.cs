@@ -90,12 +90,15 @@ namespace MSDefragLib.Defragmenter
 
         private Thread defragThread;
         private Thread eventDispatcherThread;
+        private String defragArgument;
 
         public abstract void BeginDefragmentation(string parameter);
         public abstract void FinishDefragmentation(int timeoutMS);
 
         public void StartDefragmentation(string parameter)
         {
+            defragArgument = parameter;
+
             defragThread = new Thread(Defrag);
             defragThread.Name = "Defrag Engine";
             defragThread.Priority = ThreadPriority.Normal;
@@ -128,7 +131,12 @@ namespace MSDefragLib.Defragmenter
 
         private void Defrag()
         {
-            BeginDefragmentation(@"C:\*");
+            String path = defragArgument;
+
+            if (String.IsNullOrEmpty(path))
+                path = @"C:\*";
+
+            BeginDefragmentation(path);
         }
 
         private void EventDispatcher()

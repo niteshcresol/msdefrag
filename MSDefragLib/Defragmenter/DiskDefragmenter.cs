@@ -18,7 +18,7 @@ namespace MSDefragLib.Defragmenter
         public override void BeginDefragmentation(string parameter)
         {
             ResetClusterStates();
-            lib.RunJkDefrag(@"C:\*", 2, 10, null, null);
+            lib.RunJkDefrag(parameter, 2, 10, null, null);
             //lib.RunJkDefrag(@"T:\*", 2, 10, null, null);
         }
 
