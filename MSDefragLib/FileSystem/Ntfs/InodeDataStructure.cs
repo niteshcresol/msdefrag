@@ -115,6 +115,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     break;
                 case NameTypes.NTFS | NameTypes.DOS:
                 case NameTypes.NTFS:
+                case NameTypes.POSIX:
                     LongFilename = LongFilename ?? attribute.Name;
                     break;
                 default:

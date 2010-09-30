@@ -532,7 +532,7 @@ namespace MSDefragLib.IO
         //    SE_BACKUP_NAME = Backup and Restore Privileges.
         public static void ElevatePermissions()
         {
-            AquireRights("Backup and Restore Privileges");
+            AquireRights("SeBackupPrivilege"/*"Backup and Restore Privileges"*/);
         }
 
         #endregion

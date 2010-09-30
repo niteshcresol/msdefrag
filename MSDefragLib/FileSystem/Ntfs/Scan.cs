@@ -1060,7 +1060,7 @@ namespace MSDefragLib.FileSystem.Ntfs
                     _lib.ParseDiskBitmap();
 
                 // Ignore the m_iNode if the bitmap says it's not in use.
-                if (!bit || (InodeNumber == 0))
+                if (!bit /*|| (InodeNumber == 0)*/)
                 {
                     InodeNumber++;
                     continue;
