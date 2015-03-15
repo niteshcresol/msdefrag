@@ -142,7 +142,7 @@ namespace MSDefragLib.IO
                 GCHandle handle = GCHandle.Alloc(i64, GCHandleType.Pinned);
                 IntPtr p = handle.AddrOfPinnedObject();
 
-                uint q = 1024 * 1024 * 64 + 2 * 8;
+                uint q = 1024 * 1024 * 512 + 2 * 8;
 
                 uint size = 0;
                 pAlloc = Marshal.AllocHGlobal((int)q);

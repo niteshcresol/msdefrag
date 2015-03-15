@@ -47,7 +47,7 @@ namespace MSDefragLib.FileSystem.Ntfs
         {
             if (expression && throwException)
             {
-                throw new Exception(message);
+                //throw new Exception(message);
             }
         }
 
