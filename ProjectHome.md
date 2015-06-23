@@ -1,0 +1,1 @@
+This is JKDefrag 3.36. It is ported completely to C#. All functions and structures are moved to classes.
